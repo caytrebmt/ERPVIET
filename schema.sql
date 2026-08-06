@@ -1,15 +1,15 @@
 -- ============================================================
--- ERPVIET - Canonical, fast-loading schema.sql
+-- ERPVIET - Canonical, fast-loading schema.sql (branch: sql/standardize-all)
 -- Purpose: single canonical schema for the project, optimized for
 -- fast load in Postgres (v13+) while preserving necessary indexes
--- and a simple, secure product pagination function for the webshop.
--- This file intentionally avoids heavy seed data. Keep seed data
--- in a separate insertdata.sql that you run in staging/testing only.
+-- and adding trigram search + JSON pagination helper for the webshop.
 -- ============================================================
 
 -- Extensions (safe, commonly available on Postgres 13+)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "btree_gin";
+-- OPTIONAL: trigram extension improves ILIKE search performance. Requires CREATE EXTENSION privilege.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 SET client_min_messages = WARNING;
 
@@ -141,17 +141,19 @@ CREATE TABLE IF NOT EXISTS product_attributes (
 -- Indexes to make webshop queries fast (search + list + pagination)
 CREATE INDEX IF NOT EXISTS idx_products_is_web_visible_created_at ON products(is_web_visible, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_products_web_price ON products(web_price);
-CREATE INDEX IF NOT EXISTS idx_products_name_vi ON products USING gin(to_tsvector('vietnamese', coalesce(name_vi,'')));
+CREATE INDEX IF NOT EXISTS idx_products_name_vi_fts ON products USING gin(to_tsvector('vietnamese', coalesce(name_vi,'')));
 
--- Covering index for common listing queries (Postgres 11+ supports INCLUDE)
--- INCLUDE may be ignored on older minor versions but is widely supported on PG13+.
+-- Trigram indexes for fast ILIKE searches (requires pg_trgm)
+CREATE INDEX IF NOT EXISTS idx_products_name_vi_trgm ON products USING gin (name_vi gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_products_name_en_trgm ON products USING gin (name_en gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_products_code_trgm ON products USING gin (code gin_trgm_ops);
+
+-- Covering index for common listing queries
 CREATE INDEX IF NOT EXISTS idx_products_list_cover ON products(is_web_visible, id) INCLUDE (web_price, stock_quantity, name_vi);
 
 -- --------------------
--- Webshop helper: product pagination function
+-- Webshop helper: product pagination function (returns rows + total_count)
 -- --------------------
--- Returns rows of products plus a repeated total_count column for simple client-side paging.
--- Safe parameter handling: only allow specific sort columns to avoid SQL injection.
 CREATE OR REPLACE FUNCTION webshop_get_products(
   p_page INT DEFAULT 1,
   p_per_page INT DEFAULT 20,
@@ -221,6 +223,55 @@ BEGIN
 END;
 $$;
 
+-- --------------------
+-- Webshop JSON helper: returns JSON { items: [...], total: n, page, per_page }
+-- --------------------
+CREATE OR REPLACE FUNCTION webshop_get_products_json(
+  p_page INT DEFAULT 1,
+  p_per_page INT DEFAULT 20,
+  p_search TEXT DEFAULT NULL,
+  p_sort TEXT DEFAULT 'created_at',
+  p_dir TEXT DEFAULT 'desc'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  items JSONB;
+  total BIGINT;
+  v_record RECORD;
+BEGIN
+  items := '[]'::jsonb;
+  FOR v_record IN SELECT * FROM webshop_get_products(p_page, p_per_page, p_search, p_sort, p_dir)
+  LOOP
+    items := items || jsonb_build_array(jsonb_build_object(
+      'id', v_record.id,
+      'code', v_record.code,
+      'sku', v_record.sku,
+      'name_vi', v_record.name_vi,
+      'name_en', v_record.name_en,
+      'web_price', v_record.web_price,
+      'stock_quantity', v_record.stock_quantity,
+      'primary_image', v_record.primary_image,
+      'is_web_visible', v_record.is_web_visible
+    ));
+    total := v_record.total_count; -- repeated per row; last assignment is total
+  END LOOP;
+
+  IF total IS NULL THEN
+    -- no rows returned, compute total via function (efficient enough)
+    SELECT COUNT(*) INTO total FROM products WHERE is_web_visible = TRUE AND (p_search IS NULL OR p_search = '' OR (name_vi ILIKE ('%'||p_search||'%') OR name_en ILIKE ('%'||p_search||'%') OR code ILIKE ('%'||p_search||'%')));
+  END IF;
+
+  RETURN jsonb_build_object(
+    'items', COALESCE(items, '[]'::jsonb),
+    'total', total::bigint,
+    'page', p_page,
+    'per_page', p_per_page
+  );
+END;
+$$;
+
 -- Small convenience view for quick webshop product counts (cacheable by app)
 CREATE OR REPLACE VIEW vw_webshop_product_counts AS
 SELECT COUNT(*) FILTER (WHERE is_web_visible) AS visible_count, COUNT(*) AS total_products FROM products;
@@ -228,13 +279,13 @@ SELECT COUNT(*) FILTER (WHERE is_web_visible) AS visible_count, COUNT(*) AS tota
 -- --------------------
 -- Final notes
 -- --------------------
--- - This single schema.sql is optimized for fast load: no heavy seed inserts and minimal FK constraints.
--- - Keep insertdata.sql as a separate file for test/staging bulk loads.
--- - The webshop_get_products function is safe from SQL injection by whitelisting sort columns
---   and by using quote_literal for search values. It returns total_count repeated per row to make
---   it trivial for clients to get both items and total without a second query.
--- - If you want a variant that returns a JSON payload { items: [...], total: n }, I can add that.
--- - PostgreSQL compatibility: written for PG 13+ (uses partitioning only if added later; indexes and functions
---   are compatible with 13/14/15). If you run an older PG, tell me and I'll adjust.
+-- - This schema.sql is optimized for fast load: no heavy seed inserts and minimal FK constraints.
+-- - insertdata.sql remains the bulk seed file (run in staging/test only).
+-- - pg_trgm extension and trigram indexes are added for fast ILIKE search; enabling extension
+--   requires appropriate DB privileges. If your environment doesn't allow creating extensions,
+--   remove the CREATE EXTENSION pg_trgm line and create trigram indexes manually when permitted.
+-- - The webshop_get_products functions return items + total_count; webshop_get_products_json returns
+--   a compact JSONB object suitable for API responses.
+-- - Compatible with PostgreSQL 13+. If you run a different version, tell me and I'll adjust.
 
--- End of schema.sql
+-- End of schema.sql (branch sql/standardize-all)
