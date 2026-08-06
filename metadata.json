@@ -1,0 +1,6 @@
+{
+  "name": "erpviet",
+  "description": "A React SPA web integrated with ERPVIET backend featuring products catalog, cart, checkout, orders history, account profile, and promotions validation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

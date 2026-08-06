@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Overriding indigo with a premium, strong neutral wood/walnut brown palette */
+  --color-indigo-50: #f6f5f3;
+  --color-indigo-100: #edeae4;
+  --color-indigo-200: #dbd5cb;
+  --color-indigo-300: #bfb5a5;
+  --color-indigo-400: #9e9282;
+  --color-indigo-500: #7f7363;
+  --color-indigo-600: #665b4e;
+  --color-indigo-700: #544a3f;
+  --color-indigo-800: #463d33;
+  --color-indigo-850: #3a322a;
+  --color-indigo-900: #302922;
+  --color-indigo-950: #1b1713;
+
+  /* Defining custom grays utilized in the layout styles */
+  --color-gray-450: #848d9a;
+  --color-gray-750: #2d3748;
+  --color-gray-850: #1a202c;
+}
+
+@variant dark (&:where(.dark, .dark *));
+
+/* Custom global utilities for refined visual design */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.dark * {
+  scrollbar-color: #3f3f46 transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Subtle top progress bar shown only when switching categories (background refresh) */
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+/* Mobile sidebar drawer slide-in */
+@keyframes slide-in {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}
