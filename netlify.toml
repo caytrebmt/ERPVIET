@@ -1,0 +1,22 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["express", "serverless-http"]
+
+# Forward the JSON API to the Express-backed Netlify Function.
+# serverless-http preserves the full request path, so the function mounts
+# the routers under their original "/api/*" prefix.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true
+
+# SPA fallback: serve the Vite client for any non-API route.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
