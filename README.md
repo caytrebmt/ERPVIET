@@ -30,10 +30,6 @@ Dự án sử dụng trình kết nối PostgreSQL `pg` thông minh tự động
 
 ---
 
-## 🌐 3. HƯỚNG DẪN DEPLOY TRÊN NETLIFY (CHI TIẾT TỪ A-Z)
-
-Dự án đã tích hợp sẵn tệp cấu hình chuẩn Netlify `netlify.toml`, Netlify Function (`netlify/functions/api.ts`) và quy tắc điều hướng `_redirects` giúp chạy hoàn hảo cả Frontend SPA lẫn Backend API trên Netlify.
-
 ### Step 1: Push mã nguồn lên GitHub / GitLab
 ```bash
 git add .
