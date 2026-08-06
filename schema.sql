@@ -161,12 +161,24 @@ CREATE TABLE companies (
     email VARCHAR(100),
     website VARCHAR(100),
     logo_url VARCHAR(255),
+    slug VARCHAR(50) UNIQUE,
+    subdomain VARCHAR(50) UNIQUE,
+    custom_domain VARCHAR(100) UNIQUE,
+    plan_type VARCHAR(20) DEFAULT 'free' CHECK (plan_type IN ('free', 'starter', 'professional', 'enterprise')),
+    subscription_status VARCHAR(20) DEFAULT 'trial' CHECK (subscription_status IN ('trial', 'active', 'past_due', 'canceled', 'suspended')),
+    trial_ends_at TIMESTAMP,
+    settings JSONB DEFAULT '{}',
+    max_users INT DEFAULT 5,
+    max_warehouses INT DEFAULT 3,
+    is_paused BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
+    owner_user_id INT,
+    onboarding_completed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO companies (id, code, name_vi, name_en, tax_code, address, phone, email, website) VALUES
-(1, 'ERPACC_VN', 'Công Ty Cổ Phần Công Nghệ ERPACC Việt Nam', 'ERPACC Technology Vietnam JSC', '0109988776', 'Tầng 12, Tòa nhà Landmark 81, Bình Thạnh, TP.HCM', '028.7300.9999', 'info@erpacc.vn', 'https://erpacc.vn');
+INSERT INTO companies (id, code, name_vi, name_en, tax_code, address, phone, email, website, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_active) VALUES
+(1, 'ERPACC_VN', 'Công Ty Cổ Phần Công Nghệ ERPACC Việt Nam', 'ERPACC Technology Vietnam JSC', '0109988776', 'Tầng 12, Tòa nhà Landmark 81, Bình Thạnh, TP.HCM', '028.7300.9999', 'info@erpacc.vn', 'https://erpacc.vn', 'erpacc-vn', 'erpacc', 'enterprise', 'active', NULL, 50, 10, TRUE);
 
 CREATE TABLE branches (
     id SERIAL PRIMARY KEY,
@@ -396,6 +408,8 @@ INSERT INTO sys_users (id, company_id, branch_id, department_id, username, email
 (2, 1, 1, 2, 'accountant1', 'ketoan.tran@erpacc.vn', '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C', 'Trần Thị Thu Kế Toán', '0911223344', 3, 'vi'),
 (3, 1, 1, 3, 'thukho1', 'thukho.le@erpacc.vn', '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C', 'Lê Hoàng Minh Thủ Kho', '0903555666', 4, 'vi'),
 (4, 1, 1, 4, 'sales1', 'saler.pham@erpacc.vn', '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C', 'Phạm Ngọc Anh Sale', '0977888999', 5, 'en');
+
+ALTER TABLE companies ADD CONSTRAINT fk_companies_owner_user FOREIGN KEY (owner_user_id) REFERENCES sys_users(id) ON DELETE SET NULL;
 
 CREATE TABLE sys_user_roles (
     user_id INT REFERENCES sys_users(id) ON DELETE CASCADE,
@@ -2213,7 +2227,104 @@ SELECT setval(pg_get_serial_sequence('web_orders', 'id'), COALESCE(MAX(id), 1)) 
 -- END OF COMPREHENSIVE SCHEMAS SCRIPT FOR ERPACC & WEBSHOP
 -- ============================================================
 -- ============================================================
--- BULK HIGH-VOLUME TEST DATA GENERATOR FOR ERPACC & WEBSHOP
+-- MULTI-TENANCY: ADD company_id TO ALL BUSINESS TABLES
+-- ============================================================
+ALTER TABLE products ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE product_images ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE product_attributes ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE product_cost_history ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE brands ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE price_lists ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE price_list_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE supplier_prices ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE customer_groups ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE warehouses ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE warehouse_locations ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE batches ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE serial_numbers ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE stock_balances ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE stock_movement_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE stock_transfers ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE stock_transfer_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE stock_adjustments ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE stock_adjustment_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE stocktaking_sessions ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE stocktaking_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE stock_reservations ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE fifo_cost_layers ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE quotation_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE sales_orders ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE sales_order_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE sales_deliveries ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE sales_delivery_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE sales_returns ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE sales_return_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE sales_commissions ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE purchase_requests ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE purchase_request_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE purchase_rfqs ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE purchase_rfq_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE supplier_quotations ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE supplier_quotation_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE purchase_order_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE purchase_receipts ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE purchase_receipt_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE purchase_returns ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE purchase_return_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE vat_declarations ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE receipts_payments ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE journal_entry_lines ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE bank_accounts ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE fixed_assets ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE asset_depreciations ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE crm_opportunities ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE crm_contacts ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE crm_activities ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_customers ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_promotions ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_carts ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_cart_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_orders ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_order_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_wishlists ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_wishlist_items ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_payments ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_shipping ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_product_reviews ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE web_banners ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE attachments ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE document_sequences ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE fiscal_years ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE accounting_periods ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+ALTER TABLE chart_of_accounts ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
+
+-- Indexes for tenant isolation
+CREATE INDEX IF NOT EXISTS idx_products_company ON products(company_id);
+CREATE INDEX IF NOT EXISTS idx_customers_company ON customers(company_id);
+CREATE INDEX IF NOT EXISTS idx_suppliers_company ON suppliers(company_id);
+CREATE INDEX IF NOT EXISTS idx_stock_balances_company ON stock_balances(company_id);
+CREATE INDEX IF NOT EXISTS idx_stock_movements_company ON stock_movements(company_id);
+CREATE INDEX IF NOT EXISTS idx_sales_orders_company ON sales_orders(company_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_company ON purchase_orders(company_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_company ON invoices(company_id);
+CREATE INDEX IF NOT EXISTS idx_web_orders_company ON web_orders(company_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_company ON notifications(company_id);
+
+-- ============================================================
+-- END MULTI-TENANCY SCHEMA EXTENSION
+-- ============================================================
 -- Target: Performance & Speed Testing on PostgreSQL / Supabase
 -- Contains: 500+ Products, 100+ Customers, 50+ Suppliers,
 --           2,000+ Sales Orders, 5,000+ Order Items,

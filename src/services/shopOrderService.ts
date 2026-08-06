@@ -9,13 +9,20 @@ import {
 } from './shopDataStore.js';
 import { fetchProductByIdOrSlug } from './shopProductService.js';
 
-export async function fetchOrders(webCustomerId?: number): Promise<OrderData[]> {
+export async function fetchOrders(webCustomerId?: number, companyId?: number): Promise<OrderData[]> {
   if (isDbConnected()) {
     try {
       let whereClause = '';
-      let params: any[] = [];
+      const params: any[] = [];
+      let paramIdx = 1;
+
+      if (companyId) {
+        whereClause = `WHERE wo.company_id = $${paramIdx++}`;
+        params.push(companyId);
+      }
+
       if (webCustomerId) {
-        whereClause = 'WHERE wo.customer_id = $1';
+        whereClause += whereClause ? ` AND wo.customer_id = $${paramIdx++}` : `WHERE wo.customer_id = $${paramIdx++}`;
         params.push(webCustomerId);
       }
 
@@ -89,12 +96,14 @@ export async function fetchOrders(webCustomerId?: number): Promise<OrderData[]> 
   return fallbackOrders;
 }
 
-export async function fetchOrderByCodeOrToken(codeOrToken: string): Promise<OrderData | null> {
+export async function fetchOrderByCodeOrToken(codeOrToken: string, companyId?: number): Promise<OrderData | null> {
   if (isDbConnected()) {
     try {
+      const whereCompany = companyId ? ' AND company_id = $2' : '';
+      const params = companyId ? [codeOrToken, companyId] : [codeOrToken];
       const res = await query(
-        `SELECT id, code FROM web_orders WHERE code = $1 LIMIT 1`,
-        [codeOrToken]
+        `SELECT id, code FROM web_orders WHERE code = $1 ${whereCompany} LIMIT 1`,
+        params
       );
       if (res.rows && res.rows.length > 0) {
         const orderId = res.rows[0].id;
@@ -117,7 +126,7 @@ export async function fetchOrderByCodeOrToken(codeOrToken: string): Promise<Orde
   return found || null;
 }
 
-export async function createNewOrder(orderPayload: any): Promise<OrderData> {
+export async function createNewOrder(orderPayload: any, companyId?: number): Promise<OrderData> {
   const code = `ORD-${Date.now().toString().slice(-6)}`;
   const trackingToken = `tr_${Math.random().toString(36).substring(2, 10)}`;
 
@@ -169,10 +178,11 @@ export async function createNewOrder(orderPayload: any): Promise<OrderData> {
     try {
       const orderRes = await query(
         `INSERT INTO web_orders (
-          code, customer_id, customer_name, customer_phone, customer_email,
+          company_id, code, customer_id, customer_name, customer_phone, customer_email,
           shipping_address, payment_method, subtotal, discount_amount, shipping_fee, total_amount, order_status
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'CHO_XAC_NHAN') RETURNING id`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'CHO_XAC_NHAN') RETURNING id`,
         [
+          companyId || 1,
           code,
           orderPayload.webCustomerId || null,
           newOrder.customerName,

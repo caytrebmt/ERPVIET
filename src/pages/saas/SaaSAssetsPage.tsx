@@ -71,9 +71,8 @@ const MOCK_ASSETS: Asset[] = [
 ];
 
 export const SaaSAssetsPage: React.FC = () => {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { showToast } = useToast();
-  const isEn = language === 'en';
 
   const [assets, setAssets] = useState<Asset[]>(MOCK_ASSETS);
   const [search, setSearch] = useState('');
@@ -89,7 +88,7 @@ export const SaaSAssetsPage: React.FC = () => {
   const handleCreateAsset = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAsset.asset_name || !newAsset.original_cost) {
-      showToast(isEn ? 'Please enter asset name and original cost' : 'Vui lòng điền tên tài sản và nguyên giá', 'error');
+      showToast(t('assets_please_fill'), 'error');
       return;
     }
 
@@ -111,7 +110,7 @@ export const SaaSAssetsPage: React.FC = () => {
     setAssets([created, ...assets]);
     setShowAddModal(false);
     setNewAsset({ asset_name: '', category_code: 'MÁY MÓC THIẾT BỊ', original_cost: 0, useful_life_months: 36 });
-    showToast(isEn ? 'Added Fixed Asset successfully' : 'Khai báo Tài Sản Cố Định thành công!', 'success');
+    showToast(t('assets_added_success'), 'success');
   };
 
   const handleRunDepreciation = () => {
@@ -128,7 +127,7 @@ export const SaaSAssetsPage: React.FC = () => {
       })
     );
     showToast(
-      isEn ? 'Calculated and posted monthly depreciation to Accounting Ledger (TT200)' : 'Đã trích khấu hao tháng vào sổ kế toán (TT200)!',
+      t('assets_depreciation_done'),
       'success'
     );
   };
@@ -153,7 +152,7 @@ export const SaaSAssetsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              {isEn ? 'Total Original Cost' : 'Tổng Nguyên Giá TSCĐ'}
+              {t('assets_total_cost')}
             </p>
             <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
               {totalOriginalCost.toLocaleString('vi-VN')} đ
@@ -167,7 +166,7 @@ export const SaaSAssetsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              {isEn ? 'Net Book Value' : 'Giá Trị Còn Lại'}
+              {t('assets_net_book')}
             </p>
             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
               {totalNetValue.toLocaleString('vi-VN')} đ
@@ -181,7 +180,7 @@ export const SaaSAssetsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              {isEn ? 'Monthly Depreciation' : 'Khấu Hao Hàng Tháng'}
+              {t('assets_monthly_dep')}
             </p>
             <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
               {totalMonthlyDepreciation.toLocaleString('vi-VN')} đ
@@ -198,7 +197,7 @@ export const SaaSAssetsPage: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={isEn ? 'Search asset code, name...' : 'Tìm kiếm mã tài sản, tên...'}
+               placeholder={t('assets_search_placeholder')}
             className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500/50"
           />
         </div>
@@ -209,7 +208,7 @@ export const SaaSAssetsPage: React.FC = () => {
             className="w-full sm:w-auto px-4 py-2 border border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 font-medium rounded-lg text-sm flex items-center justify-center gap-2 transition-colors"
           >
             <Calculator className="h-4 w-4" />
-            <span>{isEn ? 'Run Monthly Depreciation' : 'Trích Khấu Hao Tháng Này'}</span>
+               <span>{t('assets_run_depreciation')}</span>
           </button>
 
           <button
@@ -217,7 +216,7 @@ export const SaaSAssetsPage: React.FC = () => {
             className="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-medium rounded-lg text-sm flex items-center justify-center gap-2 transition-colors shadow-xs"
           >
             <Plus className="h-4 w-4" />
-            <span>{isEn ? 'Add Fixed Asset' : 'Thêm Tài Sản Cố Định'}</span>
+               <span>{t('assets_add_fixed')}</span>
           </button>
         </div>
       </div>
@@ -228,13 +227,13 @@ export const SaaSAssetsPage: React.FC = () => {
           <table className="w-full text-left text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 uppercase text-xs">
               <tr>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Asset Code' : 'Mã Tài Sản'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Asset Name & Category' : 'Tên Tài Sản & Phân Loại'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Original Cost' : 'Nguyên Giá'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Monthly Deprec.' : 'Khấu Hao/Tháng'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Accumulated' : 'Đã Khấu Hao'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Net Value' : 'Giá Trị Còn Lại'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Status' : 'Trạng Thái'}</th>
+                 <th className="px-4 py-3 font-semibold">{t('assets_code')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('assets_name_category')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('assets_original_cost')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('assets_monthly_deprec')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('assets_accumulated')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('assets_net_value')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('assets_status')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -281,13 +280,13 @@ export const SaaSAssetsPage: React.FC = () => {
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 max-w-lg w-full space-y-4 shadow-xl">
             <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
               <Building2 className="h-5 w-5 text-amber-500" />
-              <span>{isEn ? 'Khai Báo Tài Sản Cố Định (TT200)' : 'Khai Báo Tài Sản Cố Định (TT200)'}</span>
+               <span>{t('assets_title')}</span>
             </h3>
 
             <form onSubmit={handleCreateAsset} className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  {isEn ? 'Asset Name *' : 'Tên Tài Sản Cố Định *'}
+                   {t('assets_name_label')}
                 </label>
                 <input
                   type="text"
@@ -301,7 +300,7 @@ export const SaaSAssetsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  {isEn ? 'Category' : 'Loại Tài Sản'}
+                   {t('assets_category_label')}
                 </label>
                 <select
                   value={newAsset.category_code}
@@ -318,7 +317,7 @@ export const SaaSAssetsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    {isEn ? 'Original Cost (VND) *' : 'Nguyên Giá (VNĐ) *'}
+                     {t('assets_original_cost_label')}
                   </label>
                   <input
                     type="number"
@@ -331,7 +330,7 @@ export const SaaSAssetsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    {isEn ? 'Useful Life (Months)' : 'Thời Gian Khấu Hao (Tháng)'}
+                     {t('assets_useful_life')}
                   </label>
                   <input
                     type="number"
@@ -348,13 +347,13 @@ export const SaaSAssetsPage: React.FC = () => {
                   onClick={() => setShowAddModal(false)}
                   className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm"
                 >
-                  {isEn ? 'Cancel' : 'Hủy bỏ'}
+                   {t('assets_cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-medium rounded-lg text-sm"
                 >
-                  {isEn ? 'Save Asset' : 'Khai Báo TSCĐ'}
+                   {t('assets_save')}
                 </button>
               </div>
             </form>

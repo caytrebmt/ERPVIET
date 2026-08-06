@@ -139,7 +139,7 @@ const CatalogPage: React.FC = () => {
                   : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400"
               }`}
             >
-              {language === 'en' ? 'All Products' : 'Tất cả SP'}
+               {t('catalog_all_products')}
             </button>
             {categories.map((cat) => {
               const catName = language === 'en'
@@ -165,7 +165,7 @@ const CatalogPage: React.FC = () => {
           {searchQuery && (
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 flex items-center justify-between text-sm shadow-xs transition-colors duration-205">
               <span className="text-gray-500 dark:text-gray-400">
-                {language === 'en' ? 'Search results for:' : 'Kết quả tìm kiếm cho:'}{" "}
+                 {t('catalog_search_results')}{" "}
                 <strong className="text-gray-900 dark:text-white">"{searchQuery}"</strong>
               </span>
               <button
@@ -177,7 +177,7 @@ const CatalogPage: React.FC = () => {
                 }}
                 className="text-xs font-semibold text-red-600 hover:underline cursor-pointer"
               >
-                {language === 'en' ? 'Clear search' : 'Xóa tìm kiếm'}
+                 {t('catalog_clear_search')}
               </button>
             </div>
           )}
@@ -213,7 +213,7 @@ const CatalogPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl py-16 px-4 text-center shadow-xs">
             <Search className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-3" />
             <h4 className="font-semibold text-gray-700 dark:text-gray-200 text-base">
-              {language === 'en' ? 'No matching products found' : 'Không tìm thấy sản phẩm phù hợp'}
+               {t('catalog_no_products')}
             </h4>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs mx-auto">
               {language === 'en'
@@ -252,7 +252,7 @@ const CatalogPage: React.FC = () => {
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage <= 1 || refreshing}
                 className="inline-flex items-center justify-center w-9 h-9 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                aria-label={language === 'en' ? 'Previous page' : 'Trang trước'}
+                 aria-label={t('catalog_previous_page')}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -286,7 +286,7 @@ const CatalogPage: React.FC = () => {
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage >= totalPages || refreshing}
                 className="inline-flex items-center justify-center w-9 h-9 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                aria-label={language === 'en' ? 'Next page' : 'Trang sau'}
+                 aria-label={t('catalog_next_page')}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

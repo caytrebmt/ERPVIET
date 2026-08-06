@@ -28,7 +28,7 @@ interface StockAlertItem {
 }
 
 export const SaaSDashboardPage: React.FC = () => {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const isEn = language === 'en';
 
   const [loading, setLoading] = useState(true);

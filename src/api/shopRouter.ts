@@ -27,10 +27,13 @@ import {
   createNewOrder,
   updateOrderStatus,
 } from '../services/shopOrderService.js';
+import { shopTenantMiddleware, ShopTenantRequest } from '../middleware/shopTenant.js';
 
 export const shopRouter = Router();
 
 const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
+
+shopRouter.use(shopTenantMiddleware);
 
 async function serializeCart(cart: CartData) {
   const items = await Promise.all(cart.items.map(async (item) => {
@@ -75,9 +78,9 @@ function authWebCustomer(req: Request, res: Response, next: any) {
 
 // ================= 1. PRODUCT & CATEGORY ENDPOINTS =================
 
-shopRouter.get('/categories', async (_req: Request, res: Response) => {
+shopRouter.get('/categories', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const data = await fetchCategories();
+    const data = await fetchCategories(req.companyId);
     return res.json({ ok: true, data: { categories: data }, categories: data });
   } catch (err: any) {
     return res.status(500).json({ ok: false, message: err.message });
@@ -85,9 +88,9 @@ shopRouter.get('/categories', async (_req: Request, res: Response) => {
 });
 
 // Admin product endpoints (ERP Master Management)
-shopRouter.get('/admin/products', async (_req: Request, res: Response) => {
+shopRouter.get('/admin/products', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const result = await fetchProducts({ limit: 1000, includeInactive: true });
+    const result = await fetchProducts({ limit: 1000, includeInactive: true, companyId: req.companyId });
     const items = result.items.map((p) => ({
       ...p,
       sku: p.sku,
@@ -147,7 +150,7 @@ shopRouter.delete('/admin/products/:id', async (req: Request, res: Response) => 
 });
 
 // Catalog endpoint for WebShop
-shopRouter.get('/catalog', async (req: Request, res: Response) => {
+shopRouter.get('/catalog', async (req: ShopTenantRequest, res: Response) => {
   try {
     const { category_id, category, search, page, limit } = req.query;
     const cat = (category_id || category) as string;
@@ -156,8 +159,9 @@ shopRouter.get('/catalog', async (req: Request, res: Response) => {
       search: search as string,
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 50,
+      companyId: req.companyId,
     });
-    const categories = await fetchCategories();
+    const categories = await fetchCategories(req.companyId);
     return res.json({
       ok: true,
       data: {
@@ -174,7 +178,7 @@ shopRouter.get('/catalog', async (req: Request, res: Response) => {
   }
 });
 
-shopRouter.get('/products', async (req: Request, res: Response) => {
+shopRouter.get('/products', async (req: ShopTenantRequest, res: Response) => {
   try {
     const { category, search, page, limit, minPrice, maxPrice, sort } = req.query;
     const result = await fetchProducts({
@@ -185,6 +189,7 @@ shopRouter.get('/products', async (req: Request, res: Response) => {
       minPrice: minPrice ? Number(minPrice) : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
       sort: sort as string,
+      companyId: req.companyId,
     });
     return res.json({ ok: true, data: { items: result.items, products: result.items, total: result.total } });
   } catch (err: any) {
@@ -192,9 +197,9 @@ shopRouter.get('/products', async (req: Request, res: Response) => {
   }
 });
 
-shopRouter.get('/products/flash-sale', async (_req: Request, res: Response) => {
+shopRouter.get('/products/flash-sale', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const result = await fetchProducts({ limit: 10 });
+    const result = await fetchProducts({ limit: 10, companyId: req.companyId });
     const flashSaleItems = result.items.map((p, idx) => ({
       ...p,
       isFlashSale: true,
@@ -206,9 +211,9 @@ shopRouter.get('/products/flash-sale', async (_req: Request, res: Response) => {
   }
 });
 
-shopRouter.get('/products/slug/:slug', async (req: Request, res: Response) => {
+shopRouter.get('/products/slug/:slug', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const product = await fetchProductByIdOrSlug(req.params.slug);
+    const product = await fetchProductByIdOrSlug(req.params.slug, req.companyId);
     if (!product) {
       return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
     }
@@ -218,9 +223,9 @@ shopRouter.get('/products/slug/:slug', async (req: Request, res: Response) => {
   }
 });
 
-shopRouter.get('/products/:id', async (req: Request, res: Response) => {
+shopRouter.get('/products/:id', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const product = await fetchProductByIdOrSlug(req.params.id);
+    const product = await fetchProductByIdOrSlug(req.params.id, req.companyId);
     if (!product) {
       return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
     }
@@ -230,18 +235,34 @@ shopRouter.get('/products/:id', async (req: Request, res: Response) => {
   }
 });
 
-shopRouter.get('/banners', async (_req: Request, res: Response) => {
+shopRouter.get('/banners', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const banners = await fetchBanners();
+    const banners = await fetchBanners(req.companyId);
     return res.json({ ok: true, data: banners });
   } catch (err: any) {
     return res.status(500).json({ ok: false, message: err.message });
   }
 });
 
-shopRouter.get('/promotions', async (_req: Request, res: Response) => {
+shopRouter.get('/tenant/info', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const promotions = await fetchPromotions();
+    return res.json({
+      ok: true,
+      data: {
+        slug: req.tenantSlug,
+        name: req.tenantName,
+        companyId: req.companyId,
+        settings: (req as any).tenantSettings || {},
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ ok: false, message: err.message });
+  }
+});
+
+shopRouter.get('/promotions', async (req: ShopTenantRequest, res: Response) => {
+  try {
+    const promotions = await fetchPromotions(req.companyId);
     return res.json({ ok: true, data: promotions });
   } catch (err: any) {
     return res.status(500).json({ ok: false, message: err.message });
@@ -250,28 +271,30 @@ shopRouter.get('/promotions', async (_req: Request, res: Response) => {
 
 // ================= 2. SHOPPING CART ENDPOINTS =================
 
-shopRouter.get('/cart', async (req: Request, res: Response) => {
+shopRouter.get('/cart', async (req: ShopTenantRequest, res: Response) => {
   const sessionKey = (req.query.session_key as string) || 'guest_session';
-  let cart = fallbackCarts.get(sessionKey);
+  const tenantKey = `${req.tenantSlug || 'default'}_${sessionKey}`;
+  let cart = fallbackCarts.get(tenantKey);
   if (!cart) {
-    cart = { id: Date.now(), session_key: sessionKey, items: [], status: 'active' };
-    fallbackCarts.set(sessionKey, cart);
+    cart = { id: Date.now(), session_key: tenantKey, items: [], status: 'active' };
+    fallbackCarts.set(tenantKey, cart);
   }
   return res.json({ ok: true, data: await serializeCart(cart) });
 });
 
-shopRouter.post('/cart/items', async (req: Request, res: Response) => {
+shopRouter.post('/cart/items', async (req: ShopTenantRequest, res: Response) => {
   const { session_key, product_id, quantity } = req.body || {};
   const sessionKey = session_key || 'guest_session';
+  const tenantKey = `${req.tenantSlug || 'default'}_${sessionKey}`;
   const qty = Number(quantity || 1);
 
-  let cart = fallbackCarts.get(sessionKey);
+  let cart = fallbackCarts.get(tenantKey);
   if (!cart) {
-    cart = { id: Date.now(), session_key: sessionKey, items: [], status: 'active' };
-    fallbackCarts.set(sessionKey, cart);
+    cart = { id: Date.now(), session_key: tenantKey, items: [], status: 'active' };
+    fallbackCarts.set(tenantKey, cart);
   }
 
-  const p = await fetchProductByIdOrSlug(String(product_id));
+  const p = await fetchProductByIdOrSlug(String(product_id), req.companyId);
   const unitPrice = p ? p.salePrice : 100000;
 
   const existing = cart.items.find((item) => item.product_id === Number(product_id));
@@ -290,12 +313,13 @@ shopRouter.post('/cart/items', async (req: Request, res: Response) => {
   return res.json({ ok: true, data: await serializeCart(cart), message: 'Đã thêm sản phẩm vào giỏ hàng.' });
 });
 
-shopRouter.put('/cart/items/:id', async (req: Request, res: Response) => {
+shopRouter.put('/cart/items/:id', async (req: ShopTenantRequest, res: Response) => {
   const itemId = Number(req.params.id);
   const { session_key, quantity } = req.body || {};
   const sessionKey = session_key || 'guest_session';
+  const tenantKey = `${req.tenantSlug || 'default'}_${sessionKey}`;
 
-  const cart = fallbackCarts.get(sessionKey);
+  const cart = fallbackCarts.get(tenantKey);
   if (!cart) return res.status(404).json({ ok: false, message: 'Không tìm thấy giỏ hàng.' });
 
   const item = cart.items.find((it) => it.id === itemId || it.product_id === itemId);
@@ -306,11 +330,12 @@ shopRouter.put('/cart/items/:id', async (req: Request, res: Response) => {
   return res.json({ ok: true, data: await serializeCart(cart) });
 });
 
-shopRouter.delete('/cart/items/:id', async (req: Request, res: Response) => {
+shopRouter.delete('/cart/items/:id', async (req: ShopTenantRequest, res: Response) => {
   const itemId = Number(req.params.id);
   const sessionKey = (req.query.session_key as string) || 'guest_session';
+  const tenantKey = `${req.tenantSlug || 'default'}_${sessionKey}`;
 
-  const cart = fallbackCarts.get(sessionKey);
+  const cart = fallbackCarts.get(tenantKey);
   if (cart) {
     cart.items = cart.items.filter((it) => it.id !== itemId && it.product_id !== itemId);
   }
@@ -318,15 +343,16 @@ shopRouter.delete('/cart/items/:id', async (req: Request, res: Response) => {
   return res.json({ ok: true, data: cart ? await serializeCart(cart) : null, message: 'Đã xóa sản phẩm khỏi giỏ hàng.' });
 });
 
-shopRouter.delete('/cart', async (req: Request, res: Response) => {
+shopRouter.delete('/cart', async (req: ShopTenantRequest, res: Response) => {
   const sessionKey = (req.query.session_key as string) || 'guest_session';
-  const cart = fallbackCarts.get(sessionKey) || { id: Date.now(), session_key: sessionKey, items: [], status: 'active' as const };
+  const tenantKey = `${req.tenantSlug || 'default'}_${sessionKey}`;
+  const cart = fallbackCarts.get(tenantKey) || { id: Date.now(), session_key: tenantKey, items: [], status: 'active' as const };
   cart.items = [];
-  fallbackCarts.set(sessionKey, cart);
+  fallbackCarts.set(tenantKey, cart);
   return res.json({ ok: true, data: await serializeCart(cart) });
 });
 
-shopRouter.post('/cart/apply-promo', (req: Request, res: Response) => {
+shopRouter.post('/cart/apply-promo', (req: ShopTenantRequest, res: Response) => {
   const { code } = req.body || {};
   const promo = fallbackPromotions.find((p) => p.code.toUpperCase() === String(code || '').trim().toUpperCase());
   if (!promo) {
@@ -337,14 +363,14 @@ shopRouter.post('/cart/apply-promo', (req: Request, res: Response) => {
 
 // ================= 3. CUSTOMER AUTHENTICATION (SEPARATED FROM ERP USER) =================
 
-shopRouter.post('/auth/login', async (req: Request, res: Response) => {
+shopRouter.post('/auth/login', async (req: ShopTenantRequest, res: Response) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ ok: false, message: 'Vui lòng nhập email và mật khẩu.' });
   }
 
   try {
-    const result = await loginWebCustomer(email, password);
+    const result = await loginWebCustomer(email, password, req.companyId);
     return res.json({
       ok: true,
       data: {
@@ -359,14 +385,14 @@ shopRouter.post('/auth/login', async (req: Request, res: Response) => {
   }
 });
 
-shopRouter.post('/auth/register', async (req: Request, res: Response) => {
+shopRouter.post('/auth/register', async (req: ShopTenantRequest, res: Response) => {
   const { name, email, phone, password } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ ok: false, message: 'Vui lòng điền thông tin bắt buộc.' });
   }
 
   try {
-    const cust = await saveOrUpdateWebCustomer({ name, email, phone, password });
+    const cust = await saveOrUpdateWebCustomer({ name, email, phone, password }, req.companyId);
     const token = jwt.sign({ sub: String(cust.id), role: 'web_customer' }, JWT_SECRET, { expiresIn: '7d' });
     return res.json({
       ok: true,
@@ -388,9 +414,9 @@ shopRouter.post('/auth/register', async (req: Request, res: Response) => {
   }
 });
 
-shopRouter.get('/auth/me', authWebCustomer, async (req: Request, res: Response) => {
+shopRouter.get('/auth/me', authWebCustomer, async (req: ShopTenantRequest, res: Response) => {
   const user = (req as any).user;
-  const customers = await fetchAllWebCustomers();
+  const customers = await fetchAllWebCustomers(req.companyId);
   const found = customers.find((c) => String(c.id) === String(user.sub));
   if (!found) {
     return res.json({
@@ -409,19 +435,19 @@ shopRouter.get('/auth/me', authWebCustomer, async (req: Request, res: Response) 
 
 // ================= 4. ORDERS & CHECKOUT ENDPOINTS =================
 
-shopRouter.get('/orders', authWebCustomer, async (req: Request, res: Response) => {
+shopRouter.get('/orders', authWebCustomer, async (req: ShopTenantRequest, res: Response) => {
   try {
     const webCustId = Number((req as any).user.sub);
-    const orders = await fetchOrders(webCustId);
+    const orders = await fetchOrders(webCustId, req.companyId);
     return res.json({ ok: true, data: { items: orders } });
   } catch (err: any) {
     return res.status(500).json({ ok: false, message: err.message });
   }
 });
 
-async function getOwnedOrder(req: Request, res: Response) {
+async function getOwnedOrder(req: ShopTenantRequest, res: Response) {
   try {
-    const order = await fetchOrderByCodeOrToken(req.params.code);
+    const order = await fetchOrderByCodeOrToken(req.params.code, req.companyId);
     const customerId = Number((req as any).user.sub);
     if (!order || Number(order.webCustomerId) !== customerId) {
       return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng.' });
@@ -448,9 +474,9 @@ shopRouter.get('/orders/track/:token', async (req: Request, res: Response) => {
   }
 });
 
-shopRouter.post('/orders', async (req: Request, res: Response) => {
+shopRouter.post('/orders', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const newOrder = await createNewOrder(req.body || {});
+    const newOrder = await createNewOrder(req.body || {}, req.companyId);
     return res.json({
       ok: true,
       data: newOrder,
@@ -462,9 +488,9 @@ shopRouter.post('/orders', async (req: Request, res: Response) => {
 });
 
 // Called by the SaaS warehouse approval flow after a PXK is created.
-shopRouter.post('/orders/:code/erp-status', async (req: Request, res: Response) => {
+shopRouter.post('/orders/:code/erp-status', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const order = await fetchOrderByCodeOrToken(req.params.code);
+    const order = await fetchOrderByCodeOrToken(req.params.code, req.companyId);
     if (!order) return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng.' });
     const status = String(req.body?.erpStatus || '').toLowerCase();
     const dbStatus = status.includes('hủy') ? 'HUY' : status.includes('giao') ? 'DANG_GIAO' : 'DA_XAC_NHAN';
@@ -477,25 +503,25 @@ shopRouter.post('/orders/:code/erp-status', async (req: Request, res: Response) 
 
 // ================= 5. ADMIN WEBSHOP MANAGEMENT =================
 
-shopRouter.get('/admin/customers', async (_req: Request, res: Response) => {
+shopRouter.get('/admin/customers', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const items = await fetchAllWebCustomers();
+    const items = await fetchAllWebCustomers(req.companyId);
     return res.json({ ok: true, data: { items } });
   } catch (err: any) {
     return res.status(500).json({ ok: false, message: err.message });
   }
 });
 
-shopRouter.post('/admin/customers', async (req: Request, res: Response) => {
+shopRouter.post('/admin/customers', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const cust = await saveOrUpdateWebCustomer(req.body || {});
+    const cust = await saveOrUpdateWebCustomer(req.body || {}, req.companyId);
     return res.json({ ok: true, data: cust, message: 'Đã lưu tài khoản khách hàng WebShop.' });
   } catch (err: any) {
     return res.status(500).json({ ok: false, message: err.message });
   }
 });
 
-shopRouter.put('/admin/customers/:id/password', async (req: Request, res: Response) => {
+shopRouter.put('/admin/customers/:id/password', async (req: ShopTenantRequest, res: Response) => {
   try {
     const targetId = Number(req.params.id);
     const { password, email } = req.body || {};
@@ -509,16 +535,16 @@ shopRouter.put('/admin/customers/:id/password', async (req: Request, res: Respon
   }
 });
 
-shopRouter.get('/admin/orders', async (_req: Request, res: Response) => {
+shopRouter.get('/admin/orders', async (req: ShopTenantRequest, res: Response) => {
   try {
-    const orders = await fetchOrders();
+    const orders = await fetchOrders(undefined, req.companyId);
     return res.json({ ok: true, data: { items: orders } });
   } catch (err: any) {
     return res.status(500).json({ ok: false, message: err.message });
   }
 });
 
-shopRouter.put('/admin/orders/:id/status', async (req: Request, res: Response) => {
+shopRouter.put('/admin/orders/:id/status', async (req: ShopTenantRequest, res: Response) => {
   try {
     const orderId = Number(req.params.id);
     const { status } = req.body || {};

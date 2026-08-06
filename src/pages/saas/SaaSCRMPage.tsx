@@ -82,7 +82,7 @@ const MOCK_LEADS: Lead[] = [
 ];
 
 export const SaaSCRMPage: React.FC = () => {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { showToast } = useToast();
   const isEn = language === 'en';
 

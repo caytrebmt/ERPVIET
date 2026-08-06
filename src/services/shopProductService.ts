@@ -10,11 +10,14 @@ import {
   removeVietnameseTones,
 } from './shopDataStore.js';
 
-export async function fetchCategories(): Promise<CategoryItem[]> {
+export async function fetchCategories(companyId?: number): Promise<CategoryItem[]> {
   if (isDbConnected()) {
     try {
+      const whereCompany = companyId ? 'WHERE company_id = $1' : '';
+      const params = companyId ? [companyId] : [];
       const res = await query(
-        `SELECT id, code, COALESCE(name_vi, code) as name, name_vi, name_en FROM categories ORDER BY id ASC`
+        `SELECT id, code, COALESCE(name_vi, code) as name, name_vi, name_en FROM categories ${whereCompany} ORDER BY id ASC`,
+        params
       );
       if (res.rows && res.rows.length > 0) {
         return res.rows.map((row) => ({
@@ -41,6 +44,7 @@ export async function fetchProducts(queryParams: {
   maxPrice?: number;
   sort?: string;
   includeInactive?: boolean;
+  companyId?: number;
 }): Promise<{ items: ProductItem[]; total: number; page: number; totalPages: number }> {
   const page = Math.max(1, Number(queryParams.page || 1));
   const limit = Math.max(1, Math.min(1000, Number(queryParams.limit || 20)));
@@ -54,6 +58,11 @@ export async function fetchProducts(queryParams: {
 
       if (!queryParams.includeInactive) {
         whereClauses.push('p.is_active = TRUE');
+      }
+
+      if (queryParams.companyId) {
+        whereClauses.push(`p.company_id = $${paramIdx++}`);
+        params.push(Number(queryParams.companyId));
       }
 
       if (queryParams.category && queryParams.category !== 'all') {
@@ -194,7 +203,7 @@ export async function fetchProducts(queryParams: {
   };
 }
 
-export async function fetchProductByIdOrSlug(idOrSlug: string): Promise<ProductItem | null> {
+export async function fetchProductByIdOrSlug(idOrSlug: string, companyId?: number): Promise<ProductItem | null> {
   if (isDbConnected()) {
     try {
       const isNum = !isNaN(Number(idOrSlug));
@@ -220,11 +229,11 @@ export async function fetchProductByIdOrSlug(idOrSlug: string): Promise<ProductI
           FROM product_images pi
           WHERE pi.product_id = p.id
         ) images ON TRUE
-        WHERE ${whereCond}
+        WHERE ${whereCond} ${companyId ? `AND p.company_id = $${isNum ? 2 : 1}` : ''}
         LIMIT 1
       `;
 
-      const res = await query(sql, [isNum ? Number(idOrSlug) : idOrSlug]);
+      const res = await query(sql, companyId ? [isNum ? Number(idOrSlug) : idOrSlug, companyId] : [isNum ? Number(idOrSlug) : idOrSlug]);
       if (res.rows && res.rows.length > 0) {
         const row = res.rows[0];
         return {
@@ -267,10 +276,12 @@ export async function fetchProductByIdOrSlug(idOrSlug: string): Promise<ProductI
   return p || null;
 }
 
-export async function fetchBanners(): Promise<BannerItem[]> {
+export async function fetchBanners(companyId?: number): Promise<BannerItem[]> {
   if (isDbConnected()) {
     try {
-      const res = await query(`SELECT id, title, image_url, link_url, sort_order FROM web_banners WHERE is_active = TRUE ORDER BY sort_order ASC`);
+      const whereCompany = companyId ? 'WHERE company_id = $1' : '';
+      const params = companyId ? [companyId] : [];
+      const res = await query(`SELECT id, title, image_url, link_url, sort_order FROM web_banners ${whereCompany} AND is_active = TRUE ORDER BY sort_order ASC`, params);
       if (res.rows && res.rows.length > 0) {
         return res.rows.map((r) => ({
           id: Number(r.id),
@@ -295,10 +306,12 @@ export async function fetchBanners(): Promise<BannerItem[]> {
   ];
 }
 
-export async function fetchPromotions(): Promise<PromotionItem[]> {
+export async function fetchPromotions(companyId?: number): Promise<PromotionItem[]> {
   if (isDbConnected()) {
     try {
-      const res = await query(`SELECT id, code, title_vi as name, title_vi as description, discount_type, discount_value, min_order_value as min_order_amount FROM web_promotions WHERE is_active = TRUE`);
+      const whereCompany = companyId ? 'WHERE company_id = $1 AND ' : 'WHERE ';
+      const params = companyId ? [companyId] : [];
+      const res = await query(`SELECT id, code, title_vi as name, title_vi as description, discount_type, discount_value, min_order_value as min_order_amount FROM web_promotions ${whereCompany}is_active = TRUE`, params);
       if (res.rows && res.rows.length > 0) {
         return res.rows.map((r) => ({
           id: Number(r.id),

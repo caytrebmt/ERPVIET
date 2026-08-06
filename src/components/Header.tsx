@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ShoppingCart, Search, Sun, Moon, LayoutDashboard, User, Package, LogOut, LogIn, UserPlus, ChevronDown, ShieldCheck, Globe } from "lucide-react";
+import { ShoppingCart, Search, Sun, Moon, LayoutDashboard, User, Package, LogOut, LogIn, UserPlus, ChevronDown, ShieldCheck, Globe, Building2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { motion, AnimatePresence } from "motion/react";
 
 const Header: React.FC = () => {
@@ -12,12 +13,15 @@ const Header: React.FC = () => {
   const { cart } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { language, toggleLanguage, t } = useLanguage();
+  const { slug, name, companyId } = useShopTenant();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const [searchInput, setSearchInput] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showTenantDropdown, setShowTenantDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const tenantDropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync search input from URL
   useEffect(() => {
@@ -34,6 +38,9 @@ const Header: React.FC = () => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setShowUserDropdown(false);
+      }
+      if (tenantDropdownRef.current && !tenantDropdownRef.current.contains(e.target as Node)) {
+        setShowTenantDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -55,12 +62,33 @@ const Header: React.FC = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center font-bold text-zinc-950 text-lg leading-none shadow-xs">
-            W
+            {slug !== 'default' ? name.charAt(0).toUpperCase() : 'W'}
           </div>
           <span className="text-xl font-bold tracking-tight text-[#111827] dark:text-white flex items-center">
-            WebShop <span className="text-amber-500 ml-1">SaaS</span>
+            {slug !== 'default' ? name : 'WebShop'} <span className="text-amber-500 ml-1">SaaS</span>
           </span>
         </Link>
+
+        {/* Tenant Switcher (for local testing) */}
+        <div className="relative" ref={tenantDropdownRef}>
+          <button
+            onClick={() => setShowTenantDropdown(!showTenantDropdown)}
+            className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all cursor-pointer"
+          >
+            <Building2 className="w-3 h-3" />
+            <span className="hidden sm:inline">{slug}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${showTenantDropdown ? "rotate-180" : ""}`} />
+          </button>
+          {showTenantDropdown && (
+            <div className="absolute top-full mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl z-50 overflow-hidden">
+              <div className="p-1.5">
+                <button onClick={() => { navigate('/'); setShowTenantDropdown(false); }} className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">Default (localhost:3000)</button>
+                <button onClick={() => { navigate('/shop/erpacc-vn'); setShowTenantDropdown(false); }} className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">erpacc-vn</button>
+                <button onClick={() => { navigate('/shop/cong-ty-test-4-mshqhedq'); setShowTenantDropdown(false); }} className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">cong-ty-test-4</button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Search Bar - Desktop */}
         <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center flex-1 max-w-md relative">
@@ -96,6 +124,14 @@ const Header: React.FC = () => {
             <Globe className="w-3.5 h-3.5 text-blue-500" />
             <span className="uppercase">{language}</span>
           </button>
+
+          {/* Tenant Badge */}
+          {slug !== 'default' && (
+            <span className="hidden md:inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Building2 className="w-3 h-3" />
+              {name}
+            </span>
+          )}
 
           {/* Cart Icon */}
           <Link to="/cart" className="relative p-2 text-gray-500 hover:text-gray-950 dark:text-gray-400 dark:hover:text-gray-100 transition-colors">
@@ -202,24 +238,32 @@ const Header: React.FC = () => {
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <LogIn className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                  <span>{t("nav_login", "Đăng nhập")}</span>
-                </Link>
-                <Link
-                  to="/register"
-                  className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>{t("nav_register", "Đăng ký")}</span>
-                </Link>
-              </div>
-            )}
+             ) : (
+               <div className="flex items-center gap-1.5">
+                 <Link
+                   to="/login"
+                   className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                 >
+                   <LogIn className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                   <span>{t("nav_login", "Đăng nhập")}</span>
+                 </Link>
+                 <Link
+                   to="/register"
+                   className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all"
+                 >
+                   <UserPlus className="w-3.5 h-3.5" />
+                   <span>{t("nav_register", "Đăng ký")}</span>
+                 </Link>
+                 <Link
+                   to="/saas/register"
+                   className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all"
+                 >
+                   <Building2 className="w-3.5 h-3.5" />
+                   <span className="hidden md:inline">{t("nav_erp_register", "Đăng ký Doanh nghiệp")}</span>
+                   <span className="md:hidden">ERP</span>
+                 </Link>
+               </div>
+             )}
           </div>
         </div>
       </div>

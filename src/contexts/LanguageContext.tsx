@@ -21,6 +21,7 @@ interface LanguageContextType {
   deleteTranslation: (key: string) => Promise<void>;
   resetToDefaults: () => void;
   refreshTranslations: () => Promise<void>;
+  loadLocaleTranslations: () => Promise<void>;
 }
 
 const fetchLocaleFile = async (lang: Language): Promise<Record<string, string>> => {
@@ -47,6 +48,14 @@ const buildTranslationItems = (enData: Record<string, string>, viData: Record<st
   return items;
 };
 
+const loadFromI18nResources = (): TranslationItem[] => {
+  const res = (i18n as any).resources;
+  const enData = (res?.en?.translation as Record<string, string>) || {};
+  const viData = (res?.vi?.translation as Record<string, string>) || {};
+  if (Object.keys(enData).length === 0 && Object.keys(viData).length === 0) return [];
+  return buildTranslationItems(enData, viData);
+};
+
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -65,7 +74,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.error('Error parsing stored translations', e);
       }
     }
-    return [];
+    return loadFromI18nResources();
   });
 
   const loadLocaleTranslations = useCallback(async () => {
@@ -123,10 +132,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshTranslations();
   }, [refreshTranslations]);
 
-  const setLanguage = (lang: Language) => {
+   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     try {
-      void i18n.changeLanguage(lang);
+      i18n.changeLanguage(lang).catch(() => {});
     } catch {}
   };
 
@@ -134,7 +143,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const next: Language = language === 'vi' ? 'en' : 'vi';
     setLanguageState(next);
     try {
-      void i18n.changeLanguage(next);
+      i18n.changeLanguage(next).catch(() => {});
     } catch {}
   };
 
@@ -198,6 +207,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         deleteTranslation,
         resetToDefaults,
         refreshTranslations,
+        loadLocaleTranslations,
       }}
     >
       {children}

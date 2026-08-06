@@ -279,12 +279,20 @@ export const SaaSLoginPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-zinc-800/60 text-center">
+          <div className="mt-6 pt-4 border-t border-zinc-800/60 text-center space-y-2">
+            <Link
+              to="/saas/register"
+              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-1.5 transition-colors"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              {isEn ? "Register new company (14-day trial)" : "Đăng ký doanh nghiệp mới (dùng thử 14 ngày)"}
+            </Link>
+            <br />
             <Link
               to="/"
               className="text-xs font-semibold text-zinc-400 hover:text-amber-400 inline-flex items-center gap-1.5 transition-colors"
             >
-              <span>Quay về trang bán hàng WebShop</span>
+              <span>{isEn ? "Back to WebShop" : "Quay về trang bán hàng WebShop"}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

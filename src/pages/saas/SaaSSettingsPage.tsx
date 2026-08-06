@@ -153,14 +153,14 @@ export const SaaSSettingsPage: React.FC = () => {
     const updated = menuItems.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m));
     setMenuItems(updated);
     localStorage.setItem('saas_menu_items', JSON.stringify(updated));
-    addToast(language === 'en' ? 'Menu status updated!' : 'Đã cập nhật trạng thái Menu!', 'info');
+     addToast(t('settings_menu_updated'), 'info');
   };
 
   const handleAddMenu = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMenuName || !newMenuPath) {
       addToast(
-        language === 'en' ? 'Please fill in menu title and URL route' : 'Vui lòng điền tên menu và đường dẫn URL',
+         t('settings_fill_menu_title'),
         'error'
       );
       return;
@@ -179,7 +179,7 @@ export const SaaSSettingsPage: React.FC = () => {
     setNewMenuName('');
     setNewMenuPath('');
     addToast(
-      language === 'en' ? 'Added new menu item to system DB!' : 'Đã thêm mục Menu mới vào DB hệ thống!',
+       t('settings_menu_added'),
       'success'
     );
   };
@@ -188,14 +188,14 @@ export const SaaSSettingsPage: React.FC = () => {
     const updated = menuItems.filter((m) => m.id !== id);
     setMenuItems(updated);
     localStorage.setItem('saas_menu_items', JSON.stringify(updated));
-    addToast(language === 'en' ? 'Deleted menu item from config!' : 'Đã xóa mục Menu khỏi cấu hình!', 'warning');
+     addToast(t('settings_menu_deleted'), 'warning');
   };
 
   const handleSavePolicy = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('saas_policy_settings', JSON.stringify(policySettings));
     addToast(
-      language === 'en' ? 'Updated warehouse & tax policy settings!' : 'Đã cập nhật quy trình nghiệp vụ & kho bãi!',
+       t('settings_warehouse_updated'),
       'success'
     );
   };
@@ -206,7 +206,7 @@ export const SaaSSettingsPage: React.FC = () => {
     localStorage.setItem('token', apiConfig.jwtToken);
     localStorage.setItem('access_token', apiConfig.jwtToken);
     addToast(
-      language === 'en' ? 'Updated Backend API connection parameters!' : 'Đã cập nhật chuỗi kết nối Backend API!',
+       t('settings_api_updated'),
       'success'
     );
   };
@@ -228,7 +228,7 @@ export const SaaSSettingsPage: React.FC = () => {
     e.preventDefault();
     localStorage.setItem('saas_notify_config', JSON.stringify(notifyConfig));
     addToast(
-      language === 'en' ? 'Saved notification alert triggers!' : 'Đã lưu cấu hình thông báo tự động!',
+       t('settings_notifications_saved'),
       'success'
     );
   };
@@ -251,7 +251,7 @@ export const SaaSSettingsPage: React.FC = () => {
     a.click();
     URL.revokeObjectURL(url);
     addToast(
-      language === 'en' ? 'Exported JSON backup file successfully!' : 'Đã xuất file sao lưu dữ liệu JSON thành công!',
+       t('settings_backup_exported'),
       'success'
     );
   };
@@ -295,14 +295,14 @@ export const SaaSSettingsPage: React.FC = () => {
             className="px-3.5 py-2 text-xs font-bold rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 shadow-2xs flex items-center gap-1.5 transition-all"
           >
             <Download className="h-4 w-4 text-emerald-500" />{' '}
-            {language === 'en' ? 'Export Backup JSON' : 'Xuất Backup JSON'}
+             {t('settings_export_backup')}
           </button>
           <button
             onClick={handleResetDefaults}
             className="px-3 py-2 text-xs font-semibold rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 text-rose-700 dark:text-rose-300 flex items-center gap-1.5 transition-all"
-            title={language === 'en' ? 'Reset Defaults' : 'Khôi phục mặc định'}
+             title={t('settings_reset_defaults')}
           >
-            <RotateCcw className="h-4 w-4" /> {language === 'en' ? 'Reset Defaults' : 'Reset Mặc Định'}
+             <RotateCcw className="h-4 w-4" /> {t('settings_reset_defaults')}
           </button>
         </div>
       </div>
@@ -312,42 +312,42 @@ export const SaaSSettingsPage: React.FC = () => {
         {[
           {
             id: 'users_rbac',
-            label: language === 'en' ? 'Users & RBAC Matrix' : 'Người Dùng & Matrix Phân Quyền',
+             label: t('settings_users_rbac'),
             icon: ShieldCheck,
           },
           {
             id: 'translations',
-            label: language === 'en' ? 'Translations & Languages' : 'Dịch Thuật & Ngôn Ngữ System',
+             label: t('settings_translations_languages'),
             icon: Globe,
           },
           {
             id: 'company',
-            label: language === 'en' ? 'Company & Print Templates' : 'Doanh Nghiệp & Mẫu In',
+             label: t('settings_company_templates'),
             icon: Building2,
           },
           {
             id: 'menu',
-            label: language === 'en' ? 'DB Menu Configuration' : 'Cấu Hình Menu DB',
+             label: t('settings_db_menu'),
             icon: Database,
           },
           {
             id: 'inventory',
-            label: language === 'en' ? 'Warehouse Rules & Tax' : 'Quy Trình Kho & Thuế',
+             label: t('settings_warehouse_rules'),
             icon: Boxes,
           },
           {
             id: 'api',
-            label: language === 'en' ? 'Backend API Connection' : 'Kết Nối API Backend',
+             label: t('settings_backend_api'),
             icon: Server,
           },
           {
             id: 'notifications',
-            label: language === 'en' ? 'Alerts & Notifications' : 'Cảnh Báo & Thông Báo',
+             label: t('settings_alerts_notifications'),
             icon: BellRing,
           },
           {
             id: 'backup',
-            label: language === 'en' ? 'Backup & Restore' : 'Sao Lưu & Khôi Phục',
+             label: t('settings_backup_restore'),
             icon: Download,
           },
         ].map((tab) => {

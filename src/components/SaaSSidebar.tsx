@@ -53,6 +53,7 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
   const { erpUser, erpLogout } = useSaaSAuth();
   const { language, t } = useLanguage();
   const location = useLocation();
+  const isEn = language === 'en';
 
    const role = erpUser?.role_code || 'ADMIN';
 
@@ -114,9 +115,10 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
     {
         title: t('sidebar_system_online_store'),
       items: [
+        { name: isEn ? 'Tenant Management' : 'Quản lý Doanh nghiệp', path: '/saas/tenants', icon: Building2 },
         { name: t('sidebar_security_audit'), path: '/saas/audit-logs', icon: ShieldAlert },
         { name: t('sidebar_system_settings'), path: '/saas/settings', icon: Settings },
-        { name: t('sidebar_webshop_front'), path: '/', icon: ShoppingBag },
+        { name: t('sidebar_webshop_front'), path: '//', icon: ShoppingBag },
       ],
     },
   ];

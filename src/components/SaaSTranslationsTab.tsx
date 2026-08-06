@@ -17,6 +17,7 @@ import {
   Layers,
   Sparkles,
   RotateCcw,
+  Eye,
 } from 'lucide-react';
 import { useLanguage, TranslationItem } from '../contexts/LanguageContext';
 import { useToast } from '../contexts/ToastContext';
@@ -31,6 +32,7 @@ export const SaaSTranslationsTab: React.FC = () => {
     deleteTranslation,
     resetToDefaults,
     refreshTranslations,
+    loadLocaleTranslations,
     t,
   } = useLanguage();
 
@@ -143,15 +145,19 @@ export const SaaSTranslationsTab: React.FC = () => {
   };
 
   const handleExportJSON = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(translationsList, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `erpacc_translations_${language}_${Date.now()}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    addToast(language === 'en' ? 'Exported translation dictionary to JSON' : 'Đã xuất file từ điển dịch thuật JSON thành công', 'success');
-  };
+  const flat: Record<string, string> = {};
+  translationsList.forEach((item) => {
+    flat[item.key] = language === 'en' ? (item.en || item.vi) : (item.vi || item.en);
+  });
+  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(flat, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute('href', dataStr);
+  downloadAnchor.setAttribute('download', `erpacc_translations_${language}_${Date.now()}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+  addToast(language === 'en' ? 'Exported translation dictionary to JSON' : 'Đã xuất file từ điển dịch thuật JSON thành công', 'success');
+};
 
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -260,6 +266,18 @@ export const SaaSTranslationsTab: React.FC = () => {
 
           {/* Action Tools */}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => {
+                loadLocaleTranslations();
+                addToast(language === 'en' ? 'Synced from JSON locale files' : 'Đồng bộ từ file JSON locale', 'info');
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition cursor-pointer border border-emerald-200 dark:border-emerald-800"
+              title="Sync translations from JSON locale files"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-emerald-500" />
+              <span>{language === 'en' ? 'Sync JSON' : 'Đồng bộ JSON'}</span>
+            </button>
+
             <button
               onClick={handleExportJSON}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer"

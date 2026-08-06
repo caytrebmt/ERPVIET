@@ -4,7 +4,7 @@ import { WebCustomer, fallbackCustomers, customerIdCounter } from './shopDataSto
 
 const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
 
-export async function loginWebCustomer(email: string, password: string) {
+export async function loginWebCustomer(email: string, password: string, companyId?: number) {
   const cleanEmail = String(email).trim().toLowerCase();
   const cleanPass = String(password).trim();
 
@@ -12,8 +12,8 @@ export async function loginWebCustomer(email: string, password: string) {
   if (isDbConnected()) {
     try {
       const dbResult = await query(
-        `SELECT id, username, email, password_hash, full_name, phone FROM web_customers WHERE LOWER(email) = $1 OR LOWER(username) = $1`,
-        [cleanEmail]
+        `SELECT id, username, email, password_hash, full_name, phone FROM web_customers WHERE (LOWER(email) = $1 OR LOWER(username) = $1) ${companyId ? 'AND company_id = $2' : ''}`,
+        companyId ? [cleanEmail, companyId] : [cleanEmail]
       );
 
       if (dbResult.rows && dbResult.rows.length > 0) {
@@ -96,11 +96,14 @@ export async function loginWebCustomer(email: string, password: string) {
   };
 }
 
-export async function fetchAllWebCustomers(): Promise<WebCustomer[]> {
+export async function fetchAllWebCustomers(companyId?: number): Promise<WebCustomer[]> {
   if (isDbConnected()) {
     try {
+      const whereCompany = companyId ? 'WHERE company_id = $1' : '';
+      const params = companyId ? [companyId] : [];
       const dbRes = await query(
-        `SELECT id, COALESCE(full_name, username) as name, email, COALESCE(phone, '0901234567') as phone, password_hash as "passwordHash", (100 + id) as customer_id FROM web_customers ORDER BY id ASC`
+        `SELECT id, COALESCE(full_name, username) as name, email, COALESCE(phone, '0901234567') as phone, password_hash as "passwordHash", (100 + id) as customer_id FROM web_customers ${whereCompany} ORDER BY id ASC`,
+        params
       );
 
       if (dbRes.rows && dbRes.rows.length > 0) {
@@ -132,7 +135,7 @@ export async function fetchAllWebCustomers(): Promise<WebCustomer[]> {
   return fallbackCustomers;
 }
 
-export async function saveOrUpdateWebCustomer(data: { name: string; email: string; phone?: string; password?: string }) {
+export async function saveOrUpdateWebCustomer(data: { name: string; email: string; phone?: string; password?: string }, companyId?: number) {
   const cleanEmail = String(data.email).trim().toLowerCase();
   const cleanPass = String(data.password || 'web12345').trim();
   const cleanName = String(data.name || cleanEmail.split('@')[0]).trim();
@@ -141,10 +144,10 @@ export async function saveOrUpdateWebCustomer(data: { name: string; email: strin
   if (isDbConnected()) {
     try {
       await query(
-        `INSERT INTO web_customers (username, email, password_hash, full_name, phone)
-         VALUES ($1, $1, $2, $3, $4)
+        `INSERT INTO web_customers (company_id, username, email, password_hash, full_name, phone)
+         VALUES ($1, $1, $2, $3, $4, $5)
          ON CONFLICT (email) DO UPDATE SET full_name = EXCLUDED.full_name, phone = EXCLUDED.phone, password_hash = EXCLUDED.password_hash`,
-        [cleanEmail, cleanPass, cleanName, cleanPhone]
+        [cleanEmail, cleanPass, cleanName, cleanPhone, companyId || 1]
       );
     } catch (err) {
       console.warn('[DB Save Customer Error]', err);

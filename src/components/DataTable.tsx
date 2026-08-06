@@ -58,10 +58,9 @@ export function DataTable<TData, TValue>({
   onBatchDelete,
   batchActions,
 }: DataTableProps<TData, TValue>) {
-  const { language } = useLanguage();
-  const isEn = language === 'en';
+   const { language, t } = useLanguage();
 
-  const defaultSearchPlaceholder = searchPlaceholder || (isEn ? 'Search data...' : 'Tìm kiếm dữ liệu...');
+   const defaultSearchPlaceholder = searchPlaceholder || t('datatable_search_placeholder');
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -87,7 +86,7 @@ export function DataTable<TData, TValue>({
             }}
             onChange={table.getToggleAllPageRowsSelectedHandler()}
             className="h-4 w-4 rounded border-zinc-300 text-amber-500 focus:ring-amber-500/30 cursor-pointer accent-amber-500"
-            title={isEn ? 'Select all on this page' : 'Chọn tất cả trang này'}
+             title={t('datatable_select_all')}
           />
         </div>
       ),
@@ -108,7 +107,7 @@ export function DataTable<TData, TValue>({
     };
 
     return [selectColumn, ...columns];
-  }, [columns, enableRowSelection, isEn]);
+   }, [columns, enableRowSelection]);
 
   const table = useReactTable({
     data,
@@ -210,13 +209,13 @@ export function DataTable<TData, TValue>({
               className="px-3 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition-colors flex items-center gap-1.5 shadow-2xs"
             >
               <SlidersHorizontal className="h-3.5 w-3.5 text-zinc-500" />
-              <span>{isEn ? 'Columns' : 'Cột Hiển Thị'}</span>
+               <span>{t('datatable_columns')}</span>
             </button>
 
             {showColumnMenu && (
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-30 p-2 space-y-1 text-xs">
                 <p className="px-2 py-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                  {isEn ? 'Show / Hide Columns' : 'Ẩn / Hiện Cột'}
+                   {t('datatable_show_hide_columns')}
                 </p>
                 {table
                   .getAllColumns()
@@ -251,7 +250,7 @@ export function DataTable<TData, TValue>({
           >
             {[10, 20, 50, 100].map((size) => (
               <option key={size} value={size}>
-                {size} {isEn ? 'rows / page' : 'hàng / trang'}
+                 {size} {t('datatable_rows_per_page')}
               </option>
             ))}
           </select>
@@ -267,7 +266,7 @@ export function DataTable<TData, TValue>({
             <span className="px-2 py-0.5 rounded-full bg-amber-500 text-zinc-950 font-black text-[11px]">
               {selectedRowsData.length}
             </span>
-            <span>{isEn ? 'item(s) selected from list' : 'mục đã được chọn từ danh sách'}</span>
+             <span>{t('datatable_items_selected')}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -277,7 +276,7 @@ export function DataTable<TData, TValue>({
               className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:bg-amber-100 font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-2xs transition-colors"
             >
               <FileSpreadsheet className="h-3.5 w-3.5 text-amber-600" />{' '}
-              {isEn ? 'Export Selected' : 'Xuất Hàng Chọn'}
+               {t('datatable_export_selected')}
             </button>
             {onBatchDelete && (
               <button
@@ -287,13 +286,13 @@ export function DataTable<TData, TValue>({
                 }}
                 className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-2xs transition-colors"
               >
-                <Trash2 className="h-3.5 w-3.5" /> {isEn ? 'Delete Selected' : 'Xóa Hàng Chọn'}
+                 <Trash2 className="h-3.5 w-3.5" /> {t('datatable_delete_selected')}
               </button>
             )}
             <button
               onClick={clearSelection}
               className="p-1 rounded-lg hover:bg-amber-200/50 dark:hover:bg-amber-800/50 text-amber-700 dark:text-amber-300 transition-colors"
-              title={isEn ? 'Clear selection' : 'Bỏ chọn tất cả'}
+               title={t('datatable_clear_selection')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -352,7 +351,7 @@ export function DataTable<TData, TValue>({
                           className={`absolute right-0 top-0 h-full w-2 cursor-col-resize select-none touch-none hover:bg-amber-500/80 transition-colors z-10 flex items-center justify-center ${
                             header.column.getIsResizing() ? 'bg-amber-500 w-2.5' : 'bg-transparent'
                           }`}
-                          title={isEn ? 'Drag to adjust column width' : 'Kéo để điều chỉnh độ rộng cột'}
+                           title={t('datatable_drag_to_adjust')}
                         >
                           <div className="w-[2px] h-3.5 bg-zinc-300 dark:bg-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
@@ -393,12 +392,13 @@ export function DataTable<TData, TValue>({
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <Layers className="h-8 w-8 text-zinc-300 dark:text-zinc-600" />
                     <p className="font-semibold text-sm">
-                      {isEn ? 'No matching records found' : 'Không tìm thấy dữ liệu phù hợp'}
+                       {t('datatable_no_records')}
                     </p>
                     <p className="text-xs text-zinc-500">
-                      {isEn
-                        ? 'Try adjusting your search terms or active filters'
-                        : 'Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc'}
+                       {t('datatable_no_records')}
+                       <span className="text-xs text-zinc-400">
+                         {t('datatable_try_adjusting')}
+                       </span>
                     </p>
                   </div>
                 </td>
@@ -411,24 +411,24 @@ export function DataTable<TData, TValue>({
       {/* Modern AntD / Shadcn Style Pagination Footer */}
       <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-900/50 font-medium">
         <div>
-          {isEn ? 'Showing ' : 'Hiển thị '}
+           {t('datatable_showing')}
           <strong className="text-zinc-900 dark:text-zinc-100">
             {table.getFilteredRowModel().rows.length === 0
               ? 0
               : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
           </strong>{' '}
-          {isEn ? 'to ' : 'đến '}
+           {t('datatable_to')}
           <strong className="text-zinc-900 dark:text-zinc-100">
             {Math.min(
               (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
               table.getFilteredRowModel().rows.length
             )}
           </strong>{' '}
-          {isEn ? 'of ' : 'trong tổng số '}
+           {t('datatable_of')}
           <strong className="text-zinc-900 dark:text-zinc-100">
             {table.getFilteredRowModel().rows.length}
           </strong>{' '}
-          {isEn ? 'entries' : 'bản ghi'}
+           {t('datatable_entries')}
         </div>
 
         <div className="flex items-center gap-1">
@@ -436,7 +436,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
             className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs"
-            title={isEn ? 'First page' : 'Trang đầu'}
+             title={t('datatable_first_page')}
           >
             <ChevronsLeft className="h-4 w-4" />
           </button>
@@ -444,13 +444,13 @@ export function DataTable<TData, TValue>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs"
-            title={isEn ? 'Previous page' : 'Trang trước'}
+             title={t('datatable_previous_page')}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
 
           <span className="px-3 py-1 font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-200/60 dark:bg-zinc-800 rounded-lg">
-            {isEn ? 'Page' : 'Trang'} {table.getState().pagination.pageIndex + 1} /{' '}
+             {t('datatable_page')} {table.getState().pagination.pageIndex + 1} /{' '}
             {table.getPageCount() || 1}
           </span>
 
@@ -458,7 +458,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs"
-            title={isEn ? 'Next page' : 'Trang sau'}
+             title={t('datatable_next_page')}
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -466,7 +466,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
             className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-2xs"
-            title={isEn ? 'Last page' : 'Trang cuối'}
+             title={t('datatable_last_page')}
           >
             <ChevronsRight className="h-4 w-4" />
           </button>

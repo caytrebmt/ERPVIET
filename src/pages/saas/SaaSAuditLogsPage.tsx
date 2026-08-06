@@ -68,8 +68,7 @@ const MOCK_LOGS: AuditLog[] = [
 ];
 
 export const SaaSAuditLogsPage: React.FC = () => {
-  const { language } = useLanguage();
-  const isEn = language === 'en';
+  const { language, t } = useLanguage();
 
   const [logs] = useState<AuditLog[]>(MOCK_LOGS);
   const [search, setSearch] = useState('');
@@ -92,7 +91,7 @@ export const SaaSAuditLogsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              {isEn ? 'Recorded Events' : 'Nhật Ký Nhật Hoạt Động'}
+               {t('audit_recorded_events')}
             </p>
             <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{logs.length}</p>
           </div>
@@ -104,10 +103,10 @@ export const SaaSAuditLogsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              {isEn ? 'Active Security Status' : 'An Ninh Hệ Thống'}
+               {t('audit_active_status')}
             </p>
             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              {isEn ? 'Protected' : 'An Toàn'}
+               {t('audit_protected')}
             </p>
           </div>
         </div>
@@ -118,9 +117,9 @@ export const SaaSAuditLogsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              {isEn ? 'Audit Retention' : 'Lưu Trữ Nhật Ký DB'}
+               {t('audit_retention')}
             </p>
-            <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">365 {isEn ? 'Days' : 'Ngày'}</p>
+             <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">365 {t('audit_days')}</p>
           </div>
         </div>
       </div>
@@ -133,7 +132,7 @@ export const SaaSAuditLogsPage: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={isEn ? 'Search user, action, IP address...' : 'Tìm kiếm người dùng, hành động, IP...'}
+             placeholder={t('audit_search_placeholder')}
             className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500/50"
           />
         </div>
@@ -145,12 +144,12 @@ export const SaaSAuditLogsPage: React.FC = () => {
           <table className="w-full text-left text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 uppercase text-xs">
               <tr>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'User' : 'Người Thực Hiện'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Action Code' : 'Thao Tác Action'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Target Entity' : 'Đối Tượng Dữ Liệu'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'IP Address' : 'Địa Chỉ IP'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Status' : 'Kết Quả'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Timestamp' : 'Thời Gian'}</th>
+                 <th className="px-4 py-3 font-semibold">{t('audit_user')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('audit_action')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('audit_target')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('audit_ip')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('audit_status')}</th>
+                 <th className="px-4 py-3 font-semibold">{t('audit_timestamp')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">

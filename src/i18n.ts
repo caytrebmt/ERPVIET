@@ -25,7 +25,7 @@ const initialLanguage = getStoredLanguage();
 const enResources = await fetchLocale("en");
 const viResources = await fetchLocale("vi");
 
-i18n.use(initReactI18next).init({
+await i18n.use(initReactI18next).init({
   resources: {
     en: { translation: enResources },
     vi: { translation: viResources },

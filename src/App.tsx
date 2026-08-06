@@ -8,6 +8,7 @@ import { SaaSAuthProvider } from "./contexts/SaaSAuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { ShopTenantProvider } from "./contexts/ShopTenantContext";
 
 // Layouts & Protects
 import ShopLayout from "./layouts/ShopLayout";
@@ -32,7 +33,9 @@ const AccountPage = lazy(() => import("./pages/AccountPage"));
 
 // SaaS ERP Enterprise Pages (Lazy Loaded)
 const SaaSLoginPage = lazy(() => import("./pages/saas/SaaSLoginPage").then(m => ({ default: m.SaaSLoginPage })));
+const SaaSRegisterPage = lazy(() => import("./pages/saas/SaaSRegisterPage").then(m => ({ default: m.SaaSRegisterPage })));
 const SaaSDashboardPage = lazy(() => import("./pages/saas/SaaSDashboardPage").then(m => ({ default: m.SaaSDashboardPage })));
+const SaaSTenantsPage = lazy(() => import("./pages/saas/SaaSTenantsPage").then(m => ({ default: m.SaaSTenantsPage })));
 const SaaSWebOrdersPage = lazy(() => import("./pages/saas/SaaSWebOrdersPage").then(m => ({ default: m.SaaSWebOrdersPage })));
 const SaaSProductsPage = lazy(() => import("./pages/saas/SaaSProductsPage").then(m => ({ default: m.SaaSProductsPage })));
 const SaaSCategoriesUnitsPage = lazy(() => import("./pages/saas/SaaSCategoriesUnitsPage").then(m => ({ default: m.SaaSCategoriesUnitsPage })));
@@ -81,6 +84,7 @@ export default function App() {
                     <Routes>
                       {/* ================= SaaS ERP SYSTEM LOGIN ================= */}
                       <Route path="/saas/login" element={<SaaSLoginPage />} />
+                      <Route path="/saas/register" element={<SaaSRegisterPage />} />
 
                       {/* ================= SaaS ERP PROTECTED ROUTES ================= */}
                       <Route
@@ -90,6 +94,16 @@ export default function App() {
                             <SaaSLayout title={t('layout_dashboard')}>
                               <SaaSDashboardPage />
                             </SaaSLayout> 
+                          </SaaSProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/saas/tenants"
+                        element={
+                          <SaaSProtectedRoute allowedRoles={["ADMIN"]}>
+                            <SaaSLayout title={t('layout_tenant_management', 'Quản lý Doanh nghiệp')}>
+                              <SaaSTenantsPage />
+                            </SaaSLayout>
                           </SaaSProtectedRoute>
                         }
                       />
@@ -300,44 +314,46 @@ export default function App() {
                         path="/*"
                         element={
                           <ShopLayout>
-                            <Suspense fallback={<PageSkeleton />}>
-                              <Routes>
-                                <Route path="/" element={<CatalogPage />} />
-                                <Route path="/product/:slug" element={<ProductPage />} />
-                                <Route path="/cart" element={<CartPage />} />
-                                <Route path="/checkout" element={<CheckoutPage />} />
-                                <Route path="/order-success/:code" element={<OrderSuccessPage />} />
-                                <Route path="/login" element={<LoginPage />} />
-                                <Route path="/register" element={<RegisterPage />} />
-                                <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+                            <ShopTenantProvider>
+                              <Suspense fallback={<PageSkeleton />}>
+                                <Routes>
+                                  <Route path="/" element={<CatalogPage />} />
+                                  <Route path="/product/:slug" element={<ProductPage />} />
+                                  <Route path="/cart" element={<CartPage />} />
+                                  <Route path="/checkout" element={<CheckoutPage />} />
+                                  <Route path="/order-success/:code" element={<OrderSuccessPage />} />
+                                  <Route path="/login" element={<LoginPage />} />
+                                  <Route path="/register" element={<RegisterPage />} />
+                                  <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
 
-                                <Route
-                                  path="/orders"
-                                  element={
-                                    <ProtectedRoute>
-                                      <OrdersPage />
-                                    </ProtectedRoute>
-                                  }
-                                />
-                                <Route
-                                  path="/orders/:code"
-                                  element={
-                                    <ProtectedRoute>
-                                      <OrderDetailPage />
-                                    </ProtectedRoute>
-                                  }
-                                />
-                                <Route
-                                  path="/account"
-                                  element={
-                                    <ProtectedRoute>
-                                      <AccountPage />
-                                    </ProtectedRoute>
-                                  }
-                                />
-                                <Route path="*" element={<Navigate to="/" replace />} />
-                              </Routes>
-                            </Suspense>
+                                  <Route
+                                    path="/orders"
+                                    element={
+                                      <ProtectedRoute>
+                                        <OrdersPage />
+                                      </ProtectedRoute>
+                                    }
+                                  />
+                                  <Route
+                                    path="/orders/:code"
+                                    element={
+                                      <ProtectedRoute>
+                                        <OrderDetailPage />
+                                      </ProtectedRoute>
+                                    }
+                                  />
+                                  <Route
+                                    path="/account"
+                                    element={
+                                      <ProtectedRoute>
+                                        <AccountPage />
+                                      </ProtectedRoute>
+                                    }
+                                  />
+                                  <Route path="*" element={<Navigate to="/" replace />} />
+                                </Routes>
+                              </Suspense>
+                            </ShopTenantProvider>
                           </ShopLayout>
                         }
                       />

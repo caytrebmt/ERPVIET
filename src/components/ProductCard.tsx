@@ -63,18 +63,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Badges */}
         {product.images && product.images.length > 1 && (
           <span className="absolute top-3 right-3 bg-zinc-950/80 backdrop-blur-xs text-amber-400 text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md shadow-xs">
-            +{product.images.length} {language === 'en' ? 'photos' : 'ảnh'}
+             +{product.images.length} {t('product_photos')}
           </span>
         )}
 
         {isOutOfStock ? (
           <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold tracking-wider px-2 py-1 rounded-sm uppercase shadow-xs">
-            {language === 'en' ? 'Out of stock' : 'Hết hàng'}
+             {t('product_out_of_stock')}
           </span>
         ) : (
           product.stock <= 5 && (
             <span className="absolute top-3 left-3 bg-amber-500 text-white text-[10px] font-bold tracking-wider px-2 py-1 rounded-sm uppercase shadow-xs">
-              {language === 'en' ? `Only ${product.stock} ${displayUnit} left` : `Chỉ còn ${product.stock} ${displayUnit}`}
+               {t('product_only_left', `Only ${product.stock} ${displayUnit} left`)}
             </span>
           )
         )}
@@ -91,7 +91,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div>
             <p className="text-base font-semibold text-gray-900 dark:text-white">
               {!product.salePrice || showContact 
-                ? (language === 'en' ? 'Contact for price' : 'Liên hệ')
+                 ? t('product_contact_for_price')
                 : formatPrice(product.salePrice)}
             </p>
           </div>
@@ -106,7 +106,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 ? "bg-green-600 text-white"
                 : "bg-indigo-600 text-white hover:bg-indigo-700"
             }`}
-            title={isOutOfStock ? (language === 'en' ? 'Out of stock' : 'Sản phẩm tạm hết hàng') : (language === 'en' ? 'Add to cart' : 'Thêm vào giỏ')}
+             title={isOutOfStock ? t('product_out_of_stock_title') : t('product_add_to_cart')}
           >
             {adding ? (
               <Loader2 className="w-4 h-4 animate-spin" />
