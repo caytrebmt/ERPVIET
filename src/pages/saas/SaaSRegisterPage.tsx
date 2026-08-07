@@ -3,12 +3,15 @@ import { useNavigate, Link } from "react-router-dom";
 import { Building2, UserPlus, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "../../contexts/ToastContext";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { storage } from "../../utils/storage";
 
 export const SaaSRegisterPage: React.FC = () => {
   const { showToast } = useToast();
   const { language, toggleLanguage } = useLanguage();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+  const [isGoogleFlow, setIsGoogleFlow] = useState(false);
 
   const [form, setForm] = useState({
     name_vi: "",
@@ -41,6 +44,72 @@ export const SaaSRegisterPage: React.FC = () => {
     return Object.keys(errs).length === 0;
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsGoogleFlow(true);
+    setGoogleSubmitting(true);
+    try {
+      let googleProfile: any = null;
+
+      if (typeof window !== 'undefined' && (window as any).google?.accounts?.oauth2) {
+        const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
+            client_id: (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '',
+          scope: 'profile email',
+          callback: (resp: any) => {
+            if (resp.access_token) {
+              fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${resp.access_token}` },
+              })
+                .then((r) => r.json())
+                .then((profile) => {
+                  prefillFromGoogle(profile);
+                })
+                .catch(() => showToast('Không thể lấy thông tin Google', 'error'))
+                .finally(() => setGoogleSubmitting(false));
+            } else {
+              setGoogleSubmitting(false);
+            }
+          },
+        });
+        tokenClient.requestAccessToken();
+        return;
+      }
+
+      googleProfile = {
+        sub: 'mock-google-' + Date.now(),
+        email: 'demo.user@gmail.com',
+        name: 'Nguyễn Văn A',
+        given_name: 'Nguyễn Văn',
+        family_name: 'A',
+        picture: '',
+      };
+
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      prefillFromGoogle(googleProfile);
+      showToast('Đã điền thông tin Google (chế độ demo)', 'success');
+    } catch (err) {
+      showToast('Đăng nhập Google thất bại', 'error');
+      setGoogleSubmitting(false);
+      setIsGoogleFlow(false);
+    }
+  };
+
+  const prefillFromGoogle = (profile: any) => {
+    const email = profile.email || '';
+    const name = profile.name || '';
+    const givenName = profile.given_name || '';
+    const familyName = profile.family_name || '';
+    const fullName = name || `${givenName} ${familyName}`.trim();
+
+    setForm((prev) => ({
+      ...prev,
+      owner_email: email,
+      owner_name: fullName,
+      email: email,
+      owner_password: '',
+    }));
+    setGoogleSubmitting(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
@@ -50,16 +119,36 @@ export const SaaSRegisterPage: React.FC = () => {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/saas/tenants/register", {
+      const payload = isGoogleFlow
+        ? {
+            google_profile: {
+              email: form.owner_email,
+              name: form.owner_name,
+              given_name: form.owner_name.split(' ').slice(-1)[0] || form.owner_name,
+              family_name: form.owner_name.split(' ').slice(0, -1).join(' ') || '',
+            },
+            company_info: {
+              name_vi: form.name_vi,
+              tax_code: form.tax_code,
+              email: form.email || form.owner_email,
+              phone: form.phone,
+              address: form.address,
+            },
+            plan_type: form.plan_type,
+          }
+        : form;
+
+      const endpoint = isGoogleFlow ? '/api/saas/auth/google/callback' : '/api/saas/tenants/register';
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.ok) {
         showToast(data.message || "Đăng ký thành công!", "success");
         if (data.data?.token) {
-          localStorage.setItem("erp_saas_access_token", data.data.token);
+          storage.setAccessToken(data.data.token);
         }
         setTimeout(() => window.location.reload(), 800);
       } else {
@@ -279,6 +368,31 @@ export const SaaSRegisterPage: React.FC = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Google Sign-In */}
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={googleSubmitting}
+                className="w-full bg-white hover:bg-gray-100 disabled:bg-zinc-800 disabled:text-zinc-500 text-gray-900 font-bold rounded-xl py-2.5 text-sm flex items-center justify-center gap-2 transition-all border border-zinc-300 dark:border-zinc-700 cursor-pointer"
+              >
+                {googleSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {isEn ? "Connecting Google..." : "Đang kết nối Google..."}
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                    </svg>
+                    {isEn ? "Sign up with Google" : "Đăng ký bằng Google"}
+                  </>
+                )}
+              </button>
 
               {/* Submit */}
               <button

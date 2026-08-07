@@ -708,6 +708,128 @@ saasRouter.post('/tenants/register', async (req: Request, res: Response) => {
   }
 });
 
+saasRouter.post('/auth/google/callback', async (req: Request, res: Response) => {
+  try {
+    const { google_profile, company_info, plan_type = 'trial' } = req.body || {};
+    if (!google_profile?.email) {
+      return res.status(400).json({ ok: false, message: 'Thiếu thông tin email từ Google.' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const email = String(google_profile.email).trim().toLowerCase();
+      const fullName = google_profile.name || google_profile.given_name || email.split('@')[0];
+      const givenName = google_profile.given_name || fullName;
+      const familyName = google_profile.family_name || '';
+      const picture = google_profile.picture || '';
+      const googleId = google_profile.sub || google_profile.id || email;
+
+      let userResult = await client.query(`SELECT u.*, c.id as company_id, c.name_vi as company_name FROM sys_users u LEFT JOIN companies c ON c.owner_user_id = u.id WHERE LOWER(u.email) = $1 LIMIT 1`, [email]);
+
+      let userId: number;
+      let companyId: number | null = null;
+
+      if (userResult.rows.length > 0) {
+        userId = userResult.rows[0].id;
+        companyId = userResult.rows[0].company_id || null;
+
+        if (!companyId && company_info?.name_vi) {
+          const slug = company_info.name_vi.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 40) + '-' + Date.now().toString(36);
+          const code = 'TENANT-' + Date.now().toString(36).toUpperCase();
+          const companyResult = await client.query(
+            `INSERT INTO companies (code, name_vi, name_en, tax_code, email, phone, address, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_active, onboarding_completed, owner_user_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'trial', NOW() + INTERVAL '14 days', 5, 3, TRUE, FALSE, $11)
+             RETURNING id`,
+            [code, company_info.name_vi, company_info.name_en || null, company_info.tax_code || null, company_info.email || email, company_info.phone || null, company_info.address || null, slug, slug, plan_type, userId]
+          );
+          companyId = companyResult.rows[0].id;
+          await client.query('UPDATE sys_users SET company_id = $1 WHERE id = $2', [companyId, userId]);
+
+          const branchCode = 'HO_' + code;
+          await client.query(
+            `INSERT INTO branches (company_id, code, name_vi, name_en, is_headquarter, is_active)
+             VALUES ($1, $2, $3, $4, TRUE, TRUE)`,
+            [companyId, branchCode, 'Trụ Sở Chính', 'Headquarters']
+          );
+          await client.query(
+            `INSERT INTO departments (branch_id, code, name_vi, name_en, is_active)
+             VALUES (currval(pg_get_serial_sequence('branches', 'id')), 'DEPT_BGD', 'Ban Giám Đốc', 'Board of Directors', TRUE)`
+          );
+        }
+      } else {
+        if (!company_info?.name_vi || !company_info?.tax_code) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ ok: false, message: 'Thiếu thông tin công ty để đăng ký.' });
+        }
+
+        const slug = company_info.name_vi.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 40) + '-' + Date.now().toString(36);
+        const code = 'TENANT-' + Date.now().toString(36).toUpperCase();
+        const roleResult = await client.query("SELECT id FROM sys_roles WHERE code = 'ADMIN' LIMIT 1");
+        const roleId = roleResult.rows[0]?.id || 1;
+        const passwordHash = '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C';
+
+        const companyResult = await client.query(
+          `INSERT INTO companies (code, name_vi, name_en, tax_code, email, phone, address, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_active, onboarding_completed)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'trial', NOW() + INTERVAL '14 days', 5, 3, TRUE, FALSE)
+           RETURNING id`,
+          [code, company_info.name_vi, company_info.name_en || null, company_info.tax_code, company_info.email || email, company_info.phone || null, company_info.address || null, slug, slug, plan_type]
+        );
+        companyId = companyResult.rows[0].id;
+
+        const userResultInsert = await client.query(
+          `INSERT INTO sys_users (company_id, username, email, password_hash, full_name, phone, role_id, status, preferred_lang)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', 'vi')
+           RETURNING id`,
+          [companyId, email, email, passwordHash, fullName, company_info.phone || null, roleId]
+        );
+        userId = userResultInsert.rows[0].id;
+        await client.query('UPDATE companies SET owner_user_id = $1 WHERE id = $2', [userId, companyId]);
+
+        const branchCode = 'HO_' + code;
+        await client.query(
+          `INSERT INTO branches (company_id, code, name_vi, name_en, is_headquarter, is_active)
+           VALUES ($1, $2, $3, $4, TRUE, TRUE)`,
+          [companyId, branchCode, 'Trụ Sở Chính', 'Headquarters']
+        );
+        await client.query(
+          `INSERT INTO departments (branch_id, code, name_vi, name_en, is_active)
+           VALUES (currval(pg_get_serial_sequence('branches', 'id')), 'DEPT_BGD', 'Ban Giám Đốc', 'Board of Directors', TRUE)`
+        );
+      }
+
+      await client.query('COMMIT');
+
+      const token = jwt.sign(
+        { userId, username: email, role: 'ADMIN', companyId: companyId || undefined },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.json({
+        ok: true,
+        message: companyId ? 'Đăng nhập Google thành công!' : 'Đăng ký từ Google thành công!',
+        data: {
+          token,
+          user: { id: userId, email, full_name: fullName, picture, role: 'ADMIN' },
+          company: companyId ? { id: companyId } : null,
+          is_new: !companyId,
+        },
+      });
+    } catch (dbError: any) {
+      await client.query('ROLLBACK');
+      console.error('[Google Auth DB Error]', dbError);
+      res.status(500).json({ ok: false, message: 'Lỗi xử lý đăng nhập Google: ' + dbError.message });
+    } finally {
+      client.release();
+    }
+  } catch (error: any) {
+    console.error('[Google Auth Error]', error);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ đăng nhập Google.' });
+  }
+});
+
 saasRouter.patch('/tenants/:id', tenantMiddleware, async (req: TenantRequest, res: Response) => {
   const tenantId = parseInt(req.params.id);
   const { name_vi, name_en, plan_type, subscription_status, trial_ends_at, settings, max_users, max_warehouses, is_paused, onboarding_completed } = req.body;
