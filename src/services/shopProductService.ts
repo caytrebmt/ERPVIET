@@ -188,7 +188,7 @@ export async function fetchProductByIdOrSlug(idOrSlug: string, companyId?: numbe
         FROM product_images pi
         WHERE pi.product_id = p.id
       ) images ON TRUE
-      WHERE ${whereCond} ${companyId ? `AND p.company_id = $${isNum ? 2 : 1}` : ''}
+      WHERE ${whereCond} ${companyId ? `AND p.company_id = $2` : ''}
       LIMIT 1
     `;
 
