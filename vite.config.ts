@@ -16,7 +16,7 @@ export default defineConfig(() => {
       outDir: path.resolve(__dirname, 'dist'),
       emptyOutDir: true,
       target: 'es2020',
-      minify: 'esbuild',
+      minify: 'esbuild' as const,
       cssCodeSplit: true,
       sourcemap: false,
       chunkSizeWarningLimit: 1000,
