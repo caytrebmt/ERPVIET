@@ -4,7 +4,6 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["express", "serverless-http"]
 
 # Forward the JSON API to the Express-backed Netlify Function.
 # serverless-http preserves the full request path, so the function mounts
