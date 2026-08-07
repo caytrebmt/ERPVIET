@@ -33,54 +33,14 @@ export const SaaSDashboardPage: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    monthlyRevenue: 1285000000,
-    inventoryValue: 3450000000,
-    receivables: 240000000,
-    payables: 180000000,
-    totalOrders: 142,
+    monthlyRevenue: 0,
+    inventoryValue: 0,
+    receivables: 0,
+    payables: 0,
+    totalOrders: 0,
   });
 
-  const [alerts, setAlerts] = useState<StockAlertItem[]>([
-    {
-      id: 1,
-      sku: 'SP001',
-      name: 'Laptop Dell Inspiron 15 3520',
-      nameEn: 'Laptop Dell Inspiron 15 3520',
-      category: 'Laptop',
-      categoryEn: 'Laptop',
-      stock: 2,
-      minStock: 5,
-      unit: 'Cái',
-      unitEn: 'Pcs',
-      salePrice: 18000000,
-    },
-    {
-      id: 2,
-      sku: 'VT002',
-      name: 'Bìa thái A4 400G (Tệp 100 tờ)',
-      nameEn: 'A4 Colored Cardboard 400G (100 Sheets Pack)',
-      category: 'Văn phòng phẩm',
-      categoryEn: 'Stationery',
-      stock: 4,
-      minStock: 10,
-      unit: 'Tệp',
-      unitEn: 'Pack',
-      salePrice: 85000,
-    },
-    {
-      id: 3,
-      sku: 'VT006',
-      name: 'Bìa thái A4 500G cao cấp',
-      nameEn: 'Premium A4 Colored Cardboard 500G',
-      category: 'Văn phòng phẩm',
-      categoryEn: 'Stationery',
-      stock: 3,
-      minStock: 10,
-      unit: 'Tệp',
-      unitEn: 'Pack',
-      salePrice: 95000,
-    },
-  ]);
+  const [alerts, setAlerts] = useState<StockAlertItem[]>([]);
 
   useEffect(() => {
     async function fetchData() {

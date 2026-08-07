@@ -61,18 +61,9 @@ interface StockInVoucher {
   po_number?: string;
 }
 
-const SAMPLE_PRODUCTS = [
-  { id: 'p1', name: 'Giấy A4 Double A 70gsm (Ream 500 tờ)', sku: 'VT001', unit: 'Ream', price: 52000 },
-  { id: 'p2', name: 'Bìa thái A4 400G (Tệp 100 tờ)', sku: 'VT002', unit: 'Tệp', price: 95000 },
-  { id: 'p3', name: 'Mực in Canon 2900 12A Cartridge', sku: 'VT003', unit: 'Hộp', price: 280000 },
-  { id: 'p4', name: 'Màn Hình LG UltraGear 27 inch 144Hz', sku: 'SP002', unit: 'Cái', price: 4900000 },
-];
+const SAMPLE_PRODUCTS = [];
 
-const SAMPLE_SUPPLIERS = [
-  { id: 's1', name: 'Tổng Công Ty Giấy & Bao Bì Double A Việt Nam', phone: '0912 345 678', address: 'KCN Sài Đồng, Long Biên, Hà Nội' },
-  { id: 's2', name: 'Nhà Phân Phối Linh Kiện Máy Tính SPC', phone: '0988 111 222', address: 'Số 44 Phố Vĩnh Tuy, Q. Hai Bà Trưng, Hà Nội' },
-  { id: 's3', name: 'Công ty Cổ Phần Thiết Bị Văn Phòng Hải Hà', phone: '0903 888 999', address: 'KCN Từ Liêm, Q. Nam Từ Liêm, Hà Nội' },
-];
+const SAMPLE_SUPPLIERS = [];
 
 export const SaaSStockInPage: React.FC = () => {
   const { addToast } = useToast();
@@ -82,74 +73,7 @@ export const SaaSStockInPage: React.FC = () => {
   const [availablePOs, setAvailablePOs] = useState<PurchaseOrder[]>([]);
   const [linkedPONumber, setLinkedPONumber] = useState<string>('');
 
-  const [stockIns, setStockIns] = useState<StockInVoucher[]>([
-    {
-      id: 1,
-      code: 'PN-260730-001',
-      date: '2026-07-28 09:30',
-      supplierId: 's1',
-      supplierName: 'Tổng Công Ty Giấy & Bao Bì Double A Việt Nam',
-      supplierPhone: '0912 345 678',
-      supplierAddress: 'KCN Sài Đồng, Long Biên, Hà Nội',
-      warehouse: 'Kho Chính - Hà Nội',
-      invoiceNo: '0008891',
-      invoiceSeries: 'C26MH',
-      note: 'Nhập kho lô giấy in văn phòng theo đơn mua PO-2026-001',
-      vatMode: 'grouped',
-      vatRateGrouped: 8,
-      po_number: 'PO-2026-001',
-      items: [
-        {
-          id: '1',
-          productId: 'p1',
-          productName: 'Giấy A4 Double A 70gsm (Ream 500 tờ)',
-          sku: 'VT001',
-          unit: 'Ream',
-          quantity: 500,
-          unitPrice: 52000,
-          vatRate: 8,
-        },
-      ],
-      subtotal: 26000000,
-      vatAmount: 2080000,
-      totalAmount: 28080000,
-      status: 'Đã hoàn thành',
-      createdBy: 'Nguyễn Văn Khách',
-    },
-    {
-      id: 2,
-      code: 'PN-260730-002',
-      date: '2026-07-29 14:15',
-      supplierId: 's2',
-      supplierName: 'Nhà Phân Phối Linh Kiện Máy Tính SPC',
-      supplierPhone: '0988 111 222',
-      supplierAddress: 'Số 44 Phố Vĩnh Tuy, Q. Hai Bà Trưng, Hà Nội',
-      warehouse: 'Kho Chính - Hà Nội',
-      invoiceNo: '0008892',
-      invoiceSeries: 'C26MH',
-      note: 'Nhập màn hình LG phục vụ đơn hàng bán buôn',
-      vatMode: 'grouped',
-      vatRateGrouped: 10,
-      po_number: 'PO-2026-002',
-      items: [
-        {
-          id: '1',
-          productId: 'p4',
-          productName: 'Màn Hình LG UltraGear 27 inch 144Hz',
-          sku: 'SP002',
-          unit: 'Cái',
-          quantity: 20,
-          unitPrice: 4900000,
-          vatRate: 10,
-        },
-      ],
-      subtotal: 98000000,
-      vatAmount: 9800000,
-      totalAmount: 107800000,
-      status: 'Đã hoàn thành',
-      createdBy: 'Lê Quản Kho',
-    },
-  ]);
+  const [stockIns, setStockIns] = useState<StockInVoucher[]>([]);
 
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [selectedStockIn, setSelectedStockIn] = useState<StockInVoucher | null>(null);

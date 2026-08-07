@@ -169,79 +169,8 @@ export const SaaSProductsPage: React.FC = () => {
         setProducts(fetched);
       }
     } catch (err) {
-      console.warn('Cannot fetch products from server, using fallback with bilingual support');
-      setProducts([
-        {
-          id: 1,
-          sku: 'SP001',
-          name: 'Laptop Dell Inspiron 15 3520',
-          name_vi: 'Laptop Dell Inspiron 15 3520',
-          name_en: 'Dell Inspiron 15 3520 Laptop',
-          category: 'Laptop',
-          category_vi: 'Laptop & Máy tính',
-          category_en: 'Laptops & Computers',
-          unit: 'Cái',
-          unit_vi: 'Cái',
-          unit_en: 'Pcs',
-          salePrice: 18000000,
-          costPrice: 15500000,
-          stock: 15,
-          minStock: 5,
-          status: 'active',
-          imageUrl: '/static/uploads/products/SMARTISTA370_1.jpg',
-          images: [
-            '/static/uploads/products/SMARTISTA370_1.jpg',
-            '/static/uploads/products/SMARTISTA370_2.jpg',
-            '/static/uploads/products/SMARTISTA370_4.jpg',
-          ],
-          description: 'Laptop văn phòng mỏng nhẹ, chip Intel Core i5 thế hệ 12, RAM 16GB, SSD 512GB.',
-          description_vi: 'Laptop văn phòng mỏng nhẹ, chip Intel Core i5 thế hệ 12, RAM 16GB, SSD 512GB.',
-          description_en: 'Ultra-thin office laptop, 12th Gen Intel Core i5, 16GB RAM, 512GB SSD.',
-          brand: 'Dell',
-          origin: 'Mỹ / Trung Quốc',
-          origin_vi: 'Mỹ / Trung Quốc',
-          origin_en: 'USA / China',
-          warranty: '12 Tháng chính hãng',
-          warranty_vi: '12 Tháng chính hãng',
-          warranty_en: '12 Months Official Warranty',
-          highlights: 'Màn hình 120Hz IPS, Nhẹ 1.6kg, Bàn phím số',
-          highlights_vi: 'Màn hình 120Hz IPS, Nhẹ 1.6kg, Bàn phím số',
-          highlights_en: '120Hz IPS Display, 1.6kg Lightweight, Numpad included',
-        },
-        {
-          id: 2,
-          sku: 'SP002',
-          name: 'Chuột không dây Logitech M235',
-          name_vi: 'Chuột không dây Logitech M235',
-          name_en: 'Logitech M235 Wireless Mouse',
-          category: 'Điện tử',
-          category_vi: 'Linh kiện & Điện tử',
-          category_en: 'Electronics & Accessories',
-          unit: 'Cái',
-          unit_vi: 'Cái',
-          unit_en: 'Pcs',
-          salePrice: 350000,
-          costPrice: 240000,
-          stock: 45,
-          minStock: 10,
-          status: 'active',
-          imageUrl: '/static/uploads/products/SMARTISTA370_2.jpg',
-          images: ['/static/uploads/products/SMARTISTA370_2.jpg'],
-          description: 'Chuột quang không dây 2.4GHz kết nối ổn định, thiết kế ergonomics nhỏ gọn.',
-          description_vi: 'Chuột quang không dây 2.4GHz kết nối ổn định, thiết kế ergonomics nhỏ gọn.',
-          description_en: '2.4GHz wireless optical mouse with stable connection and compact ergonomic design.',
-          brand: 'Logitech',
-          origin: 'Thụy Sĩ / Trung Quốc',
-          origin_vi: 'Thụy Sĩ / Trung Quốc',
-          origin_en: 'Switzerland / China',
-          warranty: '12 Tháng',
-          warranty_vi: '12 Tháng',
-          warranty_en: '12 Months Warranty',
-          highlights: 'Pin dùng 12 tháng, Cảm biến 1000 DPI',
-          highlights_vi: 'Pin dùng 12 tháng, Cảm biến 1000 DPI',
-          highlights_en: '12-Month Battery Life, 1000 DPI Optical Sensor',
-        },
-      ]);
+      console.warn('Cannot fetch products from server', err);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -410,8 +339,8 @@ export const SaaSProductsPage: React.FC = () => {
       highlights: formData.highlights_vi,
       highlights_vi: formData.highlights_vi,
       highlights_en: formData.highlights_en || formData.highlights_vi,
-      images: imagesList.length > 0 ? imagesList : ['/static/uploads/products/SMARTISTA370_1.jpg'],
-      imageUrl: imagesList[0] || '/static/uploads/products/SMARTISTA370_1.jpg',
+      images: imagesList.length > 0 ? imagesList : [],
+      imageUrl: imagesList[0] || '',
     };
 
     try {

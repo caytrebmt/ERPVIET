@@ -17,38 +17,7 @@ interface SupplierItem {
 
 export const SaaSSuppliersPage: React.FC = () => {
   const { addToast } = useToast();
-  const [suppliers, setSuppliers] = useState<SupplierItem[]>([
-    {
-      id: 1,
-      code: 'NCC001',
-      name: 'Tổng Công Ty Giấy & Bao Bì Double A Việt Nam',
-      contactPerson: 'Trần Văn Hoàng',
-      phone: '02838221199',
-      email: 'sales@doublea.com.vn',
-      address: 'KCN Sài Đồng, Quận Long Biên, Hà Nội',
-      payableDebt: 120000000,
-    },
-    {
-      id: 2,
-      code: 'NCC002',
-      name: 'Nhà Phân Phối Linh Kiện Máy Tính SPC',
-      contactPerson: 'Phạm Thanh Sơn',
-      phone: '0903456789',
-      email: 'p.son@spc.com.vn',
-      address: '143 Lê Thanh Nghị, Hai Bà Trưng, Hà Nội',
-      payableDebt: 60000000,
-    },
-    {
-      id: 3,
-      code: 'NCC003',
-      name: 'Công Ty TNHH Văn Phòng Phẩm Hồng Hà',
-      contactPerson: 'Lê Minh Tú',
-      phone: '02438554433',
-      email: 'cskh@hongha.com.vn',
-      address: 'Lý Thường Kiệt, Hoàn Kiếm, Hà Nội',
-      payableDebt: 0,
-    },
-  ]);
+  const [suppliers, setSuppliers] = useState<SupplierItem[]>([]);
 
   const [showModal, setShowModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<SupplierItem | null>(null);

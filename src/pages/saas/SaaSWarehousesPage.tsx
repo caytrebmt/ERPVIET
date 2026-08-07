@@ -30,71 +30,9 @@ export const SaaSWarehousesPage: React.FC = () => {
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'warehouses' | 'opening_stock'>('warehouses');
 
-  const [warehouses, setWarehouses] = useState<WarehouseItem[]>([
-    {
-      id: 1,
-      code: 'KHO-HN',
-      name: 'Kho Chính - Hà Nội',
-      location: 'KCN Sài Đồng, Quận Long Biên, Hà Nội',
-      manager: 'Nguyễn Văn Khoa',
-      phone: '0912 345 678',
-      capacity: '1,500 m²',
-      stockCount: 420,
-      status: 'Hoạt động',
-    },
-    {
-      id: 2,
-      code: 'KHO-HCM',
-      name: 'Kho Phụ - TP. Hồ Chí Minh',
-      location: 'KCN Tân Bình, Phường 15, Quận Tân Bình, TP.HCM',
-      manager: 'Lê Minh Tuấn',
-      phone: '0988 765 432',
-      capacity: '800 m²',
-      stockCount: 180,
-      status: 'Hoạt động',
-    },
-    {
-      id: 3,
-      code: 'KHO-DN',
-      name: 'Kho Miền Trung - Đà Nẵng',
-      location: 'KCN Hòa Khánh, Cẩm Lệ, Đà Nẵng',
-      manager: 'Trần Thị Mai',
-      phone: '0905 112 233',
-      capacity: '500 m²',
-      stockCount: 95,
-      status: 'Hoạt động',
-    },
-  ]);
+  const [warehouses, setWarehouses] = useState<WarehouseItem[]>([]);
 
-  const [openingStocks, setOpeningStocks] = useState<OpeningStockItem[]>([
-    {
-      id: 1,
-      sku: 'SP001',
-      productName: 'Laptop Dell Inspiron 15 3520',
-      warehouseName: 'Kho Chính - Hà Nội',
-      openingQuantity: 10,
-      openingValue: 155000000,
-      unit: 'Cái',
-    },
-    {
-      id: 2,
-      sku: 'VT001',
-      productName: 'Giấy A4 Double A 70gsm (Ream 500 tờ)',
-      warehouseName: 'Kho Phụ - TP. Hồ Chí Minh',
-      openingQuantity: 100,
-      openingValue: 5200000,
-      unit: 'Ream',
-    },
-    {
-      id: 3,
-      sku: 'VT002',
-      productName: 'Bìa thái A4 400G (Tệp 100 tờ)',
-      warehouseName: 'Kho Chính - Hà Nội',
-      openingQuantity: 50,
-      openingValue: 3400000,
-      unit: 'Tệp',
-    },
-  ]);
+  const [openingStocks, setOpeningStocks] = useState<OpeningStockItem[]>([]);
 
   // Modals state
   const [showWhModal, setShowWhModal] = useState(false);

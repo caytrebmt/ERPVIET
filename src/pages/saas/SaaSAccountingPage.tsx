@@ -38,48 +38,7 @@ export const SaaSAccountingPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'journal' | 'chart' | 'mapping' | 'trial' | 'health'>('journal');
 
   // Journal Entries Data
-  const [entries] = useState<JournalEntry[]>([
-    {
-      id: 1,
-      entryNo: 'NKC-2026-001',
-      date: '2026-07-28',
-      description: 'Nhập hàng giấy A4 Double A từ NCC Double A Việt Nam theo PNK-001',
-      debitAccount: '156 - Hàng hóa',
-      creditAccount: '331 - Phải trả cho người bán',
-      amount: 45000000,
-      vatAmount: 4500000,
-    },
-    {
-      id: 2,
-      entryNo: 'NKC-2026-002',
-      date: '2026-07-29',
-      description: 'Xuất bán Laptop Dell Inspiron cho Công ty TechViet theo PXK-001',
-      debitAccount: '131 - Phải thu của khách hàng',
-      creditAccount: '511 - Doanh thu bán hàng',
-      amount: 18000000,
-      vatAmount: 1800000,
-    },
-    {
-      id: 3,
-      entryNo: 'NKC-2026-003',
-      date: '2026-07-29',
-      description: 'Ghi nhận Giá vốn hàng bán Laptop Dell cho PXK-001',
-      debitAccount: '632 - Giá vốn hàng bán',
-      creditAccount: '156 - Hàng hóa',
-      amount: 15500000,
-      vatAmount: 0,
-    },
-    {
-      id: 4,
-      entryNo: 'NKC-2026-004',
-      date: '2026-07-29',
-      description: 'Khách hàng TechViet thanh toán chuyển khoản tiền nợ',
-      debitAccount: '112 - Tiền gửi ngân hàng',
-      creditAccount: '131 - Phải thu của khách hàng',
-      amount: 19800000,
-      vatAmount: 0,
-    },
-  ]);
+  const [entries] = useState<JournalEntry[]>([]);
 
   // Chart of Accounts Data (Mẫu Hệ thống TK Kế toán TT200)
   const [accounts] = useState<AccountItem[]>([

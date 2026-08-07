@@ -36,77 +36,15 @@ interface QuotationItem {
   status: 'Đã gửi' | 'Chấp nhận' | 'Đã xuất hóa đơn' | 'Nháp';
 }
 
-const SAMPLE_PRODUCTS = [
-  { id: 'p1', name: 'Laptop Dell Inspiron 15 3520 (i5/16GB/512GB)', sku: 'SP001', unit: 'Cái', price: 18000000 },
-  { id: 'p2', name: 'Màn Hình LG UltraGear 27 inch 144Hz', sku: 'SP002', unit: 'Cái', price: 5800000 },
-  { id: 'p3', name: 'Bàn Phím Cơ Wireless Keychron K2 V2', sku: 'SP003', unit: 'Cái', price: 1950000 },
-  { id: 'p4', name: 'Chuột Không Dây Logitech MX Master 3S', sku: 'SP004', unit: 'Cái', price: 2450000 },
-];
+const SAMPLE_PRODUCTS = [];
 
-const SAMPLE_CUSTOMERS = [
-  { id: 'c1', name: 'Công ty TNHH Giải Pháp Công Nghệ Việt', phone: '0912 345 678', address: 'Số 18 Phố Hoàng Cầu, Q. Đống Đa, Hà Nội' },
-  { id: 'c2', name: 'Nguyễn Văn Minh (Cửa hàng Tin Học)', phone: '0988 765 432', address: '142 Đường Nguyễn Trãi, Thanh Xuân, Hà Nội' },
-  { id: 'c3', name: 'Tập đoàn Đầu tư & Thương mại Thiên Hà', phone: '0904 112 233', address: 'Tòa nhà Charmvit, 117 Trần Duy Hưng, Cầu Giấy, Hà Nội' },
-];
+const SAMPLE_CUSTOMERS = [];
 
 export const SaaSQuotationsPage: React.FC = () => {
   const { addToast } = useToast();
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ preset: 'all', fromDate: '', toDate: '' });
 
-  const [quotations, setQuotations] = useState<QuotationItem[]>([
-    {
-      id: 1,
-      code: 'BG-260730-01',
-      date: '2026-07-28',
-      validUntil: '2026-08-28',
-      customerId: 'c1',
-      customerName: 'Công ty TNHH Giải Pháp Công Nghệ Việt',
-      customerPhone: '0912 345 678',
-      customerAddress: 'Số 18 Phố Hoàng Cầu, Q. Đống Đa, Hà Nội',
-      items: [
-        {
-          id: 'q1',
-          productId: 'p1',
-          productName: 'Laptop Dell Inspiron 15 3520 (i5/16GB/512GB)',
-          sku: 'SP001',
-          unit: 'Cái',
-          quantity: 10,
-          unitPrice: 18000000,
-        },
-      ],
-      amount: 180000000,
-      vatAmount: 18000000,
-      totalAmount: 198000000,
-      notes: 'Giá đã bao gồm vận chuyển nội thành Hà Nội.',
-      status: 'Đã gửi',
-    },
-    {
-      id: 2,
-      code: 'BG-260730-02',
-      date: '2026-07-29',
-      validUntil: '2026-08-15',
-      customerId: 'c2',
-      customerName: 'Nguyễn Văn Minh (Cửa hàng Tin Học)',
-      customerPhone: '0988 765 432',
-      customerAddress: '142 Đường Nguyễn Trãi, Thanh Xuân, Hà Nội',
-      items: [
-        {
-          id: 'q2',
-          productId: 'p2',
-          productName: 'Màn Hình LG UltraGear 27 inch 144Hz',
-          sku: 'SP002',
-          unit: 'Cái',
-          quantity: 5,
-          unitPrice: 5800000,
-        },
-      ],
-      amount: 29000000,
-      vatAmount: 2900000,
-      totalAmount: 31900000,
-      notes: 'Hiệu lực báo giá 30 ngày kể từ ngày lập.',
-      status: 'Chấp nhận',
-    },
-  ]);
+  const [quotations, setQuotations] = useState<QuotationItem[]>([]);
 
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<QuotationItem | null>(null);

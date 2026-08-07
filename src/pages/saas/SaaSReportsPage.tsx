@@ -38,79 +38,11 @@ export const SaaSReportsPage: React.FC = () => {
   const [reportTab, setReportTab] = useState<'income' | 'balance' | 'customer' | 'supplier' | 'stock_movement'>('income');
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ preset: 'all', fromDate: '', toDate: '' });
 
-  // Sample data for Customer Revenue
-  const [customerRevenues] = useState<RevenueByCustomer[]>([
-    {
-      id: 1,
-      customerName: 'Công ty TNHH Giải Pháp Công Nghệ Việt',
-      orderCount: 12,
-      totalRevenue: 480000000,
-      paidAmount: 435000000,
-      debtAmount: 45000000,
-    },
-    {
-      id: 2,
-      customerName: 'Nguyễn Văn Minh (Cửa hàng Tin Học)',
-      orderCount: 8,
-      totalRevenue: 185000000,
-      paidAmount: 172500000,
-      debtAmount: 12500000,
-    },
-    {
-      id: 3,
-      customerName: 'Trần Thị Thu Hà',
-      orderCount: 3,
-      totalRevenue: 28000000,
-      paidAmount: 28000000,
-      debtAmount: 0,
-    },
-  ]);
+  const [customerRevenues] = useState<RevenueByCustomer[]>([]);
 
-  // Sample data for Supplier Purchase
-  const [supplierPurchases] = useState<PurchaseBySupplier[]>([
-    {
-      id: 1,
-      supplierName: 'Tổng Công Ty Giấy & Bao Bì Double A Việt Nam',
-      stockInCount: 15,
-      totalPurchase: 650000000,
-      paidAmount: 530000000,
-      debtAmount: 120000000,
-    },
-    {
-      id: 2,
-      supplierName: 'Nhà Phân Phối Linh Kiện Máy Tính SPC',
-      stockInCount: 9,
-      totalPurchase: 420000000,
-      paidAmount: 360000000,
-      debtAmount: 60000000,
-    },
-  ]);
+  const [supplierPurchases] = useState<PurchaseBySupplier[]>([]);
 
-  // Sample data for Stock Movement
-  const [stockMovements] = useState<StockMovement[]>([
-    {
-      id: 1,
-      sku: 'SP001',
-      productName: 'Laptop Dell Inspiron 15 3520',
-      unit: 'Cái',
-      openingStock: 10,
-      stockIn: 20,
-      stockOut: 15,
-      closingStock: 15,
-      closingValue: 232500000,
-    },
-    {
-      id: 2,
-      sku: 'VT001',
-      productName: 'Giấy A4 Double A 70gsm (Ream 500 tờ)',
-      unit: 'Ream',
-      openingStock: 100,
-      stockIn: 200,
-      stockOut: 180,
-      closingStock: 120,
-      closingValue: 6240000,
-    },
-  ]);
+  const [stockMovements] = useState<StockMovement[]>([]);
 
   const customerColumns: ColumnDef<RevenueByCustomer>[] = [
     {

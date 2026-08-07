@@ -64,38 +64,19 @@ export const SaaSPurchasingPage: React.FC = () => {
 
   // Form states
   const [newPR, setNewPR] = useState({
-    department: 'Kế Toán & Hành Chính',
+    department: '',
     priority: 'THUONG' as 'THUONG' | 'CAO' | 'KHAN_CAP',
     reason: '',
-    items: [
-      {
-        productId: 'p1',
-        productName: 'Giấy A4 Double A 70gsm (Ream 500 tờ)',
-        sku: 'VT001',
-        unit: 'Ream',
-        quantity: 100,
-        estimatedUnitPrice: 52000,
-      },
-    ],
+    items: [],
   });
 
   const [newPO, setNewPO] = useState({
-    supplier_name: 'Tổng Công Ty Giấy & Bao Bì Double A Việt Nam',
-    supplier_phone: '0912 345 678',
-    supplier_address: 'KCN Sài Đồng, Long Biên, Hà Nội',
+    supplier_name: '',
+    supplier_phone: '',
+    supplier_address: '',
     expected_delivery: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-    payment_terms: 'Thanh toán 100% sau khi giao nhận & hóa đơn',
-    items: [
-      {
-        productId: 'p1',
-        productName: 'Giấy A4 Double A 70gsm (Ream 500 tờ)',
-        sku: 'VT001',
-        unit: 'Ream',
-        quantity: 200,
-        unitPrice: 52000,
-        vatRate: 8,
-      },
-    ],
+    payment_terms: '',
+    items: [],
   });
 
   useEffect(() => {

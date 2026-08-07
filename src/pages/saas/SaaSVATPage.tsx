@@ -22,60 +22,7 @@ export const SaaSVATPage: React.FC = () => {
   const [month, setMonth] = useState<number>(7);
   const [year, setYear] = useState<number>(2026);
 
-  const [records] = useState<VatRecordItem[]>([
-    {
-      id: 1,
-      code: 'HD-XK-001',
-      date: '2026-07-28',
-      partnerName: 'Công ty TNHH Giải Pháp Công Nghệ Việt',
-      taxCode: '0101234567',
-      description: 'Xuất bán Laptop Dell Inspiron 15 theo PXK-001',
-      vatRate: 10,
-      taxableAmount: 155000000,
-      vatAmount: 15500000,
-      totalAmount: 170500000,
-      vatType: 'output',
-    },
-    {
-      id: 2,
-      code: 'HD-XK-002',
-      date: '2026-07-25',
-      partnerName: 'Nguyễn Văn Minh (Cửa hàng Tin Học)',
-      taxCode: '0109876543',
-      description: 'Xuất bán Giấy A4 Double A theo PXK-002',
-      vatRate: 8,
-      taxableAmount: 52000000,
-      vatAmount: 4160000,
-      totalAmount: 56160000,
-      vatType: 'output',
-    },
-    {
-      id: 3,
-      code: 'HD-NK-088',
-      date: '2026-07-15',
-      partnerName: 'Tổng Công Ty Giấy & Bao Bì Double A Việt Nam',
-      taxCode: '0301122334',
-      description: 'Nhập kho lô giấy A4 theo PNK-001',
-      vatRate: 8,
-      taxableAmount: 120000000,
-      vatAmount: 9600000,
-      totalAmount: 12960000,
-      vatType: 'input',
-    },
-    {
-      id: 4,
-      code: 'HD-NK-092',
-      date: '2026-07-10',
-      partnerName: 'Nhà Phân Phối Linh Kiện Máy Tính SPC',
-      taxCode: '0305566778',
-      description: 'Nhập kho Laptop Dell theo PNK-002',
-      vatRate: 10,
-      taxableAmount: 200000000,
-      vatAmount: 20000000,
-      totalAmount: 220000000,
-      vatType: 'input',
-    },
-  ]);
+  const [records] = useState<VatRecordItem[]>([]);
 
   const filteredRecords = records.filter((r) => r.vatType === vatType);
 

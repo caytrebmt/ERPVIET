@@ -33,57 +33,12 @@ interface CustomerItem {
   password?: string;
 }
 
-const INITIAL_CUSTOMERS: CustomerItem[] = [
-  {
-    id: 1,
-    code: 'KH001',
-    name: 'Công ty TNHH Giải Pháp Công Nghệ Việt',
-    phone: '0901234567',
-    email: 'contact@techviet.vn',
-    taxCode: '0101234567',
-    type: 'Khách sỉ',
-    creditLimit: 200000000,
-    currentDebt: 45000000,
-    password: 'techviet123',
-  },
-  {
-    id: 2,
-    code: 'KH002',
-    name: 'Nguyễn Văn Minh (Cửa hàng Tin Học)',
-    phone: '0912345678',
-    email: 'minh.tinhoc@gmail.com',
-    taxCode: '0109876543',
-    type: 'Đại lý',
-    creditLimit: 100000000,
-    currentDebt: 12500000,
-    password: 'minh2026',
-  },
-  {
-    id: 3,
-    code: 'KH003',
-    name: 'Trần Thị Thu Hà',
-    phone: '0988776655',
-    email: 'ha.tran@yahoo.com',
-    taxCode: '-',
-    type: 'Khách lẻ',
-    creditLimit: 10000000,
-    currentDebt: 0,
-    password: 'ha123456',
-  },
-];
+const INITIAL_CUSTOMERS: CustomerItem[] = [];
 
 export const SaaSCustomersPage: React.FC = () => {
   const { addToast } = useToast();
 
-  // Load Customers from API and fallback to LocalStorage
-  const [customers, setCustomers] = useState<CustomerItem[]>(() => {
-    const saved = localStorage.getItem('saas_webshop_customers');
-    if (saved) {
-      const parsed: CustomerItem[] = JSON.parse(saved);
-      if (parsed.length > 3) return parsed;
-    }
-    return INITIAL_CUSTOMERS;
-  });
+  const [customers, setCustomers] = useState<CustomerItem[]>([]);
 
   useEffect(() => {
     client

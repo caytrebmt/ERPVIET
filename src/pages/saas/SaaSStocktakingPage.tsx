@@ -27,43 +27,13 @@ interface ProductStocktakingRow {
 }
 
 export const SaaSStocktakingPage: React.FC = () => {
-  const [stocktakings, setStocktakings] = useState<StocktakingItem[]>([
-    {
-      id: 1,
-      code: 'KK-2026-001',
-      warehouseName: 'Kho Chính - Hà Nội',
-      date: '2026-07-28',
-      creator: 'Nguyễn Văn Khoa',
-      totalProducts: 12,
-      totalDiffQty: -2,
-      totalDiffValue: -300000,
-      status: 'Đã điều chỉnh kho',
-      note: 'Kiểm kê định kỳ cuối tháng 7. Thiếu 2 Ream giấy do rách hỏng.',
-    },
-    {
-      id: 2,
-      code: 'KK-2026-002',
-      warehouseName: 'Kho Phụ - TP. Hồ Chí Minh',
-      date: '2026-07-20',
-      creator: 'Lê Minh Tuấn',
-      totalProducts: 8,
-      totalDiffQty: 1,
-      totalDiffValue: 150000,
-      status: 'Đã hoàn thành',
-      note: 'Kiểm kê đột xuất nhóm văn phòng phẩm. Thừa 1 hộp mực in.',
-    },
-  ]);
+  const [stocktakings, setStocktakings] = useState<StocktakingItem[]>([]);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedWarehouse, setSelectedWarehouse] = useState('Kho Chính - Hà Nội');
+  const [selectedWarehouse, setSelectedWarehouse] = useState('');
   const [stockNote, setStockNote] = useState('');
 
-  const [checkingRows, setCheckingRows] = useState<ProductStocktakingRow[]>([
-    { sku: 'SP001', productName: 'Laptop Dell Inspiron 15 3520', unit: 'Cái', bookQty: 10, actualQty: 10, unitPrice: 15500000 },
-    { sku: 'VT001', productName: 'Giấy A4 Double A 70gsm (Ream 500 tờ)', unit: 'Ream', bookQty: 100, actualQty: 98, unitPrice: 52000 },
-    { sku: 'VT002', productName: 'Bìa thái A4 400G (Tệp 100 tờ)', unit: 'Tệp', bookQty: 50, actualQty: 51, unitPrice: 68000 },
-    { sku: 'LK001', productName: 'Chuột Máy Tính Logitech M185', unit: 'Cái', bookQty: 30, actualQty: 30, unitPrice: 180000 },
-  ]);
+  const [checkingRows, setCheckingRows] = useState<ProductStocktakingRow[]>([]);
 
   const handleActualQtyChange = (index: number, val: number) => {
     const updated = [...checkingRows];

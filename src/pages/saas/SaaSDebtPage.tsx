@@ -20,56 +20,7 @@ interface DebtItem {
 export const SaaSDebtPage: React.FC = () => {
   const [partnerTypeTab, setPartnerTypeTab] = useState<'customer' | 'supplier' | 'aging'>('customer');
 
-  const [debts, setDebts] = useState<DebtItem[]>([
-    {
-      id: 1,
-      partnerName: 'Công ty TNHH Giải Pháp Công Nghệ Việt',
-      type: 'Phải thu KH',
-      initialBalance: 25000000,
-      increment: 38000000,
-      decrement: 18000000,
-      closingBalance: 45000000,
-      dueDate: '2026-08-15',
-      agingDays: 0,
-      status: 'Trong hạn',
-    },
-    {
-      id: 2,
-      partnerName: 'Nguyễn Văn Minh (Cửa hàng Tin Học)',
-      type: 'Phải thu KH',
-      initialBalance: 10000000,
-      increment: 12500000,
-      decrement: 10000000,
-      closingBalance: 12500000,
-      dueDate: '2026-07-20',
-      agingDays: 9,
-      status: 'Trễ nợ <30 ngày',
-    },
-    {
-      id: 3,
-      partnerName: 'Tổng Công Ty Giấy & Bao Bì Double A Việt Nam',
-      type: 'Phải trả NCC',
-      initialBalance: 80000000,
-      increment: 45000000,
-      decrement: 5000000,
-      closingBalance: 120000000,
-      dueDate: '2026-08-10',
-      agingDays: 0,
-      status: 'Trong hạn',
-    },
-    {
-      id: 4,
-      partnerName: 'Nhà Phân Phối Linh Kiện Máy Tính SPC',
-      type: 'Phải trả NCC',
-      initialBalance: 20000000,
-      increment: 60000000,
-      decrement: 20000000,
-      closingBalance: 60000000,
-      dueDate: '2026-08-05',
-      agingDays: 0,
-      status: 'Trong hạn',
-    },
-  ]);
+  const [debts, setDebts] = useState<DebtItem[]>([]);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<DebtItem | null>(null);

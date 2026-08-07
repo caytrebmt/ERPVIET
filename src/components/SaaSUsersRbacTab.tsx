@@ -166,60 +166,7 @@ const DEFAULT_ROLES: SystemRole[] = [
 ];
 
 // Initial Demo Users
-const INITIAL_USERS: SaasUserItem[] = [
-  {
-    id: 'usr-001',
-    username: 'admin@erpacc.vn',
-    fullName: 'Nguyễn Văn Quản Trị',
-    email: 'admin@erpacc.vn',
-    phone: '0988.111.222',
-    department: 'Ban Giám Đốc',
-    roleId: 'admin',
-    roleName: 'Quản Trị Viên (Admin)',
-    status: 'active',
-    password: 'admin123',
-    createdAt: '2026-01-15',
-  },
-  {
-    id: 'usr-002',
-    username: 'ketoan.tran@erpacc.vn',
-    fullName: 'Trần Thị Thu Kế Toán',
-    email: 'ketoan.tran@erpacc.vn',
-    phone: '0912.333.444',
-    department: 'Phòng Tài Chính Kế Toán',
-    roleId: 'accountant',
-    roleName: 'Kế Toán Trưởng',
-    status: 'active',
-    password: 'accountant123',
-    createdAt: '2026-02-01',
-  },
-  {
-    id: 'usr-003',
-    username: 'thukho.le@erpacc.vn',
-    fullName: 'Lê Hoàng Minh Thủ Kho',
-    email: 'thukho.le@erpacc.vn',
-    phone: '0903.555.666',
-    department: 'Bộ Phận Kho Bãi Logis',
-    roleId: 'warehouse_keeper',
-    roleName: 'Thủ Kho',
-    status: 'active',
-    password: 'warehouse123',
-    createdAt: '2026-02-10',
-  },
-  {
-    id: 'usr-004',
-    username: 'saler.pham@erpacc.vn',
-    fullName: 'Phạm Ngọc Anh Sale',
-    email: 'saler.pham@erpacc.vn',
-    phone: '0977.888.999',
-    department: 'Phòng Kinh Doanh Bán Hàng',
-    roleId: 'sales_rep',
-    roleName: 'Nhân Viên Bán Hàng',
-    status: 'active',
-    password: 'sales123',
-    createdAt: '2026-03-01',
-  },
-];
+const INITIAL_USERS: SaasUserItem[] = [];
 
 export const SaaSUsersRbacTab: React.FC = () => {
   const { addToast } = useToast();
@@ -233,51 +180,14 @@ export const SaaSUsersRbacTab: React.FC = () => {
     const saved = localStorage.getItem('saas_webshop_customers');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed.length > 3) {
+      if (parsed.length > 0) {
         return parsed.map((c: any) => ({
           ...c,
-          password: c.password || 'web12345',
+          password: c.password || '',
         }));
       }
     }
-    return [
-      {
-        id: 1,
-        code: 'KH001',
-        name: 'Công ty TNHH Giải Pháp Công Nghệ Việt',
-        phone: '0901234567',
-        email: 'contact@techviet.vn',
-        taxCode: '0101234567',
-        type: 'Khách sỉ',
-        creditLimit: 200000000,
-        currentDebt: 45000000,
-        password: 'techviet123',
-      },
-      {
-        id: 2,
-        code: 'KH002',
-        name: 'Nguyễn Văn Minh (Cửa hàng Tin Học)',
-        phone: '0912345678',
-        email: 'minh.tinhoc@gmail.com',
-        taxCode: '0109876543',
-        type: 'Đại lý',
-        creditLimit: 100000000,
-        currentDebt: 12500000,
-        password: 'minh2026',
-      },
-      {
-        id: 3,
-        code: 'KH003',
-        name: 'Trần Thị Thu Hà',
-        phone: '0988776655',
-        email: 'ha.tran@yahoo.com',
-        taxCode: '-',
-        type: 'Khách lẻ',
-        creditLimit: 10000000,
-        currentDebt: 0,
-        password: 'ha123456',
-      },
-    ];
+    return [];
   });
 
   const persistWebshopUsers = (newList: any[]) => {

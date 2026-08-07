@@ -41,44 +41,7 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
   const userMenuRef = useRef<HTMLDivElement>(null);
 
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: '1',
-      type: 'order',
-      title: 'Đơn hàng WebShop mới',
-      message: 'Khách hàng Trần Thị Thu Hà vừa đặt đơn #ORD-260730-001 (19,800,000đ)',
-      time: 'Vừa xong',
-      read: false,
-      link: '/saas/web-orders?code=ORD-260730-001',
-    },
-    {
-      id: '2',
-      type: 'stock',
-      title: 'Cảnh báo hàng tồn kho',
-      message: '2 sản phẩm (Áo thun polo, Giày sneaker) sắp chạm ngưỡng định mức tối thiểu',
-      time: '15 phút trước',
-      read: false,
-      link: '/saas/inventory',
-    },
-    {
-      id: '3',
-      type: 'debt',
-      title: 'Nhắc công nợ quá hạn',
-      message: 'Công ty Nam Hải có khoản công nợ 15,200,000đ đến hạn thanh toán',
-      time: '1 giờ trước',
-      read: true,
-      link: '/saas/debt',
-    },
-    {
-      id: '4',
-      type: 'system',
-      title: 'Đồng bộ Python JWT Realtime',
-      message: 'Hệ thống đã tự động kết nối và đồng bộ 100% chứng từ kho và kế toán',
-      time: 'Hôm nay',
-      read: true,
-      link: '/saas/settings',
-    },
-  ]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
     const loadNotifications = async () => {

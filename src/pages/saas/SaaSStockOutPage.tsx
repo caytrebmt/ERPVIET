@@ -60,19 +60,9 @@ interface WebShopOrder {
   status: 'Chờ duyệt xuất kho' | 'Đã duyệt & Xuất kho (PX)';
 }
 
-const SAMPLE_PRODUCTS = [
-  { id: 'p1', name: 'Laptop Dell Inspiron 15 3520 (i5/16GB/512GB)', sku: 'SP001', unit: 'Cái', stock: 45, price: 18000000 },
-  { id: 'p2', name: 'Màn Hình LG UltraGear 27 inch 144Hz', sku: 'SP002', unit: 'Cái', stock: 28, price: 5800000 },
-  { id: 'p3', name: 'Bàn Phím Cơ Wireless Keychron K2 V2', sku: 'SP003', unit: 'Cái', stock: 60, price: 1950000 },
-  { id: 'p4', name: 'Chuột Không Dây Logitech MX Master 3S', sku: 'SP004', unit: 'Cái', stock: 110, price: 2450000 },
-  { id: 'p5', name: 'Giấy A4 Double A 70gsm (Ream 500 tờ)', sku: 'VT001', unit: 'Ream', stock: 450, price: 68000 },
-];
+const SAMPLE_PRODUCTS = [];
 
-const SAMPLE_CUSTOMERS = [
-  { id: 'c1', name: 'Công ty TNHH Giải Pháp Công Nghệ Việt', phone: '0912 345 678', address: '18 Phố Hoàng Cầu, Q. Đống Đa, Hà Nội' },
-  { id: 'c2', name: 'Nguyễn Văn Minh (Cửa hàng Tin Học)', phone: '0988 765 432', address: '142 Đường Nguyễn Trãi, Thanh Xuân, Hà Nội' },
-  { id: 'c3', name: 'Tập đoàn Đầu tư & Thương mại Thiên Hà', phone: '0904 112 233', address: 'Tòa nhà Charmvit, 117 Trần Duy Hưng, Cầu Giấy, Hà Nội' },
-];
+const SAMPLE_CUSTOMERS = [];
 
 export const SaaSStockOutPage: React.FC = () => {
   const { addToast } = useToast();
@@ -102,117 +92,16 @@ export const SaaSStockOutPage: React.FC = () => {
               : 'Chờ duyệt xuất kho',
           }));
           setWebOrders(items);
-        } else {
-          setWebOrders([
-            {
-              id: '1',
-              code: 'ORD-260730-001',
-              date: '2026-07-30 08:30',
-              customerName: 'Trần Thị Thu Hà',
-              customerPhone: '0988 776 655',
-              customerAddress: 'Số 88 Cầu Giấy, Q. Cầu Giấy, Hà Nội',
-              productName: 'Laptop Dell XPS 15 Ultra',
-              sku: 'DELL-XPS15',
-              quantity: 1,
-              amount: 19800000,
-              status: 'Chờ duyệt xuất kho',
-            },
-          ]);
         }
       } catch (err) {
-        setWebOrders([
-          {
-            id: '1',
-            code: 'ORD-260730-001',
-            date: '2026-07-30 08:30',
-            customerName: 'Trần Thị Thu Hà',
-            customerPhone: '0988 776 655',
-            customerAddress: 'Số 88 Cầu Giấy, Q. Cầu Giấy, Hà Nội',
-            productName: 'Laptop Dell XPS 15 Ultra',
-            sku: 'DELL-XPS15',
-            quantity: 1,
-            amount: 19800000,
-            status: 'Chờ duyệt xuất kho',
-          },
-        ]);
+        console.warn('Failed to load web orders:', err);
       }
     };
 
     fetchWebOrders();
   }, []);
 
-  const [stockOuts, setStockOuts] = useState<StockOutVoucher[]>([
-    {
-      id: 1,
-      code: 'PX-260730-001',
-      date: '2026-07-30 09:15',
-      customerId: 'c1',
-      customerName: 'Lê Hoàng Nam',
-      customerPhone: '0933 222 111',
-      customerAddress: 'Số 12 Lý Thường Kiệt, Hoàn Kiếm, Hà Nội',
-      warehouse: 'Kho Chính - Hà Nội',
-      invoiceNo: '0001234',
-      invoiceSeries: 'C26TVN',
-      note: 'Phiếu xuất kho tự động từ đơn hàng WebShop ORD-260730-002',
-      vatMode: 'grouped',
-      vatRateGrouped: 10,
-      items: [
-        {
-          id: '1',
-          productId: 'p4',
-          productName: 'Giấy A4 Double A 70gsm (Ream 500 tờ)',
-          sku: 'VT001',
-          unit: 'Ream',
-          stock: 120,
-          quantity: 3,
-          factor: 1,
-          unitPrice: 65000,
-          vatRate: 10,
-        },
-      ],
-      subtotal: 195000,
-      vatAmount: 19500,
-      totalAmount: 214500,
-      paymentStatus: 'Đã thanh toán',
-      status: 'Đã xác nhận',
-      createdBy: 'Đồng bộ WebShop',
-    },
-    {
-      id: 2,
-      code: 'PX-260730-002',
-      date: '2026-07-29 10:05',
-      customerId: 'c2',
-      customerName: 'Nguyễn Văn Minh (Cửa hàng Tin Học)',
-      customerPhone: '0988 765 432',
-      customerAddress: '142 Đường Nguyễn Trãi, Thanh Xuân, Hà Nội',
-      warehouse: 'Kho Chính - Hà Nội',
-      invoiceNo: '0001235',
-      invoiceSeries: 'C26TVN',
-      note: 'Giao hàng đại lý đợt 1',
-      vatMode: 'grouped',
-      vatRateGrouped: 10,
-      items: [
-        {
-          id: '1',
-          productId: 'p2',
-          productName: 'Màn Hình LG UltraGear 27 inch 144Hz',
-          sku: 'SP002',
-          unit: 'Cái',
-          stock: 28,
-          quantity: 5,
-          factor: 1,
-          unitPrice: 5800000,
-          vatRate: 10,
-        },
-      ],
-      subtotal: 29000000,
-      vatAmount: 2900000,
-      totalAmount: 31900000,
-      paymentStatus: 'Còn nợ',
-      status: 'Đã xác nhận',
-      createdBy: 'Nguyễn Bán Hàng',
-    },
-  ]);
+  const [stockOuts, setStockOuts] = useState<StockOutVoucher[]>([]);
 
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [selectedStockOut, setSelectedStockOut] = useState<StockOutVoucher | null>(null);

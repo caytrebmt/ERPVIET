@@ -2,41 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ColumnDef } from '@tanstack/react-table';
 
-const DEMO_FALLBACK_ORDERS: WebOrder[] = [
-  {
-    id: 1,
-    code: 'ORD-260730-001',
-    tracking_token: 'tr_demo1001',
-    status: 'new',
-    customerId: 101,
-    customerName: 'Trần Thị Thu Hà',
-    customerPhone: '0988 776 655',
-    customerEmail: 'ha.tran@gmail.com',
-    shippingAddress: 'Số 88 Cầu Giấy, Q. Cầu Giấy, Hà Nội',
-    paymentMethod: 'VIETQR',
-    subtotal_amount: 18000000,
-    discount_amount: 0,
-    shipping_fee: 0,
-    vat_amount: 1800000,
-    total_amount: 19800000,
-    note: 'Giao trong giờ hành chính giúp em',
-    createdAt: '2026-07-30T08:30:00.000Z',
-    updatedAt: '2026-07-30T08:30:00.000Z',
-    erp_status: 'Chờ duyệt ERP',
-    erp_note: 'Đơn hàng mới tạo từ WebShop',
-    items: [
-      {
-        id: 1,
-        product_id: 1,
-        name: 'Laptop Dell XPS 15 Ultra',
-        sku: 'DELL-XPS15',
-        unit_price: 18000000,
-        quantity: 1,
-        amount: 18000000,
-      },
-    ],
-  },
-];
 import {
   ShoppingBag,
   Clock,
@@ -123,11 +88,11 @@ export const SaaSWebOrdersPage: React.FC = () => {
       if (res.data?.ok && Array.isArray(res.data.data?.items) && res.data.data.items.length > 0) {
         setOrders(res.data.data.items);
       } else {
-        setOrders(DEMO_FALLBACK_ORDERS);
+        setOrders([]);
       }
     } catch (err) {
       console.warn('Lỗi tải danh sách đơn WebShop:', err);
-      setOrders(DEMO_FALLBACK_ORDERS);
+      setOrders([]);
     } finally {
       setLoading(false);
     }

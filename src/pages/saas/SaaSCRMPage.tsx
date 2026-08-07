@@ -30,63 +30,14 @@ interface Lead {
   created_at: string;
 }
 
-const MOCK_LEADS: Lead[] = [
-  {
-    id: 1,
-    lead_code: 'LEAD-2026-001',
-    contact_name: 'Nguyễn Văn Minh',
-    company_name: 'Công ty TNHH Bách Hóa Xanh',
-    email: 'minh.nguyen@bachhoa.vn',
-    phone: '0901234567',
-    status: 'PROPOSAL',
-    source: 'Website Form',
-    estimated_value: 250000000,
-    created_at: '2026-07-28',
-  },
-  {
-    id: 2,
-    lead_code: 'LEAD-2026-002',
-    contact_name: 'Trần Thị Thu Hà',
-    company_name: 'Tập Đoàn Thương Mại An Phú',
-    email: 'ha.tran@anphugroup.com',
-    phone: '0918765432',
-    status: 'QUALIFIED',
-    source: 'Giới thiệu đối tác',
-    estimated_value: 480000000,
-    created_at: '2026-07-30',
-  },
-  {
-    id: 3,
-    lead_code: 'LEAD-2026-003',
-    contact_name: 'Lê Hoàng Nam',
-    company_name: 'Chuỗi Cửa Hàng Tiện Lợi MartPlus',
-    email: 'nam.le@martplus.vn',
-    phone: '0933112233',
-    status: 'NEW',
-    source: 'Sự kiện Triển lãm',
-    estimated_value: 120000000,
-    created_at: '2026-08-01',
-  },
-  {
-    id: 4,
-    lead_code: 'LEAD-2026-004',
-    contact_name: 'Phạm Đức Anh',
-    company_name: 'Công Ty Logistics Toàn Cầu',
-    email: 'anh.pham@globallogistics.vn',
-    phone: '0988990011',
-    status: 'WON',
-    source: 'Hotline Direct',
-    estimated_value: 650000000,
-    created_at: '2026-07-15',
-  },
-];
+const MOCK_LEADS: Lead[] = [];
 
 export const SaaSCRMPage: React.FC = () => {
   const { language, t } = useLanguage();
   const { showToast } = useToast();
   const isEn = language === 'en';
 
-  const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [showAddModal, setShowAddModal] = useState(false);

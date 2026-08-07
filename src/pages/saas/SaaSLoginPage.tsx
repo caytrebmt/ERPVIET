@@ -39,48 +39,7 @@ export const SaaSLoginPage: React.FC = () => {
     }
   };
 
-  const demoAccounts = [
-    {
-      title: "Quản Trị Viên (Admin)",
-      username: "admin",
-      password: "admin123",
-      roleCode: "ADMIN",
-      desc: "Toàn quyền hệ thống, cấu hình, dữ liệu & phân quyền",
-      badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-    },
-    {
-      title: "Kế Toán Trưởng",
-      username: "accountant1",
-      password: "accountant123",
-      roleCode: "ACCOUNTANT",
-      desc: "Hóa đơn, Công nợ, Kê khai thuế GTGT, Sổ cái TT200",
-      badgeClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-    },
-    {
-      title: "Kinh Doanh (Sales)",
-      username: "sales1",
-      password: "sales123",
-      roleCode: "SALES",
-      desc: "Quản lý Báo giá, Đơn hàng WebShop & Khách hàng",
-      badgeClass: "bg-blue-500/10 text-blue-400 border-blue-500/30",
-    },
-    {
-      title: "Thủ Kho (Warehouse)",
-      username: "warehouse1",
-      password: "warehouse123",
-      roleCode: "WAREHOUSE",
-      desc: "Nhập/Xuất kho, Địa điểm kho & Kiểm kê lệch kho",
-      badgeClass: "bg-purple-500/10 text-purple-400 border-purple-500/30",
-    },
-    {
-      title: "Nhân Viên Mua Hàng",
-      username: "purchasing1",
-      password: "purchasing123",
-      roleCode: "PURCHASING",
-      desc: "Quản lý Nhà cung cấp, Yêu cầu mua hàng & Nhập kho",
-      badgeClass: "bg-orange-500/10 text-orange-400 border-orange-500/30",
-    },
-  ];
+  const demoAccounts: { username: string; password: string; title: string; roleCode: string; desc: string; badgeClass: string }[] = [];
 
   const fillAndLogin = async (userAcc: string, passAcc: string) => {
     setUsername(userAcc);
@@ -233,68 +192,6 @@ export const SaaSLoginPage: React.FC = () => {
             <p className="text-[11px] text-zinc-500">
               Mọi hoạt động được ghi lại trong nhật ký truy cập (System Audit Log)
             </p>
-          </div>
-        </div>
-
-        {/* Right Demo Presets Section */}
-        <div className="w-full lg:w-1/2 bg-zinc-900/50 border border-zinc-800/80 rounded-3xl p-6 sm:p-8 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-amber-400">
-                CHỌN TÀI KHOẢN MẪU ĐỂ TEST PHÂN QUYỀN RBAC
-              </h3>
-            </div>
-            <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
-              Bấm trực tiếp vào các vai trò dưới đây để hệ thống tự động điền thông tin và đăng nhập kiểm tra ma trận phân quyền:
-            </p>
-
-            <div className="space-y-2.5">
-              {demoAccounts.map((acc, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => fillAndLogin(acc.username, acc.password)}
-                  className="p-3 bg-zinc-950/80 hover:bg-zinc-800/80 border border-zinc-800 hover:border-amber-500/50 rounded-2xl transition-all cursor-pointer group flex items-center justify-between gap-3 shadow-xs"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-extrabold text-zinc-100 group-hover:text-amber-400 transition-colors">
-                        {acc.title}
-                      </span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${acc.badgeClass}`}>
-                        {acc.roleCode}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-zinc-400 truncate leading-snug">
-                      {acc.desc}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-[10px] font-mono font-semibold text-zinc-400 bg-zinc-900 px-2 py-1 rounded-lg border border-zinc-800 block">
-                      {acc.username}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-zinc-800/60 text-center space-y-2">
-            <Link
-              to="/saas/register"
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-1.5 transition-colors"
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              {isEn ? "Register new company (14-day trial)" : "Đăng ký doanh nghiệp mới (dùng thử 14 ngày)"}
-            </Link>
-            <br />
-            <Link
-              to="/"
-              className="text-xs font-semibold text-zinc-400 hover:text-amber-400 inline-flex items-center gap-1.5 transition-colors"
-            >
-              <span>{isEn ? "Back to WebShop" : "Quay về trang bán hàng WebShop"}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
           </div>
         </div>
       </main>
