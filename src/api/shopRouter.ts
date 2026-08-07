@@ -30,6 +30,7 @@ import {
   fetchPromotionByCode,
 } from '../services/shopOrderService.js';
 import { shopTenantMiddleware, ShopTenantRequest } from '../middleware/shopTenant.js';
+import { query } from '../db/index.js';
 
 export const shopRouter = Router();
 
@@ -417,6 +418,58 @@ shopRouter.post('/auth/register', async (req: ShopTenantRequest, res: Response) 
     });
   } catch (err: any) {
     return res.status(500).json({ ok: false, message: err.message });
+  }
+});
+
+shopRouter.post('/auth/google', async (req: ShopTenantRequest, res: Response) => {
+  const { google_profile } = req.body || {};
+  if (!google_profile?.email) {
+    return res.status(400).json({ ok: false, message: 'Thiếu thông tin email từ Google.' });
+  }
+
+  try {
+    const email = String(google_profile.email).trim().toLowerCase();
+    const fullName = google_profile.name || google_profile.given_name || email.split('@')[0];
+    const phone = google_profile.phone || '0901234567';
+
+    let customerResult = await query(
+      `SELECT id, username, email, password_hash, full_name, phone FROM web_customers WHERE LOWER(email) = $1 LIMIT 1`,
+      [email]
+    );
+
+    let customer;
+    if (customerResult.rows.length > 0) {
+      customer = customerResult.rows[0];
+    } else {
+      const passwordHash = '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C';
+      customer = await query(
+        `INSERT INTO web_customers (company_id, username, email, password_hash, full_name, phone, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+         RETURNING id, full_name, email, phone`,
+        [req.companyId || 1, email, email, passwordHash, fullName, phone]
+      ).then(r => r.rows[0]);
+    }
+
+    const token = jwt.sign({ sub: String(customer.id), role: 'web_customer' }, JWT_SECRET, { expiresIn: '7d' });
+
+    return res.json({
+      ok: true,
+      message: customerResult.rows.length > 0 ? 'Đăng nhập Google thành công!' : 'Đăng ký từ Google thành công!',
+      data: {
+        access_token: token,
+        refresh_token: token,
+        customer: {
+          id: customer.id,
+          name: customer.full_name || fullName,
+          email: customer.email,
+          phone: customer.phone || '0901234567',
+          customer_id: 100 + Number(customer.id),
+        },
+      },
+    });
+  } catch (err: any) {
+    console.error('[Google Auth Error]', err);
+    return res.status(500).json({ ok: false, message: 'Lỗi xử lý đăng nhập Google: ' + err.message });
   }
 });
 
