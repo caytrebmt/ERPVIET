@@ -1,8 +1,6 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import {
-  fallbackCarts,
-  fallbackPromotions,
   CartData,
 } from '../services/shopDataStore.js';
 import {
@@ -26,6 +24,10 @@ import {
   fetchOrderByCodeOrToken,
   createNewOrder,
   updateOrderStatus,
+  fetchCart,
+  createOrUpdateCart,
+  deleteCartItem,
+  fetchPromotionByCode,
 } from '../services/shopOrderService.js';
 import { shopTenantMiddleware, ShopTenantRequest } from '../middleware/shopTenant.js';
 
@@ -46,7 +48,6 @@ async function serializeCart(cart: CartData) {
       name: product?.name || `Sản phẩm #${item.product_id}`,
       sku: product?.sku || `SKU-${item.product_id}`,
       slug: product?.slug || String(item.product_id),
-      imageUrl: product?.imageUrl || '',
     };
   }));
   const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
@@ -274,10 +275,9 @@ shopRouter.get('/promotions', async (req: ShopTenantRequest, res: Response) => {
 shopRouter.get('/cart', async (req: ShopTenantRequest, res: Response) => {
   const sessionKey = (req.query.session_key as string) || 'guest_session';
   const tenantKey = `${req.tenantSlug || 'default'}_${sessionKey}`;
-  let cart = fallbackCarts.get(tenantKey);
+  let cart = await fetchCart(tenantKey, req.companyId);
   if (!cart) {
-    cart = { id: Date.now(), session_key: tenantKey, items: [], status: 'active' };
-    fallbackCarts.set(tenantKey, cart);
+    cart = { id: 0, session_key: tenantKey, items: [], status: 'active' };
   }
   return res.json({ ok: true, data: await serializeCart(cart) });
 });
@@ -288,10 +288,9 @@ shopRouter.post('/cart/items', async (req: ShopTenantRequest, res: Response) => 
   const tenantKey = `${req.tenantSlug || 'default'}_${sessionKey}`;
   const qty = Number(quantity || 1);
 
-  let cart = fallbackCarts.get(tenantKey);
+  let cart = await fetchCart(tenantKey, req.companyId);
   if (!cart) {
-    cart = { id: Date.now(), session_key: tenantKey, items: [], status: 'active' };
-    fallbackCarts.set(tenantKey, cart);
+    cart = { id: 0, session_key: tenantKey, items: [], status: 'active' };
   }
 
   const p = await fetchProductByIdOrSlug(String(product_id), req.companyId);
@@ -310,7 +309,8 @@ shopRouter.post('/cart/items', async (req: ShopTenantRequest, res: Response) => 
     });
   }
 
-  return res.json({ ok: true, data: await serializeCart(cart), message: 'Đã thêm sản phẩm vào giỏ hàng.' });
+  const savedCart = await createOrUpdateCart(cart, req.companyId);
+  return res.json({ ok: true, data: await serializeCart(savedCart), message: 'Đã thêm sản phẩm vào giỏ hàng.' });
 });
 
 shopRouter.put('/cart/items/:id', async (req: ShopTenantRequest, res: Response) => {
@@ -319,7 +319,7 @@ shopRouter.put('/cart/items/:id', async (req: ShopTenantRequest, res: Response) 
   const sessionKey = session_key || 'guest_session';
   const tenantKey = `${req.tenantSlug || 'default'}_${sessionKey}`;
 
-  const cart = fallbackCarts.get(tenantKey);
+  const cart = await fetchCart(tenantKey, req.companyId);
   if (!cart) return res.status(404).json({ ok: false, message: 'Không tìm thấy giỏ hàng.' });
 
   const item = cart.items.find((it) => it.id === itemId || it.product_id === itemId);
@@ -327,7 +327,8 @@ shopRouter.put('/cart/items/:id', async (req: ShopTenantRequest, res: Response) 
     item.quantity = Math.max(1, Number(quantity));
   }
 
-  return res.json({ ok: true, data: await serializeCart(cart) });
+  const savedCart = await createOrUpdateCart(cart, req.companyId);
+  return res.json({ ok: true, data: await serializeCart(savedCart) });
 });
 
 shopRouter.delete('/cart/items/:id', async (req: ShopTenantRequest, res: Response) => {
@@ -335,26 +336,31 @@ shopRouter.delete('/cart/items/:id', async (req: ShopTenantRequest, res: Respons
   const sessionKey = (req.query.session_key as string) || 'guest_session';
   const tenantKey = `${req.tenantSlug || 'default'}_${sessionKey}`;
 
-  const cart = fallbackCarts.get(tenantKey);
+  const cart = await fetchCart(tenantKey, req.companyId);
   if (cart) {
-    cart.items = cart.items.filter((it) => it.id !== itemId && it.product_id !== itemId);
+    await deleteCartItem(cart.id, itemId);
+    const refreshed = await fetchCart(tenantKey, req.companyId);
+    return res.json({ ok: true, data: refreshed ? await serializeCart(refreshed) : null, message: 'Đã xóa sản phẩm khỏi giỏ hàng.' });
   }
 
-  return res.json({ ok: true, data: cart ? await serializeCart(cart) : null, message: 'Đã xóa sản phẩm khỏi giỏ hàng.' });
+  return res.json({ ok: true, data: null, message: 'Đã xóa sản phẩm khỏi giỏ hàng.' });
 });
 
 shopRouter.delete('/cart', async (req: ShopTenantRequest, res: Response) => {
   const sessionKey = (req.query.session_key as string) || 'guest_session';
   const tenantKey = `${req.tenantSlug || 'default'}_${sessionKey}`;
-  const cart = fallbackCarts.get(tenantKey) || { id: Date.now(), session_key: tenantKey, items: [], status: 'active' as const };
-  cart.items = [];
-  fallbackCarts.set(tenantKey, cart);
-  return res.json({ ok: true, data: await serializeCart(cart) });
+
+  const cart = await fetchCart(tenantKey, req.companyId);
+  if (cart) {
+    await createOrUpdateCart({ ...cart, items: [] }, req.companyId);
+  }
+
+  return res.json({ ok: true, data: { id: cart?.id || 0, session_key: tenantKey, items: [], status: 'active' }, message: 'Đã xóa giỏ hàng.' });
 });
 
-shopRouter.post('/cart/apply-promo', (req: ShopTenantRequest, res: Response) => {
+shopRouter.post('/cart/apply-promo', async (req: ShopTenantRequest, res: Response) => {
   const { code } = req.body || {};
-  const promo = fallbackPromotions.find((p) => p.code.toUpperCase() === String(code || '').trim().toUpperCase());
+  const promo = await fetchPromotionByCode(code || '');
   if (!promo) {
     return res.status(400).json({ ok: false, message: 'Mã giảm giá không tồn tại hoặc đã hết hạn.' });
   }

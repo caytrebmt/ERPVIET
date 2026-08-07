@@ -1466,6 +1466,8 @@ INSERT INTO web_promotions (id, code, title_vi, title_en, discount_type, discoun
 CREATE TABLE web_carts (
     id SERIAL PRIMARY KEY,
     customer_id INT REFERENCES web_customers(id) ON DELETE CASCADE,
+    session_key VARCHAR(100),
+    company_id INT REFERENCES companies(id) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

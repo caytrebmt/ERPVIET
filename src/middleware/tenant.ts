@@ -24,18 +24,16 @@ export async function tenantMiddleware(req: TenantRequest, res: Response, next: 
     const isSuperAdmin = decoded.role === 'SUPER_ADMIN';
 
     if (!companyId && !isSuperAdmin) {
-      if (isDbConnected() && pool) {
-        try {
-          const result = await query(
-            'SELECT company_id FROM sys_users WHERE id = $1',
-            [decoded.userId]
-          );
-          if (result.rows.length > 0) {
-            companyId = result.rows[0].company_id;
-          }
-        } catch (err) {
-          console.warn('[Tenant Middleware] Could not fetch company_id from DB, using fallback');
+      try {
+        const result = await query(
+          'SELECT company_id FROM sys_users WHERE id = $1',
+          [decoded.userId]
+        );
+        if (result.rows.length > 0) {
+          companyId = result.rows[0].company_id;
         }
+      } catch (err) {
+        console.warn('[Tenant Middleware] Could not fetch company_id from DB, using fallback');
       }
     }
 

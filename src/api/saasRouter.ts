@@ -100,75 +100,6 @@ saasRouter.post('/inventory/movements', tenantMiddleware, async (req: TenantRequ
 
 const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
 
-// Pre-defined demo users for role-based permissions
-const DEMO_ERP_USERS: Record<string, any> = {
-  admin: {
-    id: 1,
-    username: 'admin',
-    email: 'admin@erpacc.vn',
-    full_name: 'Quản Trị Viên',
-    phone: '0912345678',
-    company_id: 1,
-    role_code: 'ADMIN',
-    role_name_vi: 'Quản trị viên',
-    role_name_en: 'System Administrator',
-    permissions: ['*'],
-    preferred_lang: 'vi',
-  },
-  sales1: {
-    id: 2,
-    username: 'sales1',
-    email: 'sales@erpacc.vn',
-    full_name: 'John Sales',
-    phone: '0987654321',
-    company_id: 1,
-    role_code: 'SALES',
-    role_name_vi: 'Nhân viên Kinh doanh',
-    role_name_en: 'Sales Representative',
-    permissions: ['quotation:view', 'quotation:create', 'order:view', 'customer:view', 'product:view'],
-    preferred_lang: 'vi',
-  },
-  accountant1: {
-    id: 3,
-    username: 'accountant1',
-    email: 'accountant@erpacc.vn',
-    full_name: 'Trần Kế Toán',
-    phone: '0911223344',
-    company_id: 1,
-    role_code: 'ACCOUNTANT',
-    role_name_vi: 'Kế toán viên',
-    role_name_en: 'Chief Accountant',
-    permissions: ['finance:view', 'invoice:manage', 'debt:view', 'vat:manage', 'accounting:manage', 'report:view'],
-    preferred_lang: 'vi',
-  },
-  warehouse1: {
-    id: 4,
-    username: 'warehouse1',
-    email: 'warehouse@erpacc.vn',
-    full_name: 'Lê Thủ Kho',
-    phone: '0933445566',
-    company_id: 1,
-    role_code: 'WAREHOUSE',
-    role_name_vi: 'Thủ kho',
-    role_name_en: 'Warehouse Manager',
-    permissions: ['inventory:manage', 'stockin:manage', 'stockout:manage', 'warehouse:view', 'product:view'],
-    preferred_lang: 'vi',
-  },
-  purchasing1: {
-    id: 5,
-    username: 'purchasing1',
-    email: 'purchasing@erpacc.vn',
-    full_name: 'Phạm Mua Hàng',
-    phone: '0944556677',
-    company_id: 1,
-    role_code: 'PURCHASING',
-    role_name_vi: 'Nhân viên Mua hàng',
-    role_name_en: 'Purchaser',
-    permissions: ['purchase:view', 'supplier:view', 'stockin:manage'],
-    preferred_lang: 'vi',
-  },
-};
-
 // ==========================================
 // ERP AUTHENTICATION ENDPOINTS
 // ==========================================
@@ -180,74 +111,47 @@ saasRouter.post('/auth/login', async (req: Request, res: Response) => {
 
   const cleanUser = username.toLowerCase().trim();
 
-  // Check DB if connected
-  if (isDbConnected()) {
-    try {
-      const result = await query(
-        `SELECT u.*, r.code as role_code, r.name_vi as role_name_vi, r.name_en as role_name_en 
-         FROM sys_users u 
-         LEFT JOIN sys_roles r ON u.role_id = r.id 
-         WHERE u.username = $1 OR u.email = $1`,
-        [cleanUser]
-      );
-      if (result.rows.length > 0) {
-        const dbUser = result.rows[0];
-        const userObj = {
-          id: dbUser.id,
-          username: dbUser.username,
-          email: dbUser.email,
-          full_name: dbUser.full_name,
-          phone: dbUser.phone,
-          company_id: dbUser.company_id,
-          role_code: dbUser.role_code || 'ADMIN',
-          role_name_vi: dbUser.role_name_vi || 'Quản trị viên',
-          role_name_en: dbUser.role_name_en || 'System Administrator',
-          permissions: dbUser.role_code === 'ADMIN' ? ['*'] : DEMO_ERP_USERS[dbUser.username]?.permissions || ['*'],
-          preferred_lang: dbUser.preferred_lang || 'vi',
-        };
-        const token = jwt.sign(
-          { userId: userObj.id, username: userObj.username, role: userObj.role_code, companyId: userObj.company_id },
-          JWT_SECRET,
-          { expiresIn: '7d' }
-        );
-        return res.json({
-          ok: true,
-          message: `Đăng nhập ERP thành công với quyền ${userObj.role_name_vi}`,
-          data: { token, user: userObj },
-        });
-      }
-    } catch (err) {
-      console.error('Error authenticating sys_user:', err);
-    }
-  }
-
-  // Fallback to DEMO users matching username prefix/key
-  let matchedUser = DEMO_ERP_USERS[cleanUser];
-  if (!matchedUser) {
-    if (cleanUser.includes('admin')) matchedUser = DEMO_ERP_USERS['admin'];
-    else if (cleanUser.includes('sales')) matchedUser = DEMO_ERP_USERS['sales1'];
-    else if (cleanUser.includes('account') || cleanUser.includes('ketoan')) matchedUser = DEMO_ERP_USERS['accountant1'];
-    else if (cleanUser.includes('ware') || cleanUser.includes('kho')) matchedUser = DEMO_ERP_USERS['warehouse1'];
-    else if (cleanUser.includes('purchas') || cleanUser.includes('muahang')) matchedUser = DEMO_ERP_USERS['purchasing1'];
-  }
-
-  // Accept any non-empty password for demo accounts
-  if (matchedUser) {
-    const token = jwt.sign(
-      { userId: matchedUser.id, username: matchedUser.username, role: matchedUser.role_code },
-      JWT_SECRET,
-      { expiresIn: '7d' }
+  try {
+    const result = await query(
+      `SELECT u.*, r.code as role_code, r.name_vi as role_name_vi, r.name_en as role_name_en 
+       FROM sys_users u 
+       LEFT JOIN sys_roles r ON u.role_id = r.id 
+       WHERE u.username = $1 OR u.email = $1`,
+      [cleanUser]
     );
-    return res.json({
-      ok: true,
-      message: `Đăng nhập ERP thành công với quyền ${matchedUser.role_name_vi}`,
-      data: { token, user: matchedUser },
-    });
+    if (result.rows.length > 0) {
+      const dbUser = result.rows[0];
+      const userObj = {
+        id: dbUser.id,
+        username: dbUser.username,
+        email: dbUser.email,
+        full_name: dbUser.full_name,
+        phone: dbUser.phone,
+        company_id: dbUser.company_id,
+        role_code: dbUser.role_code || 'ADMIN',
+        role_name_vi: dbUser.role_name_vi || 'Quản trị viên',
+        role_name_en: dbUser.role_name_en || 'System Administrator',
+        permissions: dbUser.role_code === 'ADMIN' ? ['*'] : ['quotation:view', 'quotation:create', 'order:view', 'customer:view', 'product:view'],
+        preferred_lang: dbUser.preferred_lang || 'vi',
+      };
+      const token = jwt.sign(
+        { userId: userObj.id, username: userObj.username, role: userObj.role_code, companyId: userObj.company_id },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      return res.json({
+        ok: true,
+        message: `Đăng nhập ERP thành công với quyền ${userObj.role_name_vi}`,
+        data: { token, user: userObj },
+      });
+    }
+  } catch (err) {
+    console.error('Error authenticating sys_user:', err);
   }
 
   return res.status(401).json({
     ok: false,
-    message: 'Tài khoản ERP không tồn tại hoặc mật khẩu chưa đúng. Dùng thử: admin / admin123',
+    message: 'Tài khoản ERP không tồn tại hoặc mật khẩu chưa đúng.',
   });
 });
 
@@ -260,12 +164,35 @@ saasRouter.get('/auth/me', async (req: Request, res: Response) => {
   const token = authHeader.split(' ')[1];
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
-    const username = decoded.username || 'admin';
-    const userObj = DEMO_ERP_USERS[username] || DEMO_ERP_USERS['admin'];
-    return res.json({ ok: true, data: userObj });
+    const userId = decoded.userId;
+    const result = await query(
+      `SELECT u.*, r.code as role_code, r.name_vi as role_name_vi, r.name_en as role_name_en 
+       FROM sys_users u 
+       LEFT JOIN sys_roles r ON u.role_id = r.id 
+       WHERE u.id = $1`,
+      [userId]
+    );
+    if (result.rows.length > 0) {
+      const dbUser = result.rows[0];
+      const userObj = {
+        id: dbUser.id,
+        username: dbUser.username,
+        email: dbUser.email,
+        full_name: dbUser.full_name,
+        phone: dbUser.phone,
+        company_id: dbUser.company_id,
+        role_code: dbUser.role_code || 'ADMIN',
+        role_name_vi: dbUser.role_name_vi || 'Quản trị viên',
+        role_name_en: dbUser.role_name_en || 'System Administrator',
+        permissions: dbUser.role_code === 'ADMIN' ? ['*'] : ['quotation:view', 'quotation:create', 'order:view', 'customer:view', 'product:view'],
+        preferred_lang: dbUser.preferred_lang || 'vi',
+      };
+      return res.json({ ok: true, data: userObj });
+    }
   } catch (err) {
     return res.status(401).json({ ok: false, message: 'Phiên đăng nhập ERP đã hết hạn' });
   }
+  return res.status(404).json({ ok: false, message: 'Không tìm thấy người dùng' });
 });
 
 // Helper to determine language code ('vi' or 'en')
@@ -279,16 +206,6 @@ const getLang = (req: Request): 'vi' | 'en' => {
 // 1. LANGUAGES & TRANSLATIONS DICTIONARY
 // ==========================================
 saasRouter.get('/languages', async (req, res) => {
-  if (!isDbConnected()) {
-    return res.json({
-      ok: true,
-      data: [
-        { code: 'vi', name: 'Tiếng Việt', flag_icon: '🇻🇳', is_default: true, is_active: true },
-        { code: 'en', name: 'English', flag_icon: '🇬🇧', is_default: false, is_active: true },
-      ],
-    });
-  }
-
   try {
     const result = await query('SELECT * FROM sys_languages WHERE is_active = TRUE ORDER BY is_default DESC');
     res.json({ ok: true, data: result.rows });
@@ -298,10 +215,6 @@ saasRouter.get('/languages', async (req, res) => {
 });
 
 saasRouter.get('/translations/all', async (req: Request, res: Response) => {
-  if (!isDbConnected()) {
-    return res.json({ ok: true, data: [] });
-  }
-
   try {
     const result = await query(
       `SELECT key_name as key, category, vi_text as vi, en_text as en
@@ -317,10 +230,6 @@ saasRouter.post('/translations', async (req: Request, res: Response) => {
   const { key, category = 'common', vi, en } = req.body;
   if (!key) {
     return res.status(400).json({ ok: false, error: 'Key is required' });
-  }
-
-  if (!isDbConnected()) {
-    return res.json({ ok: true, message: 'Saved locally in frontend state' });
   }
 
   try {
@@ -348,10 +257,6 @@ saasRouter.post('/translations', async (req: Request, res: Response) => {
 
 saasRouter.delete('/translations/:key', async (req: Request, res: Response) => {
   const { key } = req.params;
-  if (!isDbConnected()) {
-    return res.json({ ok: true, message: 'Deleted locally' });
-  }
-
   try {
     await query('DELETE FROM sys_translations WHERE key_name = $1', [key]);
     res.json({ ok: true, message: 'Translation key deleted' });
@@ -365,18 +270,6 @@ saasRouter.delete('/translations/:key', async (req: Request, res: Response) => {
 // ==========================================
 saasRouter.get('/settings', async (req: Request, res: Response) => {
   const lang = getLang(req);
-  if (!isDbConnected()) {
-    return res.json({
-      ok: true,
-      data: [
-        { setting_key: 'company_name', setting_value: lang === 'en' ? 'ERPACC VIETNAM CO., LTD' : 'CÔNG TY TNHH ERPACC VIỆT NAM' },
-        { setting_key: 'company_tax_code', setting_value: '0102030405' },
-        { setting_key: 'company_address', setting_value: lang === 'en' ? '8th Floor, Innovation Building, Hanoi' : 'Tầng 8, Tòa nhà Innovation, Hà Nội' },
-        { setting_key: 'company_phone', setting_value: '0988 123 456' },
-      ],
-    });
-  }
-
   try {
     const result = await query('SELECT * FROM sys_settings ORDER BY setting_key ASC');
     res.json({ ok: true, data: result.rows });
@@ -390,23 +283,6 @@ saasRouter.get('/settings', async (req: Request, res: Response) => {
 // ==========================================
 saasRouter.get('/menus', async (req: Request, res: Response) => {
   const lang = getLang(req);
-  if (!isDbConnected()) {
-    const mockMenus = [
-      { id: 1, code: 'DASHBOARD', title: lang === 'en' ? 'Dashboard Overview' : 'Tổng quan (Dashboard)', path: '/saas/dashboard', icon: 'LayoutDashboard' },
-      { id: 2, code: 'QUOTATIONS', title: lang === 'en' ? 'Customer Quotations' : 'Báo giá khách hàng', path: '/saas/quotations', icon: 'FileText' },
-      { id: 3, code: 'SALES_ORDERS', title: lang === 'en' ? 'Sales Orders' : 'Đơn hàng bán', path: '/saas/orders', icon: 'ShoppingCart' },
-      { id: 4, code: 'CUSTOMERS', title: lang === 'en' ? 'Customers' : 'Khách hàng', path: '/saas/customers', icon: 'Users' },
-      { id: 5, code: 'SUPPLIERS', title: lang === 'en' ? 'Suppliers' : 'Nhà cung cấp', path: '/saas/suppliers', icon: 'Truck' },
-      { id: 6, code: 'PRODUCTS', title: lang === 'en' ? 'Products & Items' : 'Sản phẩm & Hàng hóa', path: '/saas/products', icon: 'Package' },
-      { id: 7, code: 'CATEGORIES_UOM', title: lang === 'en' ? 'Categories & UOM' : 'Danh mục & Đơn vị tính', path: '/saas/categories-units', icon: 'Tags' },
-      { id: 8, code: 'INVENTORY', title: lang === 'en' ? 'Warehouse Inventory' : 'Quản lý kho hàng', path: '/saas/inventory', icon: 'Boxes' },
-      { id: 9, code: 'FINANCE_INVOICE', title: lang === 'en' ? 'Invoices & Receipts' : 'Hóa đơn & Thu chi', path: '/saas/finance-invoices', icon: 'Receipt' },
-      { id: 10, code: 'REPORTS', title: lang === 'en' ? 'Reports & Analytics' : 'Báo cáo & Phân tích', path: '/saas/reports', icon: 'BarChart3' },
-      { id: 11, code: 'SETTINGS', title: lang === 'en' ? 'System Settings' : 'Cấu hình hệ thống', path: '/saas/settings', icon: 'Settings' },
-    ];
-    return res.json({ ok: true, data: mockMenus });
-  }
-
   try {
     const result = await query(
       `SELECT id, code, path, icon, parent_id, sort_order, 
@@ -425,18 +301,6 @@ saasRouter.get('/menus', async (req: Request, res: Response) => {
 // ==========================================
 saasRouter.get('/roles', async (req: Request, res: Response) => {
   const lang = getLang(req);
-  if (!isDbConnected()) {
-    return res.json({
-      ok: true,
-      data: [
-        { id: 1, code: 'ADMIN', name: lang === 'en' ? 'System Administrator' : 'Quản trị viên toàn hệ thống' },
-        { id: 2, code: 'SALES', name: lang === 'en' ? 'Sales Representative' : 'Nhân viên Kinh doanh' },
-        { id: 3, code: 'ACCOUNTANT', name: lang === 'en' ? 'Chief Accountant' : 'Kế toán viên' },
-        { id: 4, code: 'WAREHOUSE', name: lang === 'en' ? 'Warehouse Manager' : 'Thủ kho' },
-      ],
-    });
-  }
-
   try {
     const result = await query(
       `SELECT id, code, 
@@ -456,10 +320,6 @@ saasRouter.get('/roles', async (req: Request, res: Response) => {
 // ==========================================
 saasRouter.get('/products', tenantMiddleware, async (req: TenantRequest, res: Response) => {
   const lang = getLang(req);
-  if (!isDbConnected()) {
-    return res.json({ ok: true, message: 'Running with local mock products' });
-  }
-
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query(
@@ -486,7 +346,6 @@ saasRouter.get('/products', tenantMiddleware, async (req: TenantRequest, res: Re
 // ==========================================
 saasRouter.get('/categories', async (req: Request, res: Response) => {
   const lang = getLang(req);
-  if (!isDbConnected()) return res.json({ ok: true, data: [] });
   try {
     const result = await query(
       `SELECT c.id, c.code, c.parent_id, c.is_active, c.name_vi, c.name_en,
@@ -507,7 +366,6 @@ saasRouter.get('/categories', async (req: Request, res: Response) => {
 
 saasRouter.get('/uom', async (req: Request, res: Response) => {
   const lang = getLang(req);
-  if (!isDbConnected()) return res.json({ ok: true, data: [] });
   try {
     const result = await query(
       `SELECT id, code, FALSE as is_fractional, name_vi, name_en,
@@ -524,7 +382,6 @@ saasRouter.get('/uom', async (req: Request, res: Response) => {
 
 // Other endpoints
 saasRouter.get('/customers', tenantMiddleware, async (req: TenantRequest, res) => {
-  if (!isDbConnected()) return res.json({ ok: true, message: 'Running with mock customers' });
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query('SELECT * FROM customers WHERE ($1::int IS NULL OR company_id = $1) ORDER BY id DESC', [companyId]);
@@ -535,7 +392,6 @@ saasRouter.get('/customers', tenantMiddleware, async (req: TenantRequest, res) =
 });
 
 saasRouter.get('/suppliers', tenantMiddleware, async (req: TenantRequest, res) => {
-  if (!isDbConnected()) return res.json({ ok: true, message: 'Running with mock suppliers' });
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query('SELECT * FROM suppliers WHERE ($1::int IS NULL OR company_id = $1) ORDER BY id DESC', [companyId]);
@@ -546,7 +402,6 @@ saasRouter.get('/suppliers', tenantMiddleware, async (req: TenantRequest, res) =
 });
 
 saasRouter.get('/quotations', tenantMiddleware, async (req: TenantRequest, res) => {
-  if (!isDbConnected()) return res.json({ ok: true, message: 'Running with mock quotations' });
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query(
@@ -564,7 +419,6 @@ saasRouter.get('/quotations', tenantMiddleware, async (req: TenantRequest, res) 
 });
 
 saasRouter.get('/orders', tenantMiddleware, async (req: TenantRequest, res) => {
-  if (!isDbConnected()) return res.json({ ok: true, message: 'Running with mock orders' });
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query(
@@ -585,9 +439,6 @@ saasRouter.get('/orders', tenantMiddleware, async (req: TenantRequest, res) => {
 // 7. SYSTEM TRANSLATION MANAGEMENT
 // ==========================================
 saasRouter.get('/translations/all', async (req, res) => {
-  if (!isDbConnected()) {
-    return res.json({ ok: true, data: [] });
-  }
   try {
     const result = await query(
       `SELECT t1.translation_key as key, 
@@ -611,29 +462,27 @@ saasRouter.post('/translations', async (req, res) => {
     return res.status(400).json({ ok: false, message: 'Missing translation key code' });
   }
 
-  if (isDbConnected()) {
-    try {
-      if (vi !== undefined) {
-        await query(
-          `INSERT INTO sys_translations (lang_code, category, translation_key, translation_value)
-           VALUES ('vi', $1, $2, $3)
-           ON CONFLICT (lang_code, translation_key) 
-           DO UPDATE SET category = EXCLUDED.category, translation_value = EXCLUDED.translation_value`,
-          [category, key, vi]
-        );
-      }
-      if (en !== undefined) {
-        await query(
-          `INSERT INTO sys_translations (lang_code, category, translation_key, translation_value)
-           VALUES ('en', $1, $2, $3)
-           ON CONFLICT (lang_code, translation_key) 
-           DO UPDATE SET category = EXCLUDED.category, translation_value = EXCLUDED.translation_value`,
-          [category, key, en]
-        );
-      }
-    } catch (error: any) {
-      console.error('[Translation DB Save Error]', error);
+  try {
+    if (vi !== undefined) {
+      await query(
+        `INSERT INTO sys_translations (lang_code, category, translation_key, translation_value)
+         VALUES ('vi', $1, $2, $3)
+         ON CONFLICT (lang_code, translation_key) 
+         DO UPDATE SET category = EXCLUDED.category, translation_value = EXCLUDED.translation_value`,
+        [category, key, vi]
+      );
     }
+    if (en !== undefined) {
+      await query(
+        `INSERT INTO sys_translations (lang_code, category, translation_key, translation_value)
+         VALUES ('en', $1, $2, $3)
+         ON CONFLICT (lang_code, translation_key) 
+         DO UPDATE SET category = EXCLUDED.category, translation_value = EXCLUDED.translation_value`,
+        [category, key, en]
+      );
+    }
+  } catch (error: any) {
+    console.error('[Translation DB Save Error]', error);
   }
 
   res.json({ ok: true, message: 'Saved translation key successfully' });
@@ -641,12 +490,10 @@ saasRouter.post('/translations', async (req, res) => {
 
 saasRouter.delete('/translations/:key', async (req, res) => {
   const { key } = req.params;
-  if (isDbConnected() && key) {
-    try {
-      await query(`DELETE FROM sys_translations WHERE translation_key = $1`, [key]);
-    } catch (error: any) {
-      console.error('[Translation DB Delete Error]', error);
-    }
+  try {
+    await query(`DELETE FROM sys_translations WHERE translation_key = $1`, [key]);
+  } catch (error: any) {
+    console.error('[Translation DB Delete Error]', error);
   }
   res.json({ ok: true, message: 'Deleted translation key successfully' });
 });
@@ -655,7 +502,6 @@ saasRouter.delete('/translations/:key', async (req, res) => {
 // 8. CRM & SALES PIPELINE ENDPOINTS
 // ==========================================
 saasRouter.get('/crm/leads', tenantMiddleware, async (req: TenantRequest, res) => {
-  if (!isDbConnected()) return res.json({ ok: true, message: 'Running with mock CRM leads' });
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query('SELECT * FROM crm_leads WHERE ($1::int IS NULL OR company_id = $1) ORDER BY id DESC', [companyId]);
@@ -666,7 +512,6 @@ saasRouter.get('/crm/leads', tenantMiddleware, async (req: TenantRequest, res) =
 });
 
 saasRouter.get('/crm/opportunities', tenantMiddleware, async (req: TenantRequest, res) => {
-  if (!isDbConnected()) return res.json({ ok: true, message: 'Running with mock CRM opportunities' });
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query(
@@ -687,7 +532,6 @@ saasRouter.get('/crm/opportunities', tenantMiddleware, async (req: TenantRequest
 // 9. PURCHASING & PROCUREMENT ENDPOINTS
 // ==========================================
 saasRouter.get('/purchasing/orders', tenantMiddleware, async (req: TenantRequest, res) => {
-  if (!isDbConnected()) return res.json({ ok: true, message: 'Running with mock purchase orders' });
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query(
@@ -705,7 +549,6 @@ saasRouter.get('/purchasing/orders', tenantMiddleware, async (req: TenantRequest
 });
 
 saasRouter.get('/purchasing/requests', tenantMiddleware, async (req: TenantRequest, res) => {
-  if (!isDbConnected()) return res.json({ ok: true, message: 'Running with mock purchase requests' });
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query('SELECT * FROM purchase_requests WHERE ($1::int IS NULL OR company_id = $1) ORDER BY id DESC', [companyId]);
@@ -719,7 +562,6 @@ saasRouter.get('/purchasing/requests', tenantMiddleware, async (req: TenantReque
 // 10. FIXED ASSETS & DEPRECIATION ENDPOINTS
 // ==========================================
 saasRouter.get('/assets', tenantMiddleware, async (req: TenantRequest, res) => {
-  if (!isDbConnected()) return res.json({ ok: true, message: 'Running with mock assets' });
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query(
@@ -741,7 +583,6 @@ saasRouter.get('/assets', tenantMiddleware, async (req: TenantRequest, res) => {
 // 11. AUDIT LOGS & USER SESSIONS ENDPOINTS
 // ==========================================
 saasRouter.get('/audit-logs', tenantMiddleware, async (req: TenantRequest, res) => {
-  if (!isDbConnected()) return res.json({ ok: true, message: 'Running with mock audit logs' });
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query(
@@ -762,20 +603,6 @@ saasRouter.get('/audit-logs', tenantMiddleware, async (req: TenantRequest, res) 
 // 12. TENANT MANAGEMENT ENDPOINTS
 // ==========================================
 saasRouter.get('/tenants/me', tenantMiddleware, async (req: TenantRequest, res: Response) => {
-  if (!isDbConnected()) {
-    return res.json({
-      ok: true,
-      data: {
-        id: req.companyId,
-        name_vi: 'Công Ty Mẫu',
-        plan_type: 'trial',
-        subscription_status: 'active',
-        max_users: 5,
-        max_warehouses: 3,
-        settings: {},
-      },
-    });
-  }
   try {
     const result = await query(
       `SELECT id, code, name_vi, name_en, slug, subdomain, plan_type, subscription_status, trial_ends_at, settings, max_users, max_warehouses, is_paused, onboarding_completed, created_at FROM companies WHERE id = $1`,
@@ -788,7 +615,6 @@ saasRouter.get('/tenants/me', tenantMiddleware, async (req: TenantRequest, res: 
 });
 
 saasRouter.get('/tenants/list', tenantMiddleware, async (req: TenantRequest, res: Response) => {
-  if (!isDbConnected()) return res.json({ ok: true, data: [] });
   try {
     const result = await query(
       `SELECT id, code, name_vi, name_en, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_paused, is_active, created_at FROM companies ORDER BY id DESC`
@@ -801,9 +627,6 @@ saasRouter.get('/tenants/list', tenantMiddleware, async (req: TenantRequest, res
 
 saasRouter.get('/tenants/:id', tenantMiddleware, async (req: TenantRequest, res: Response) => {
   const tenantId = parseInt(req.params.id);
-  if (!isDbConnected()) {
-    return res.json({ ok: true, data: { id: tenantId, name_vi: 'Demo Tenant', plan_type: 'trial', subscription_status: 'active' } });
-  }
   try {
     const result = await query(
       `SELECT id, code, name_vi, name_en, slug, subdomain, plan_type, subscription_status, trial_ends_at, settings, max_users, max_warehouses, is_paused, onboarding_completed, created_at FROM companies WHERE id = $1`,
@@ -820,14 +643,6 @@ saasRouter.post('/tenants/register', async (req: Request, res: Response) => {
 
   if (!name_vi || !tax_code || !owner_email || !owner_password) {
     return res.status(400).json({ ok: false, message: 'Thiếu thông tin bắt buộc: tên công ty, mã số thuế, email quản lý, mật khẩu' });
-  }
-
-  if (!isDbConnected()) {
-    return res.json({
-      ok: true,
-      message: 'Đăng ký tenant thành công (demo mode)',
-      data: { id: 999, code: 'DEMO', name_vi, plan_type, subscription_status: 'trial' },
-    });
   }
 
   const client = await pool.connect();
@@ -897,10 +712,6 @@ saasRouter.patch('/tenants/:id', tenantMiddleware, async (req: TenantRequest, re
   const tenantId = parseInt(req.params.id);
   const { name_vi, name_en, plan_type, subscription_status, trial_ends_at, settings, max_users, max_warehouses, is_paused, onboarding_completed } = req.body;
 
-  if (!isDbConnected()) {
-    return res.json({ ok: true, message: 'Đã cập nhật tenant (demo mode)' });
-  }
-
   try {
     const sets: string[] = [];
     const params: any[] = [];
@@ -931,10 +742,6 @@ saasRouter.post('/tenants/:id/pause', tenantMiddleware, async (req: TenantReques
   const tenantId = parseInt(req.params.id);
   const { paused } = req.body;
 
-  if (!isDbConnected()) {
-    return res.json({ ok: true, message: paused ? 'Đã tạm dừng tenant' : 'Đã kích hoạt lại tenant' });
-  }
-
   try {
     const result = await query('UPDATE companies SET is_paused = $1 WHERE id = $2 RETURNING id, name_vi, is_paused', [!!paused, tenantId]);
     res.json({ ok: true, data: result.rows[0], message: paused ? 'Tenant đã bị tạm dừng' : 'Tenant đã được kích hoạt lại' });
@@ -949,10 +756,6 @@ saasRouter.post('/tenants/:id/upgrade', tenantMiddleware, async (req: TenantRequ
 
   if (!['free', 'starter', 'professional', 'enterprise'].includes(plan_type)) {
     return res.status(400).json({ ok: false, message: 'Gói không hợp lệ' });
-  }
-
-  if (!isDbConnected()) {
-    return res.json({ ok: true, message: `Đã nâng cấp lên gói ${plan_type}` });
   }
 
   try {
