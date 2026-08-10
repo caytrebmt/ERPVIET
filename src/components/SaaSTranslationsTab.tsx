@@ -27,12 +27,14 @@ export const SaaSTranslationsTab: React.FC = () => {
   const {
     language,
     toggleLanguage,
-    translationsList,
+     translationsList,
     updateTranslation,
+    createTranslation,
     deleteTranslation,
     resetToDefaults,
     refreshTranslations,
     loadLocaleTranslations,
+    saveAllToJSON,
     t,
   } = useLanguage();
 
@@ -136,7 +138,7 @@ export const SaaSTranslationsTab: React.FC = () => {
       return;
     }
 
-    await updateTranslation(formattedKey, newVi || newEn, newEn || newVi, newCategory);
+    await createTranslation(formattedKey, newVi || newEn, newEn || newVi, newCategory);
     addToast(language === 'en' ? `Added new key '${formattedKey}' successfully!` : `Đã thêm mới từ khóa dịch '${formattedKey}' thành công!`, 'success');
     setIsAddModalOpen(false);
     setNewKey('');
@@ -189,6 +191,15 @@ export const SaaSTranslationsTab: React.FC = () => {
     }
   };
 
+  const handleSaveAllToJSON = async () => {
+    const result = await saveAllToJSON();
+    if (result.ok) {
+      addToast(language === 'en' ? `Saved ${totalKeys} keys to JSON files!` : `Đã lưu ${totalKeys} từ khóa vào file JSON!`, 'success');
+    } else {
+      addToast(language === 'en' ? `Failed to save to JSON: ${result.message}` : `Lỗi lưu JSON: ${result.message}`, 'error');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner & Overview */}
@@ -216,7 +227,7 @@ export const SaaSTranslationsTab: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/15 transition cursor-pointer"
             >
               <Globe className="w-4 h-4 text-emerald-400" />
-              <span>{language === 'en' ? 'Current Lang: 🇬🇧 EN' : 'Ngôn ngữ hiện tại: 🇻🇳 VI'}</span>
+              <span>{language === 'en' ? 'Switch to 🇻🇳 VI' : 'Switch to 🇬🇧 EN'}</span>
             </button>
             <button
               onClick={() => setIsAddModalOpen(true)}
@@ -300,6 +311,15 @@ export const SaaSTranslationsTab: React.FC = () => {
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>{language === 'en' ? 'Reset Defaults' : 'Khôi phục mặc định'}</span>
+            </button>
+
+            <button
+              onClick={handleSaveAllToJSON}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition cursor-pointer border border-emerald-200 dark:border-emerald-800"
+              title={language === 'en' ? 'Save all translations to JSON locale files' : 'Lưu tất cả dịch thuật vào file JSON'}
+            >
+              <Save className="w-3.5 h-3.5 text-emerald-500" />
+              <span>{language === 'en' ? 'Save to JSON' : 'Lưu ra JSON'}</span>
             </button>
           </div>
         </div>

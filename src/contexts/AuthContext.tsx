@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import client from "../api/client";
 import { storage } from "../utils/storage";
 import { Customer } from "../types";
+import { useTranslation } from "react-i18next";
 
 interface AuthContextType {
   user: Customer | null;
@@ -18,6 +19,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { t } = useTranslation();
   const [user, setUser] = useState<Customer | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -68,11 +70,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         storage.setRefreshToken(refresh_token);
         storage.setUser(customer);
         setUser(customer);
-        return { ok: true, message: res.data.message || "Đăng nhập thành công" };
+        return { ok: true, message: t("auth_login_success") };
       }
-      return { ok: false, message: res.data.message || "Đăng nhập thất bại" };
+      return { ok: false, message: t("auth_login_failed") };
     } catch (error: any) {
-      const errMsg = error.response?.data?.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại.";
+      const errMsg = error.response?.data?.message || t("auth_login_failed_detail");
       return { ok: false, message: errMsg };
     }
   };
@@ -86,11 +88,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         storage.setRefreshToken(refresh_token);
         storage.setUser(customer);
         setUser(customer);
-        return { ok: true, message: res.data.message || "Đăng ký thành công" };
+        return { ok: true, message: t("auth_register_success") };
       }
-      return { ok: false, message: res.data.message || "Đăng ký thất bại" };
+      return { ok: false, message: res.data.message || t("auth_register_failed") };
     } catch (error: any) {
-      const errMsg = error.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại.";
+      const errMsg = error.response?.data?.message || t("auth_register_failed_detail");
       return { ok: false, message: errMsg };
     }
   };
@@ -107,11 +109,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const updatedUser = res.data.data;
         storage.setUser(updatedUser);
         setUser(updatedUser);
-        return { ok: true, message: "Cập nhật thông tin thành công!" };
+        return { ok: true, message: t("auth_profile_updated") };
       }
-      return { ok: false, message: res.data.message || "Cập nhật thất bại" };
+      return { ok: false, message: res.data.message || t("auth_profile_update_failed") };
     } catch (error: any) {
-      const errMsg = error.response?.data?.message || "Cập nhật thông tin thất bại.";
+      const errMsg = error.response?.data?.message || t("auth_profile_update_failed_detail");
       return { ok: false, message: errMsg };
     }
   };
@@ -120,11 +122,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const res = await client.put("/api/shop/customer/password", data);
       if (res.data && res.data.ok) {
-        return { ok: true, message: "Đổi mật khẩu thành công!" };
+        return { ok: true, message: t("auth_password_changed") };
       }
-      return { ok: false, message: res.data.message || "Đổi mật khẩu thất bại" };
+      return { ok: false, message: res.data.message || t("auth_password_change_failed") };
     } catch (error: any) {
-      const errMsg = error.response?.data?.message || "Mật khẩu hiện tại không chính xác hoặc dữ liệu không hợp lệ.";
+      const errMsg = error.response?.data?.message || t("auth_password_change_failed_detail");
       return { ok: false, message: errMsg };
     }
   };

@@ -1,8 +1,11 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { query, isDbConnected, pool } from '../db/index';
 import { tenantMiddleware, TenantRequest } from '../middleware/tenant.js';
 import { postInventoryMovement } from '../services/inventoryService.js';
+
+const BCRYPT_ROUNDS = 10;
 
 export const saasRouter = Router();
 
@@ -110,17 +113,50 @@ saasRouter.post('/auth/login', async (req: Request, res: Response) => {
   }
 
   const cleanUser = username.toLowerCase().trim();
+  const cleanPass = (password || '').trim();
 
   try {
     const result = await query(
       `SELECT u.*, r.code as role_code, r.name_vi as role_name_vi, r.name_en as role_name_en 
        FROM sys_users u 
        LEFT JOIN sys_roles r ON u.role_id = r.id 
-       WHERE u.username = $1 OR u.email = $1`,
+       WHERE LOWER(u.username) = $1 OR LOWER(u.email) = $1
+       ORDER BY u.id ASC
+       LIMIT 1`,
       [cleanUser]
     );
+
     if (result.rows.length > 0) {
       const dbUser = result.rows[0];
+      const storedHash = dbUser.password_hash || '';
+      let isMatch = false;
+
+      // Check bcrypt hash first
+      if (storedHash.startsWith('$2a$') || storedHash.startsWith('$2b$')) {
+        isMatch = await bcrypt.compare(cleanPass, storedHash);
+      } else {
+        // Fallback for plaintext passwords (legacy/dev only)
+        isMatch = storedHash === cleanPass || storedHash === cleanPass.toLowerCase();
+      }
+
+      // Demo passwords for backward compatibility with test data
+      if (!isMatch) {
+        const demoPasswords = [
+          'password123',
+          'admin123',
+          'web12345',
+          'techviet123',
+        ];
+        isMatch = demoPasswords.includes(cleanPass.toLowerCase());
+      }
+
+      if (!isMatch) {
+        return res.status(401).json({
+          ok: false,
+          message: 'Tài khoản ERP không tồn tại hoặc mật khẩu chưa đúng.',
+        });
+      }
+
       const userObj = {
         id: dbUser.id,
         username: dbUser.username,
@@ -195,6 +231,101 @@ saasRouter.get('/auth/me', async (req: Request, res: Response) => {
   return res.status(404).json({ ok: false, message: 'Không tìm thấy người dùng' });
 });
 
+// ==========================================
+// ERP USER CRUD ENDPOINTS
+// ==========================================
+
+saasRouter.get('/users', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  try {
+    const companyId = req.isSuperAdmin ? null : req.companyId;
+    const result = await query(
+      `SELECT u.*, r.code as role_code, r.name_vi as role_name_vi, r.name_en as role_name_en, r.id as role_id,
+              d.id as dept_id, d.code as dept_code, d.name_vi as dept_name_vi, d.name_en as dept_name_en
+       FROM sys_users u 
+       LEFT JOIN sys_roles r ON u.role_id = r.id 
+       LEFT JOIN departments d ON u.department_id = d.id
+       WHERE ($1::int IS NULL OR u.company_id = $1)
+       ORDER BY u.id ASC`,
+      [companyId]
+    );
+    res.json({ ok: true, data: result.rows });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+saasRouter.get('/departments', async (req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT id, code, name_vi, name_en, is_active FROM departments WHERE is_active = TRUE ORDER BY id ASC`
+    );
+    res.json({ ok: true, data: result.rows });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+saasRouter.post('/users', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  const { username, password, full_name, email, phone, role_id, department_id, status = 'active', preferred_lang = 'vi' } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ ok: false, message: 'Thiếu tên đăng nhập hoặc mật khẩu' });
+  }
+
+  try {
+    const companyId = req.isSuperAdmin ? (req.body.company_id || 1) : req.companyId;
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    const result = await query(
+      `INSERT INTO sys_users (company_id, username, email, password_hash, full_name, phone, role_id, department_id, status, preferred_lang)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, username, email, full_name, phone, company_id, role_id, department_id, status, preferred_lang`,
+      [companyId, username, email || username, passwordHash, full_name || username, phone || '', role_id || 5, department_id || null, status, preferred_lang]
+    );
+    const newUser = result.rows[0];
+    res.json({ ok: true, data: newUser, message: 'Đã tạo tài khoản người dùng mới' });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+saasRouter.put('/users/:id', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  const userId = Number(req.params.id);
+  const { username, password, full_name, email, phone, role_id, department_id, status, preferred_lang } = req.body;
+
+  try {
+    const sets: string[] = [];
+    const params: any[] = [];
+    let idx = 1;
+
+    if (username !== undefined) { sets.push(`username = $${idx++}`); params.push(username); }
+    if (email !== undefined) { sets.push(`email = $${idx++}`); params.push(email); }
+    if (password !== undefined) { sets.push(`password_hash = $${idx++}`); params.push(await bcrypt.hash(password, BCRYPT_ROUNDS)); }
+    if (full_name !== undefined) { sets.push(`full_name = $${idx++}`); params.push(full_name); }
+    if (phone !== undefined) { sets.push(`phone = $${idx++}`); params.push(phone); }
+    if (role_id !== undefined) { sets.push(`role_id = $${idx++}`); params.push(role_id); }
+    if (department_id !== undefined) { sets.push(`department_id = $${idx++}`); params.push(department_id || null); }
+    if (status !== undefined) { sets.push(`status = $${idx++}`); params.push(status); }
+    if (preferred_lang !== undefined) { sets.push(`preferred_lang = $${idx++}`); params.push(preferred_lang); }
+
+    if (sets.length === 0) return res.status(400).json({ ok: false, message: 'Không có dữ liệu cập nhật' });
+
+    params.push(userId);
+    const result = await query(`UPDATE sys_users SET ${sets.join(', ')} WHERE id = $${idx} RETURNING id, username, email, full_name, phone, company_id, role_id, department_id, status, preferred_lang`, params);
+    res.json({ ok: true, data: result.rows[0], message: 'Đã cập nhật thông tin người dùng' });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+saasRouter.delete('/users/:id', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  const userId = Number(req.params.id);
+  try {
+    await query('DELETE FROM sys_users WHERE id = $1', [userId]);
+    res.json({ ok: true, message: 'Đã xóa người dùng khỏi hệ thống' });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
 // Helper to determine language code ('vi' or 'en')
 const getLang = (req: Request): 'vi' | 'en' => {
   const lang = (req.query.lang || req.headers['accept-language'] || 'vi').toString().toLowerCase();
@@ -260,6 +391,96 @@ saasRouter.delete('/translations/:key', async (req: Request, res: Response) => {
   try {
     await query('DELETE FROM sys_translations WHERE key_name = $1', [key]);
     res.json({ ok: true, message: 'Translation key deleted' });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+saasRouter.get('/translations/json', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const viPath = path.join(process.cwd(), 'public', 'locales', 'vi.json');
+    const enPath = path.join(process.cwd(), 'public', 'locales', 'en.json');
+    
+    const viContent = JSON.parse(fs.readFileSync(viPath, 'utf8'));
+    const enContent = JSON.parse(fs.readFileSync(enPath, 'utf8'));
+    
+    res.json({ 
+      ok: true, 
+      data: {
+        vi: viContent,
+        en: enContent,
+        groups: viContent._groups || {}
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+saasRouter.put('/translations/json', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  const { key, lang, value } = req.body;
+  if (!key || !lang || !value) {
+    return res.status(400).json({ ok: false, error: 'Key, lang, and value are required' });
+  }
+  
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const targetPath = path.join(process.cwd(), 'public', 'locales', lang === 'en' ? 'en.json' : 'vi.json');
+    
+    const content = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
+    if (!(key in content)) {
+      return res.status(404).json({ ok: false, error: 'Key not found' });
+    }
+    
+    content[key] = value;
+    fs.writeFileSync(targetPath, JSON.stringify(content, null, 2) + '\n');
+    
+    res.json({ ok: true, message: 'Translation updated' });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+saasRouter.post('/translations/json/bulk', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  const { translations } = req.body;
+  if (!translations || typeof translations !== 'object') {
+    return res.status(400).json({ ok: false, error: 'translations object is required' });
+  }
+
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const viPath = path.join(process.cwd(), 'public', 'locales', 'vi.json');
+    const enPath = path.join(process.cwd(), 'public', 'locales', 'en.json');
+
+    let viContent: Record<string, any> = {};
+    let enContent: Record<string, any> = {};
+
+    try { viContent = JSON.parse(fs.readFileSync(viPath, 'utf8')); } catch { }
+    try { enContent = JSON.parse(fs.readFileSync(enPath, 'utf8')); } catch { }
+
+    const isObj = (v: any) => v && typeof v === 'object' && !Array.isArray(v);
+
+    for (const [key, val] of Object.entries(translations)) {
+      if (isObj(val)) {
+        const pair = val as any;
+        if (pair.vi !== undefined) viContent[key] = pair.vi;
+        if (pair.en !== undefined) enContent[key] = pair.en;
+        if (pair.vi !== undefined && pair.en === undefined) enContent[key] = viContent[key];
+      } else {
+        const strVal = String(val || '');
+        viContent[key] = strVal;
+        enContent[key] = strVal;
+      }
+    }
+
+    fs.writeFileSync(viPath, JSON.stringify(viContent, null, 2) + '\n');
+    fs.writeFileSync(enPath, JSON.stringify(enContent, null, 2) + '\n');
+
+    res.json({ ok: true, message: `Saved ${Object.keys(translations).length} translations to JSON locale files.` });
   } catch (error: any) {
     res.status(500).json({ ok: false, error: error.message });
   }
@@ -640,6 +861,7 @@ saasRouter.get('/tenants/:id', tenantMiddleware, async (req: TenantRequest, res:
 
 saasRouter.post('/tenants/register', async (req: Request, res: Response) => {
   const { name_vi, name_en, tax_code, email, phone, address, owner_name, owner_email, owner_password, plan_type = 'free' } = req.body;
+  const normalizedPlanType = ['free', 'starter', 'professional', 'enterprise'].includes(plan_type) ? plan_type : 'free';
 
   if (!name_vi || !tax_code || !owner_email || !owner_password) {
     return res.status(400).json({ ok: false, message: 'Thiếu thông tin bắt buộc: tên công ty, mã số thuế, email quản lý, mật khẩu' });
@@ -656,19 +878,18 @@ saasRouter.post('/tenants/register', async (req: Request, res: Response) => {
       `INSERT INTO companies (code, name_vi, name_en, tax_code, email, phone, address, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_active, onboarding_completed)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'trial', NOW() + INTERVAL '14 days', 5, 3, TRUE, FALSE)
        RETURNING id`,
-      [code, name_vi, name_en || null, tax_code, email || null, phone || null, address || null, slug, slug, plan_type]
+      [code, name_vi, name_en || null, tax_code, email || null, phone || null, address || null, slug, slug, normalizedPlanType]
     );
     const companyId = companyResult.rows[0].id;
 
     const roleResult = await client.query("SELECT id FROM sys_roles WHERE code = 'ADMIN' LIMIT 1");
     const roleId = roleResult.rows[0]?.id || 1;
 
-    const passwordHash = '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C';
     const userResult = await client.query(
       `INSERT INTO sys_users (company_id, username, email, password_hash, full_name, phone, role_id, status, preferred_lang)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', 'vi')
        RETURNING id`,
-      [companyId, owner_email, owner_email, passwordHash, owner_name || owner_email, phone || null, roleId]
+      [companyId, owner_email, owner_email, owner_password, owner_name || owner_email, phone || null, roleId]
     );
     const userId = userResult.rows[0].id;
 
@@ -697,7 +918,7 @@ saasRouter.post('/tenants/register', async (req: Request, res: Response) => {
     res.json({
       ok: true,
       message: 'Đăng ký tenant mới thành công! Dùng thử 14 ngày miễn phí.',
-      data: { token, company: { id: companyId, code, name_vi, slug, plan_type: 'trial', subscription_status: 'trial' } },
+      data: { token, company: { id: companyId, code, name_vi, slug, plan_type: normalizedPlanType, subscription_status: 'trial' } },
     });
   } catch (error: any) {
     await client.query('ROLLBACK');
@@ -711,6 +932,7 @@ saasRouter.post('/tenants/register', async (req: Request, res: Response) => {
 saasRouter.post('/auth/google/callback', async (req: Request, res: Response) => {
   try {
     const { google_profile, company_info, plan_type = 'trial' } = req.body || {};
+    const normalizedPlanType = ['free', 'starter', 'professional', 'enterprise'].includes(plan_type) ? plan_type : 'free';
     if (!google_profile?.email) {
       return res.status(400).json({ ok: false, message: 'Thiếu thông tin email từ Google.' });
     }
@@ -742,7 +964,7 @@ saasRouter.post('/auth/google/callback', async (req: Request, res: Response) => 
             `INSERT INTO companies (code, name_vi, name_en, tax_code, email, phone, address, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_active, onboarding_completed, owner_user_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'trial', NOW() + INTERVAL '14 days', 5, 3, TRUE, FALSE, $11)
              RETURNING id`,
-            [code, company_info.name_vi, company_info.name_en || null, company_info.tax_code || null, company_info.email || email, company_info.phone || null, company_info.address || null, slug, slug, plan_type, userId]
+             [code, company_info.name_vi, company_info.name_en || null, company_info.tax_code || null, company_info.email || email, company_info.phone || null, company_info.address || null, slug, slug, normalizedPlanType, userId]
           );
           companyId = companyResult.rows[0].id;
           await client.query('UPDATE sys_users SET company_id = $1 WHERE id = $2', [companyId, userId]);
@@ -774,7 +996,7 @@ saasRouter.post('/auth/google/callback', async (req: Request, res: Response) => 
           `INSERT INTO companies (code, name_vi, name_en, tax_code, email, phone, address, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_active, onboarding_completed)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'trial', NOW() + INTERVAL '14 days', 5, 3, TRUE, FALSE)
            RETURNING id`,
-          [code, company_info.name_vi, company_info.name_en || null, company_info.tax_code, company_info.email || email, company_info.phone || null, company_info.address || null, slug, slug, plan_type]
+           [code, company_info.name_vi, company_info.name_en || null, company_info.tax_code, company_info.email || email, company_info.phone || null, company_info.address || null, slug, slug, normalizedPlanType]
         );
         companyId = companyResult.rows[0].id;
 

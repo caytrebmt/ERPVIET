@@ -3,17 +3,29 @@ import { useNavigate, Link } from "react-router-dom";
 import { Building2, UserPlus, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "../../contexts/ToastContext";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 import { storage } from "../../utils/storage";
 
 export const SaaSRegisterPage: React.FC = () => {
   const { showToast } = useToast();
   const { language, toggleLanguage } = useLanguage();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [isGoogleFlow, setIsGoogleFlow] = useState(false);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name_vi: string;
+    tax_code: string;
+    email: string;
+    phone: string;
+    address: string;
+    owner_name: string;
+    owner_email: string;
+    owner_password: string;
+    plan_type: string;
+  }>({
     name_vi: "",
     tax_code: "",
     email: "",
@@ -35,11 +47,11 @@ export const SaaSRegisterPage: React.FC = () => {
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!form.name_vi.trim()) errs.name_vi = "Tên doanh nghiệp là bắt buộc";
-    if (!form.tax_code.trim()) errs.tax_code = "Mã số thuế là bắt buộc";
-    if (!form.owner_email.trim()) errs.owner_email = "Email quản lý là bắt buộc";
-    if (!form.owner_password || form.owner_password.length < 6) errs.owner_password = "Mật khẩu tối thiểu 6 ký tự";
-    if (!form.owner_name.trim()) errs.owner_name = "Tên người quản lý là bắt buộc";
+    if (!form.name_vi.trim()) errs.name_vi = t("saas_register_company_name_required");
+    if (!form.tax_code.trim()) errs.tax_code = t("saas_register_tax_code_required");
+    if (!form.owner_email.trim()) errs.owner_email = t("saas_register_admin_email_required");
+    if (!form.owner_password || form.owner_password.length < 6) errs.owner_password = t("saas_register_admin_password_min");
+    if (!form.owner_name.trim()) errs.owner_name = t("saas_register_admin_name_required");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -63,7 +75,7 @@ export const SaaSRegisterPage: React.FC = () => {
                 .then((profile) => {
                   prefillFromGoogle(profile);
                 })
-                .catch(() => showToast('Không thể lấy thông tin Google', 'error'))
+                .catch(() => showToast(t("page_saas_register_google_failed"), "error"))
                 .finally(() => setGoogleSubmitting(false));
             } else {
               setGoogleSubmitting(false);
@@ -85,9 +97,9 @@ export const SaaSRegisterPage: React.FC = () => {
 
       await new Promise((resolve) => setTimeout(resolve, 600));
       prefillFromGoogle(googleProfile);
-      showToast('Đã điền thông tin Google (chế độ demo)', 'success');
+      showToast(t("page_saas_register_google_demo"), "success");
     } catch (err) {
-      showToast('Đăng nhập Google thất bại', 'error');
+      showToast(t("page_saas_register_google_login_failed"), "error");
       setGoogleSubmitting(false);
       setIsGoogleFlow(false);
     }
@@ -113,7 +125,7 @@ export const SaaSRegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
-      showToast("Vui lòng kiểm tra lại thông tin", "error");
+      showToast(t("page_saas_register_validation_error"), "error");
       return;
     }
 
@@ -146,17 +158,17 @@ export const SaaSRegisterPage: React.FC = () => {
       });
       const data = await res.json();
       if (data.ok) {
-        showToast(data.message || "Đăng ký thành công!", "success");
+        showToast(data.message || t("page_saas_register_success"), "success");
         if (data.data?.token) {
           storage.setAccessToken(data.data.token);
         }
-        setTimeout(() => window.location.reload(), 800);
+        setTimeout(() => navigate('/saas/login', { replace: true }), 800);
       } else {
-        showToast(data.message || "Đăng ký thất bại", "error");
+        showToast(data.message || t("page_saas_register_failed"), "error");
         setSubmitting(false);
       }
     } catch {
-      showToast("Lỗi kết nối server", "error");
+      showToast(t("page_saas_register_server_error"), "error");
       setSubmitting(false);
     }
   };
@@ -164,10 +176,10 @@ export const SaaSRegisterPage: React.FC = () => {
   const isEn = language === "en";
 
   const plans = [
-    { value: "trial", labelVi: "Dùng thử 14 ngày", labelEn: "14-Day Free Trial", price: "0₫", color: "border-zinc-700 bg-zinc-900" },
-    { value: "starter", labelVi: "Starter", labelEn: "Starter", price: "499K/tháng", color: "border-indigo-500/30 bg-indigo-500/5" },
-    { value: "professional", labelVi: "Professional", labelEn: "Professional", price: "1.2TR/tháng", color: "border-amber-500/30 bg-amber-500/5" },
-    { value: "enterprise", labelVi: "Enterprise", labelEn: "Enterprise", price: "Liên hệ", color: "border-emerald-500/30 bg-emerald-500/5" },
+    { value: "trial", labelKey: "saas_register_plan_trial", price: "0₫", color: "border-zinc-700 bg-zinc-900" },
+    { value: "starter", labelKey: "saas_register_plan_starter", price: "499K/tháng", color: "border-indigo-500/30 bg-indigo-500/5" },
+    { value: "professional", labelKey: "saas_register_plan_professional", price: "1.2TR/tháng", color: "border-amber-500/30 bg-amber-500/5" },
+    { value: "enterprise", labelKey: "saas_register_plan_enterprise", price: "Liên hệ", color: "border-emerald-500/30 bg-emerald-500/5" },
   ];
 
   return (
@@ -184,15 +196,15 @@ export const SaaSRegisterPage: React.FC = () => {
           </div>
           <div>
             <h1 className="font-bold text-base tracking-tight leading-none text-zinc-100">ERP-VIET</h1>
-            <span className="text-[10px] text-amber-400 font-semibold">{isEn ? "Enterprise SaaS Platform" : "Nền tảng ERP Doanh nghiệp"}</span>
+             <span className="text-[10px] text-amber-400 font-semibold">{t('saas_register_subtitle')}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={toggleLanguage} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer">
-            <span className="uppercase">{language}</span>
+            <span className="uppercase">{language === 'vi' ? 'EN' : 'VI'}</span>
           </button>
           <Link to="/saas/login" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-xs font-bold text-zinc-300 transition-all cursor-pointer">
-            {isEn ? "Already have account?" : "Đã có tài khoản?"}
+            {t('saas_register_have_account')}
           </Link>
         </div>
       </header>
@@ -203,28 +215,26 @@ export const SaaSRegisterPage: React.FC = () => {
           {/* Left: Form */}
           <div className="lg:col-span-3 bg-zinc-900/90 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
             <div className="mb-6">
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-extrabold flex items-center gap-1 w-fit">
-                <UserPlus className="w-3.5 h-3.5" />
-                {isEn ? "TRIAL / SIGN UP" : "ĐĂNG KÝ DÙNG THỬ"}
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-3 mb-1">
-                {isEn ? "Register your company" : "Đăng ký doanh nghiệp"}
-              </h2>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                {isEn
-                  ? "Create your ERP workspace. Get a 14-day free trial with full features."
-                  : "Tạo không gian làm việc ERP cho doanh nghiệp. Dùng thử 14 ngày miễn phí toàn bộ tính năng."}
-              </p>
+               <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-extrabold flex items-center gap-1 w-fit">
+                 <UserPlus className="w-3.5 h-3.5" />
+                 {t('saas_register_badge')}
+               </span>
+               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-3 mb-1">
+                 {t('saas_register_heading')}
+               </h2>
+               <p className="text-xs text-zinc-400 leading-relaxed">
+                 {t('saas_register_desc')}
+               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Company Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-                    {isEn ? "Company Name" : "Tên doanh nghiệp"} <span className="text-red-500">*</span>
-                  </label>
+                   <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                     <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+                     {t('saas_register_company_name')} <span className="text-red-500">*</span>
+                   </label>
                   <input
                     type="text"
                     required
@@ -236,9 +246,9 @@ export const SaaSRegisterPage: React.FC = () => {
                   {errors.name_vi && <span className="text-[10px] text-red-400">{errors.name_vi}</span>}
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
-                    {isEn ? "Tax Code" : "Mã số thuế"} <span className="text-red-500">*</span>
-                  </label>
+                   <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                     {t('saas_register_tax_code')} <span className="text-red-500">*</span>
+                   </label>
                   <input
                     type="text"
                     required
@@ -253,10 +263,10 @@ export const SaaSRegisterPage: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                    {isEn ? "Company Email" : "Email công ty"}
-                  </label>
+                   <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                     <Mail className="w-3.5 h-3.5 text-emerald-400" />
+                     {t('saas_register_company_email')}
+                   </label>
                   <input
                     type="email"
                     value={form.email}
@@ -266,10 +276,10 @@ export const SaaSRegisterPage: React.FC = () => {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                    {isEn ? "Company Phone" : "Số điện thoại"}
-                  </label>
+                   <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                     <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                     {t('saas_register_company_phone')}
+                   </label>
                   <input
                     type="tel"
                     value={form.phone}
@@ -281,7 +291,7 @@ export const SaaSRegisterPage: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-zinc-300">{isEn ? "Address" : "Địa chỉ trụ sở"}</label>
+                 <label className="text-xs font-bold text-zinc-300">{t('saas_register_address')}</label>
                 <input
                   type="text"
                   value={form.address}
@@ -293,15 +303,15 @@ export const SaaSRegisterPage: React.FC = () => {
 
               {/* Owner / Admin Info */}
               <div className="border-t border-zinc-800 pt-4 mt-2">
-                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
-                  {isEn ? "ADMINISTRATOR ACCOUNT" : "TÀI KHOẢN QUẢN TRỊ VIÊN"}
-                </p>
+                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
+                   {t('saas_register_admin_section')}
+                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
-                      <UserPlus className="w-3.5 h-3.5 text-amber-400" />
-                      {isEn ? "Admin Full Name" : "Họ tên quản lý"} <span className="text-red-500">*</span>
-                    </label>
+                     <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                       <UserPlus className="w-3.5 h-3.5 text-amber-400" />
+                       {t('saas_register_admin_name')} <span className="text-red-500">*</span>
+                     </label>
                     <input
                       type="text"
                       required
@@ -312,10 +322,10 @@ export const SaaSRegisterPage: React.FC = () => {
                     {errors.owner_name && <span className="text-[10px] text-red-400">{errors.owner_name}</span>}
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-amber-400" />
-                      {isEn ? "Admin Email" : "Email quản lý"} <span className="text-red-500">*</span>
-                    </label>
+                     <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                       <Mail className="w-3.5 h-3.5 text-amber-400" />
+                       {t('saas_register_admin_email')} <span className="text-red-500">*</span>
+                     </label>
                     <input
                       type="email"
                       required
@@ -327,17 +337,17 @@ export const SaaSRegisterPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="mt-3 flex flex-col gap-1">
-                  <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-amber-400" />
-                    {isEn ? "Admin Password" : "Mật khẩu quản lý"} <span className="text-red-500">*</span>
-                  </label>
+                     <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                       <Lock className="w-3.5 h-3.5 text-amber-400" />
+                       {t('saas_register_admin_password')} <span className="text-red-500">*</span>
+                     </label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
                       required
                       value={form.owner_password}
                       onChange={(e) => update("owner_password", e.target.value)}
-                      placeholder={isEn ? "Min 6 characters" : "Tối thiểu 6 ký tự"}
+                       placeholder={t('saas_register_admin_password_placeholder')}
                       className={`w-full bg-zinc-950 border ${errors.owner_password ? "border-red-500" : "border-zinc-800"} rounded-xl pl-3 pr-10 py-2.5 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-zinc-100 placeholder-zinc-600`}
                     />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 cursor-pointer">
@@ -350,9 +360,9 @@ export const SaaSRegisterPage: React.FC = () => {
 
               {/* Plan Selection */}
               <div className="border-t border-zinc-800 pt-4 mt-2">
-                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
-                  {isEn ? "CHOOSE PLAN" : "CHỌN GÓI DỊCH VỤ"}
-                </p>
+                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
+                   {t('saas_register_plan_title')}
+                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {plans.map((plan) => (
                     <button
@@ -361,7 +371,7 @@ export const SaaSRegisterPage: React.FC = () => {
                       onClick={() => update("plan_type", plan.value)}
                       className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${form.plan_type === plan.value ? plan.color + " ring-1 ring-white/20" : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"}`}
                     >
-                      <div className="text-[10px] font-extrabold text-zinc-300 uppercase">{isEn ? plan.labelEn : plan.labelVi}</div>
+                       <div className="text-[10px] font-extrabold text-zinc-300 uppercase">{t(plan.labelKey)}</div>
                       <div className="text-xs font-bold text-white mt-1">{plan.price}</div>
                       {form.plan_type === plan.value && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mt-2" />}
                     </button>
@@ -379,7 +389,7 @@ export const SaaSRegisterPage: React.FC = () => {
                 {googleSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {isEn ? "Connecting Google..." : "Đang kết nối Google..."}
+                    {t('saas_register_google_connecting')}
                   </>
                 ) : (
                   <>
@@ -389,7 +399,7 @@ export const SaaSRegisterPage: React.FC = () => {
                       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                     </svg>
-                    {isEn ? "Sign up with Google" : "Đăng ký bằng Google"}
+                    {t('saas_register_google')}
                   </>
                 )}
               </button>
@@ -403,12 +413,12 @@ export const SaaSRegisterPage: React.FC = () => {
                 {submitting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    {isEn ? "Creating workspace..." : "Đang khởi tạo..."}
+                    {t('saas_register_submitting')}
                   </>
                 ) : (
                   <>
                     <Building2 className="w-4 h-4" />
-                    {isEn ? "Create Workspace" : "Tạo không gian làm việc"}
+                    {t('saas_register_submit')}
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -422,43 +432,41 @@ export const SaaSRegisterPage: React.FC = () => {
               <div className="flex items-center gap-2 mb-3">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400">
-                  {isEn ? "WHAT YOU GET" : "BẠN NHẬN ĐƯỢC GÌ"}
+                  {t('saas_register_what_you_get')}
                 </h3>
               </div>
               <ul className="space-y-3 text-xs text-zinc-300">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                  {isEn ? "Full ERP module access (Inventory, Sales, Accounting, CRM, Purchasing)" : "Toàn bộ module ERP (Kho, Bán hàng, Kế toán, CRM, Mua hàng)"}
+                  {t('saas_register_benefit_1')}
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                  {isEn ? "Multi-user & role-based permissions (RBAC)" : "Đa người dùng & phân quyền RBAC"}
+                  {t('saas_register_benefit_2')}
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                  {isEn ? "Multi-branch & multi-warehouse support" : "Hỗ trợ đa chi nhánh & đa kho"}
+                  {t('saas_register_benefit_3')}
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                  {isEn ? "Vietnamese accounting standards (TT200) & VAT filing" : "Chuẩn kế toán Việt Nam (TT200) & kê khai thuế GTGT"}
+                  {t('saas_register_benefit_4')}
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                  {isEn ? "WebShop storefront for each tenant" : "Cửa hàng WebShop riêng cho từng doanh nghiệp"}
+                  {t('saas_register_benefit_5')}
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                  {isEn ? "Complete data isolation between companies" : "Cách ly dữ liệu hoàn toàn giữa các công ty"}
+                  {t('saas_register_benefit_6')}
                 </li>
               </ul>
             </div>
 
             <div className="mt-8 pt-4 border-t border-zinc-800/60">
-              <p className="text-[11px] text-zinc-500 leading-relaxed">
-                {isEn
-                  ? "By registering, you agree to our Terms of Service and Privacy Policy. Your data is securely stored and isolated per tenant."
-                  : "Bằng cách đăng ký, bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật. Dữ liệu được lưu trữ an toàn và cách ly theo từng doanh nghiệp."}
-              </p>
+               <p className="text-[11px] text-zinc-500 leading-relaxed">
+                 {t('saas_register_terms')}
+               </p>
             </div>
           </div>
         </div>

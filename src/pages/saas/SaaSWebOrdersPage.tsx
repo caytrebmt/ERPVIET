@@ -27,6 +27,7 @@ import { DataTable } from '../../components/DataTable';
 import { SaaSPrintModal } from '../../components/SaaSPrintModal';
 import { SaaSDateFilterBar, DateFilterValue, filterByDateRange } from '../../components/SaaSDateFilterBar';
 import { useToast } from '../../contexts/ToastContext';
+import { useTranslation } from 'react-i18next';
 import { generateERPCode, readVietnameseNumber } from '../../utils/format';
 import client from '../../api/client';
 
@@ -66,6 +67,7 @@ export interface WebOrder {
 }
 
 export const SaaSWebOrdersPage: React.FC = () => {
+  const { t } = useTranslation();
   const { addToast } = useToast();
   const [orders, setOrders] = useState<WebOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,11 +126,11 @@ export const SaaSWebOrdersPage: React.FC = () => {
       });
 
       if (res.data?.ok) {
-        addToast(`Đã duyệt đơn ${order.code} và tự động chuyển thành Phiếu Xuất Kho ${pxCode}!`, 'success');
+        addToast(t('saas_web_orders_da_duyet_d_n_order_code_va_tu_dong_chuyen_thanh_phieu_xuat_kho_pxcode', { order_code: order.code, pxCode }), 'success');
         fetchWebOrders();
       }
     } catch (err) {
-      addToast('Lỗi khi duyệt đơn hàng', 'error');
+      addToast(t('saas_web_orders_loi_khi_duyet_d_n_hang'), 'error');
     }
   };
 
@@ -141,12 +143,12 @@ export const SaaSWebOrdersPage: React.FC = () => {
       });
 
       if (res.data?.ok) {
-        addToast(`Đã cập nhật đơn ${order.code} -> Giao Hàng Thành Công (Đã chuyển trạng thái Hoàn Tất/Finish)!`, 'success');
+        addToast(t('saas_web_orders_da_cap_nhat_d_n_order_code_giao_hang_thanh_cong_da_chuyen_trang_thai_hoan_tat_finish', { order_code: order.code }), 'success');
         fetchWebOrders();
         if (detailModalOpen) setDetailModalOpen(false);
       }
     } catch (err) {
-      addToast('Không thể cập nhật giao hàng thành công', 'error');
+      addToast(t('saas_web_orders_khong_the_cap_nhat_giao_hang_thanh_cong'), 'error');
     }
   };
 
@@ -173,13 +175,13 @@ export const SaaSWebOrdersPage: React.FC = () => {
       });
 
       if (res.data?.ok) {
-        addToast(`Đã cập nhật đơn ${selectedOrder.code} -> ${editingStatus.erpStatus} (Trạng thái Web: ${targetStatus === 'completed' ? 'Hoàn Tất / Finish' : targetStatus})`, 'success');
+        addToast(t('saas_web_orders_da_cap_nhat_don', { order_code: selectedOrder.code, erp_status: editingStatus.erpStatus, web_status: targetStatus === 'completed' ? t('saas_web_orders_hoan_tat_finish') : targetStatus }), 'success');
         setStatusModalOpen(false);
         if (detailModalOpen) setDetailModalOpen(false);
         fetchWebOrders();
       }
     } catch (err) {
-      addToast('Không thể cập nhật trạng thái', 'error');
+      addToast(t('saas_web_orders_khong_the_cap_nhat_trang_thai'), 'error');
     }
   };
 
@@ -206,7 +208,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
   const columns: ColumnDef<WebOrder>[] = [
     {
       accessorKey: 'code',
-      header: 'Mã Đơn Web',
+      header: t('saas_web_orders_ma_d_n_web'),
       cell: ({ row, getValue }) => (
         <button
           onClick={() => {
@@ -214,7 +216,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
             setDetailModalOpen(true);
           }}
           className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors cursor-pointer p-0 bg-transparent inline-flex items-center gap-1"
-          title="Click vào mã đơn để xem chi tiết đơn hàng"
+          title={t('saas_web_orders_click_vao_ma_d_n_de_xem_chi_tiet_d_n_hang')}
         >
           {getValue() as string}
         </button>
@@ -222,7 +224,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
     },
     {
       accessorKey: 'createdAt',
-      header: 'Thời Gian Đặt',
+      header: t('saas_web_orders_thoi_gian_d_t'),
       cell: (info) => {
         const val = info.getValue() as string;
         const d = new Date(val);
@@ -235,7 +237,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
     },
     {
       accessorKey: 'customerName',
-      header: 'Khách Hàng & Địa Chỉ',
+      header: t('saas_web_orders_khach_hang_dia_chi'),
       cell: (info) => (
         <div className="text-xs max-w-xs">
           <p className="font-bold text-zinc-900 dark:text-zinc-100">{info.getValue() as string}</p>
@@ -250,7 +252,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
     },
     {
       id: 'items_summary',
-      header: 'Sản Phẩm Đặt Mua',
+      header: t('saas_web_orders_san_pham_d_t_mua'),
       cell: ({ row }) => {
         const items = row.original.items || [];
         return (
@@ -274,7 +276,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
     },
     {
       accessorKey: 'paymentMethod',
-      header: 'Thanh Toán',
+      header: t('saas_web_orders_thanh_toan'),
       cell: (info) => (
         <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
           {info.getValue() as string}
@@ -283,7 +285,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
     },
     {
       accessorKey: 'total_amount',
-      header: 'Tổng Giá Trị',
+      header: t('saas_web_orders_tong_gia_tri'),
       cell: (info) => (
         <span className="font-bold text-emerald-600 dark:text-emerald-400">
           {(info.getValue() as number).toLocaleString('vi-VN')} đ
@@ -292,7 +294,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
     },
     {
       accessorKey: 'erp_status',
-      header: 'Trạng Thái ERP',
+      header: t('saas_web_orders_trang_thai_erp'),
       cell: (info) => {
         const val = (info.getValue() as string) || 'Mới';
         const isApproved = val.includes('PXK') || val.includes('Đã duyệt');
@@ -325,7 +327,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
     },
     {
       id: 'actions',
-      header: 'Xử Lý ERP',
+      header: t('saas_web_orders_xu_ly_erp'),
       cell: ({ row }) => {
         const order = row.original;
         const erpStatus = order.erp_status || '';
@@ -342,7 +344,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                 setDetailModalOpen(true);
               }}
               className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 transition-colors"
-              title="Xem Chi Tiết Đơn Hàng Web"
+              title={t('saas_web_orders_xem_chi_tiet_d_n_hang_web')}
             >
               <Eye className="h-4 w-4" />
             </button>
@@ -351,9 +353,9 @@ export const SaaSWebOrdersPage: React.FC = () => {
               <button
                 onClick={() => handleApproveAndCreatePXK(order)}
                 className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-lg text-xs flex items-center gap-1 shadow-xs transition-all"
-                title="Duyệt đơn và tự động lập phiếu xuất kho ERP"
+                title={t('saas_web_orders_duyet_d_n_va_tu_dong_lap_phieu_xuat_kho_erp')}
               >
-                <CheckCircle2 className="h-3.5 w-3.5" /> Duyệt & PXK
+                <CheckCircle2 className="h-3.5 w-3.5" /> {t('saas_web_orders_duyet_pxk')}
               </button>
             )}
 
@@ -368,9 +370,9 @@ export const SaaSWebOrdersPage: React.FC = () => {
                   setStatusModalOpen(true);
                 }}
                 className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold rounded-lg text-xs flex items-center gap-1 shadow-xs transition-all"
-                title="Bàn giao hàng cho đơn vị vận chuyển Shipper"
+                title={t('saas_web_orders_ban_giao_hang_cho_d_n_vi_van_chuyen_shipper')}
               >
-                <Truck className="h-3.5 w-3.5" /> Bàn giao Shipper
+                <Truck className="h-3.5 w-3.5" /> {t('saas_web_orders_ban_giao_shipper')}
               </button>
             )}
 
@@ -378,15 +380,15 @@ export const SaaSWebOrdersPage: React.FC = () => {
               <button
                 onClick={() => handleMarkDelivered(order)}
                 className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer"
-                title="Xác nhận giao thành công & chuyển trạng thái sang Hoàn Tất (Finish)"
+                title={t('saas_web_orders_xac_nhan_giao_thanh_cong_chuyen_trang_thai_sang_hoan_tat_finish')}
               >
-                <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> Giao Thành Công
+                <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> {t('saas_web_orders_giao_thanh_cong')}
               </button>
             )}
 
             {isCompleted && (
               <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
-                ✓ Hoàn Tất
+                {t('saas_web_orders_hoan_tat')}
               </span>
             )}
 
@@ -400,7 +402,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                 setStatusModalOpen(true);
               }}
               className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 transition-colors"
-              title="Cập nhật Tiến độ Đóng gói & Vận chuyển Shipper"
+              title={t('saas_web_orders_cap_nhat_tien_do_dong_goi_van_chuyen_shipper')}
             >
               <Truck className="h-4 w-4" />
             </button>
@@ -411,7 +413,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                 setPrintModalOpen(true);
               }}
               className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-amber-500 transition-colors"
-              title="In Chứng Từ"
+              title={t('saas_web_orders_in_chung_t')}
             >
               <Printer className="h-4 w-4" />
             </button>
@@ -427,10 +429,10 @@ export const SaaSWebOrdersPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <ShoppingBag className="h-6 w-6 text-amber-500" /> Quản Lý Đơn Hàng WebShop (E-Commerce Sync)
+            <ShoppingBag className="h-6 w-6 text-amber-500" /> {t('saas_web_orders_quan_ly_d_n_hang_webshop_e_commerce_sync')}
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Đồng bộ đơn hàng trực tiếp từ gian hàng WebShop Online, duyệt đơn và tự động sinh Phiếu Xuất Kho (PX) vào ERP.
+            {t('saas_web_orders_dong_bo_d_n_hang_truc_tiep_t_gian_hang_webshop_online_duyet_d_n_va_tu_dong_sinh_phieu_xuat_kho_px_vao_erp')}
           </p>
         </div>
 
@@ -440,13 +442,13 @@ export const SaaSWebOrdersPage: React.FC = () => {
             disabled={loading}
             className="px-3 py-2 text-xs font-bold rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 transition-colors"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Đồng bộ mới
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> {t('saas_web_orders_dong_bo_moi')}
           </button>
           <a
             href="/saas/stock-out"
             className="px-3.5 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 flex items-center gap-1.5 shadow-xs transition-colors"
           >
-            <ArrowUpRight className="h-4 w-4" /> Xem Sổ Xuất Kho
+            <ArrowUpRight className="h-4 w-4" /> {t('saas_web_orders_xem_so_xuat_kho')}
           </a>
         </div>
       </div>
@@ -455,40 +457,40 @@ export const SaaSWebOrdersPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-zinc-500 uppercase">Tổng Đơn WebShop</span>
+            <span className="text-xs font-semibold text-zinc-500 uppercase">{t('saas_web_orders_tong_d_n_webshop')}</span>
             <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600">
               <ShoppingBag className="h-4 w-4" />
             </div>
           </div>
-          <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-2">{totalCount} đơn</h3>
-          <p className="text-[11px] text-zinc-400 mt-1">Khách hàng đặt hàng trực tuyến</p>
+          <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-2">{totalCount} {t('saas_web_orders_don')}</h3>
+          <p className="text-[11px] text-zinc-400 mt-1">{t('saas_web_orders_khach_hang_dat_hang_truc_tuyen')}</p>
         </div>
 
         <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-amber-600 uppercase">Chờ Duyệt Xuất Kho</span>
+            <span className="text-xs font-semibold text-amber-600 uppercase">{t('saas_web_orders_cho_duyet_xuat_kho')}</span>
             <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600">
               <Clock className="h-4 w-4" />
             </div>
           </div>
-          <h3 className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">{pendingCount} đơn</h3>
-          <p className="text-[11px] text-zinc-400 mt-1">Cần bấm "Duyệt & PXK" để xuất hàng</p>
+          <h3 className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">{pendingCount} {t('saas_web_orders_don')}</h3>
+          <p className="text-[11px] text-zinc-400 mt-1">{t('saas_web_orders_can_bam_duyet_pxk_de_xuat_hang')}</p>
         </div>
 
         <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-emerald-600 uppercase">Đã Lập Phiếu PXK</span>
+            <span className="text-xs font-semibold text-emerald-600 uppercase">{t('saas_web_orders_da_lap_phieu_pxk')}</span>
             <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
               <CheckCircle2 className="h-4 w-4" />
             </div>
           </div>
-          <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">{approvedCount} đơn</h3>
-          <p className="text-[11px] text-zinc-400 mt-1">Đã đưa vào sổ xuất kho ERP</p>
+          <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">{approvedCount} {t('saas_web_orders_don')}</h3>
+          <p className="text-[11px] text-zinc-400 mt-1">{t('saas_web_orders_da_dua_vao_so_xuat_kho_erp')}</p>
         </div>
 
         <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-zinc-500 uppercase">Doanh Thu WebShop</span>
+            <span className="text-xs font-semibold text-zinc-500 uppercase">{t('saas_web_orders_doanh_thu_webshop')}</span>
             <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600">
               <DollarSign className="h-4 w-4" />
             </div>
@@ -496,7 +498,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
           <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-2">
             {totalRevenue.toLocaleString('vi-VN')} đ
           </h3>
-          <p className="text-[11px] text-zinc-400 mt-1">Tổng tiền các đơn đã chốt</p>
+          <p className="text-[11px] text-zinc-400 mt-1">{t('saas_web_orders_tong_tien_cac_d_n_da_chot')}</p>
         </div>
       </div>
 
@@ -513,7 +515,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
               : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
           }`}
         >
-          Tất cả đơn ({orders.length})
+          {t('saas_web_orders_tat_ca_don')} ({orders.length})
         </button>
         <button
           onClick={() => setActiveTab('pending')}
@@ -523,7 +525,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
               : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
           }`}
         >
-          <Clock className="h-3.5 w-3.5 text-amber-500" /> Chờ duyệt ERP ({pendingCount})
+          <Clock className="h-3.5 w-3.5 text-amber-500" /> {t('saas_web_orders_cho_duyet_erp')} ({pendingCount})
         </button>
         <button
           onClick={() => setActiveTab('approved')}
@@ -533,7 +535,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
               : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
           }`}
         >
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Đã lập PXK ({approvedCount})
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> {t('saas_web_orders_da_lap_pxk')} ({approvedCount})
         </button>
       </div>
 
@@ -541,7 +543,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
       <DataTable
         columns={columns}
         data={filtered}
-        searchPlaceholder="Tìm mã đơn WEB-..., tên khách hàng, số điện thoại..."
+        searchPlaceholder={t('saas_web_orders_tim_ma_d_n_web_ten_khach_hang_so_dien_thoai')}
       />
 
       {/* Order Detail Modal */}
@@ -554,7 +556,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                   {selectedOrder.code}
                 </span>
                 <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mt-1">
-                  Chi Tiết Đơn Hàng Khách Đặt Online
+                   {t('saas_web_orders_chi_tiet_d_n_hang_khach_d_t_online')}
                 </h3>
               </div>
               <button
@@ -569,12 +571,12 @@ export const SaaSWebOrdersPage: React.FC = () => {
               {/* Buyer Info */}
               <div className="bg-zinc-50 dark:bg-zinc-800/60 p-4 rounded-xl space-y-2 text-xs">
                 <h4 className="font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider flex items-center gap-1">
-                  <User className="h-4 w-4 text-amber-500" /> Thông Tin Người Nhận Hàng
+                   <User className="h-4 w-4 text-amber-500" /> {t('saas_web_orders_thong_tin_ng_oi_nhan_hang')}
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-zinc-700 dark:text-zinc-300">
                   <p>Họ tên: <strong className="text-zinc-900 dark:text-zinc-100">{selectedOrder.customerName}</strong></p>
                   <p>Số điện thoại: <strong className="text-zinc-900 dark:text-zinc-100">{selectedOrder.customerPhone}</strong></p>
-                  <p className="col-span-2">Email: <strong>{selectedOrder.customerEmail || 'Chưa cung cấp'}</strong></p>
+                  <p className="col-span-2">Email: <strong>                   {selectedOrder.customerEmail || t('saas_web_orders_ch_a_cung_cap')}</strong></p>
                   <p className="col-span-2">Địa chỉ giao: <strong>{selectedOrder.shippingAddress}</strong></p>
                   <p className="col-span-2">Phương thức thanh toán: <strong className="text-indigo-600">{selectedOrder.paymentMethod}</strong></p>
                   {selectedOrder.note && <p className="col-span-2 text-amber-600 font-medium">Ghi chú: "{selectedOrder.note}"</p>}
@@ -583,17 +585,17 @@ export const SaaSWebOrdersPage: React.FC = () => {
 
               {/* Items Table */}
               <div>
-                <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 mb-2">Danh Sách Mặt Hàng Đặt Mua</h4>
+                                 <h4 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 mb-2">{t('saas_web_orders_danh_sach_mat_hang_dat_mua')}</h4>
                 <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
                   <table className="w-full text-xs text-left">
                     <thead className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold">
                       <tr>
                         <th className="p-2.5">STT</th>
-                        <th className="p-2.5">Tên Sản Phẩm</th>
+                        <th className="p-2.5">{t('saas_web_orders_ten_san_pham')}</th>
                         <th className="p-2.5 text-center">SKU</th>
-                        <th className="p-2.5 text-right">Đơn Giá</th>
+                        <th className="p-2.5 text-right">{t('saas_web_orders_d_n_gia')}</th>
                         <th className="p-2.5 text-center">SL</th>
-                        <th className="p-2.5 text-right">Thành Tiền</th>
+                        <th className="p-2.5 text-right">{t('saas_web_orders_thanh_tien')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -617,15 +619,15 @@ export const SaaSWebOrdersPage: React.FC = () => {
               {/* Financial summary */}
               <div className="bg-zinc-50 dark:bg-zinc-800/60 p-4 rounded-xl flex flex-col gap-1.5 text-xs text-right">
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">Tiền hàng tạm tính:</span>
+                   <span className="text-zinc-500">{t('saas_web_orders_tien_hang_tam_tinh')}</span>
                   <span className="font-semibold">{selectedOrder.subtotal_amount?.toLocaleString('vi-VN')} đ</span>
                 </div>
                 <div className="flex justify-between text-emerald-600">
-                  <span>Thuế VAT (10%):</span>
+                   <span>{t('saas_web_orders_thue_vat_10')}</span>
                   <span>+{(selectedOrder.vat_amount || 0).toLocaleString('vi-VN')} đ</span>
                 </div>
                 <div className="flex justify-between text-base font-black text-zinc-900 dark:text-zinc-100 pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                  <span>Tổng tiền thanh toán:</span>
+                   <span>{t('saas_web_orders_tong_tien_thanh_toan')}</span>
                   <span className="text-amber-500">{selectedOrder.total_amount?.toLocaleString('vi-VN')} đ</span>
                 </div>
                 <p className="text-[11px] text-zinc-500 italic mt-1">
@@ -639,7 +641,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                 onClick={() => setDetailModalOpen(false)}
                 className="px-4 py-2 text-xs font-semibold rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200"
               >
-                Đóng
+                   {t('saas_web_orders_dong')}
               </button>
 
               {(selectedOrder.erp_status.includes('Chờ') || selectedOrder.status === 'new') && (
@@ -650,7 +652,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                   }}
                   className="px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 flex items-center gap-1.5 shadow-xs"
                 >
-                  <CheckCircle2 className="h-4 w-4" /> Duyệt & Tạo Phiếu Xuất Kho ERP
+                    <CheckCircle2 className="h-4 w-4" /> {t('saas_web_orders_duyet_tao_phieu_xuat_kho_erp')}
                 </button>
               )}
 
@@ -669,7 +671,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                     }}
                     className="px-4 py-2 text-xs font-bold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-zinc-950 flex items-center gap-1.5 shadow-xs"
                   >
-                    <Truck className="h-4 w-4" /> Bàn giao Shipper Vận Chuyển
+                    <Truck className="h-4 w-4" /> {t('saas_web_orders_ban_giao_shipper_van_chuyen')}
                   </button>
                 )}
 
@@ -680,7 +682,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                     onClick={() => handleMarkDelivered(selectedOrder)}
                     className="px-4 py-2 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5 shadow-xs cursor-pointer"
                   >
-                    <CheckCircle2 className="h-4 w-4 text-amber-400" /> Xác Nhận Giao Thành Công
+                    <CheckCircle2 className="h-4 w-4 text-amber-400" /> {t('saas_web_orders_xac_nhan_giao_thanh_cong')}
                   </button>
                 )}
             </div>
@@ -736,31 +738,31 @@ export const SaaSWebOrdersPage: React.FC = () => {
             <form onSubmit={handleUpdateStatusSubmit} className="py-4 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Trạng Thái ERP & Vận Chuyển:
+                  {t('saas_web_orders_trang_thai_erp_van_chuyen')}:
                 </label>
                 <select
                   value={editingStatus.erpStatus}
                   onChange={(e) => setEditingStatus({ ...editingStatus, erpStatus: e.target.value })}
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
-                  <option value="Chờ duyệt ERP">Chờ duyệt ERP (Mới tạo)</option>
-                  <option value="Đã duyệt - Đã tạo PXK">Đã duyệt - Đã lập Phiếu Xuất Kho</option>
-                  <option value="Đã đóng gói & Bàn giao Shipper">Đã đóng gói & Bàn giao Shipper</option>
-                  <option value="Đang vận chuyển (In Transit)">Đang vận chuyển (In Transit)</option>
-                  <option value="Giao hàng thành công">Giao hàng thành công (Hoàn thành)</option>
-                  <option value="Đã hủy đơn">Đã hủy đơn</option>
+                <option value="Chờ duyệt ERP">{t('saas_web_orders_cho_duyet_erp')} (Mới tạo)</option>
+                <option value="Đã duyệt - Đã tạo PXK">{t('saas_web_orders_da_duyet_da_tao_pxk')} (Đã lập Phiếu Xuất Kho)</option>
+                <option value="Đã đóng gói & Bàn giao Shipper">{t('saas_web_orders_da_dong_goi_ban_giao_shipper')}</option>
+                <option value="Đang vận chuyển (In Transit)">{t('saas_web_orders_dang_van_chuyen_in_transit')}</option>
+                <option value="Giao hàng thành công">{t('saas_web_orders_giao_hang_thanh_cong')} ({t('saas_web_orders_hoan_thanh')})</option>
+                <option value="Đã hủy đơn">{t('saas_web_orders_da_huy_d_n')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Ghi Chú Vận Đơn / Thông Tin Shipper:
+                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
+                  {t('saas_web_orders_ghi_chu_van_d_n_thong_tin_shipper')}:
                 </label>
                 <textarea
                   rows={3}
                   value={editingStatus.erpNote}
                   onChange={(e) => setEditingStatus({ ...editingStatus, erpNote: e.target.value })}
-                  placeholder="Ví dụ: Đã đóng gói xong, giao cho Shipper Nguyễn Văn A (GHN: #GHN998822)..."
+                  placeholder={t('saas_web_orders_vi_du_da_dong_goi_xong_giao_cho_shipper_nguyen_v_n_a_ghn_ghn998822')}
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
@@ -771,13 +773,13 @@ export const SaaSWebOrdersPage: React.FC = () => {
                   onClick={() => setStatusModalOpen(false)}
                   className="px-4 py-2 text-xs font-semibold rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200"
                 >
-                  Hủy
+                  {t('saas_web_orders_huy')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 text-xs font-bold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-zinc-950 flex items-center gap-1 shadow-xs"
                 >
-                  <CheckCircle2 className="h-4 w-4" /> Lưu & Đồng Bộ Sang Web
+                  <CheckCircle2 className="h-4 w-4" /> {t('saas_web_orders_luu_dong_bo_sang_web')}
                 </button>
               </div>
             </form>

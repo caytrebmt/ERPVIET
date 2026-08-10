@@ -8,8 +8,10 @@ import { useToast } from "../contexts/ToastContext";
 import { formatPrice } from "../utils/format";
 import { getProductImageSrc } from "../utils/images";
 import ProductCard from "../components/ProductCard";
+import { useTranslation } from "react-i18next";
 
 const ProductPage: React.FC = () => {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -58,12 +60,12 @@ const ProductPage: React.FC = () => {
             setRelatedProducts(filtered.slice(0, 4));
           }
         } else {
-          showToast("Không thể tìm thấy thông tin sản phẩm này.", "error");
+          showToast(t("page_product_not_found"), "error");
           navigate("/");
         }
       } catch (err) {
         console.error("Error loading product details", err);
-        const message = err instanceof Error ? err.message : "Có lỗi xảy ra khi tải thông tin sản phẩm.";
+        const message = err instanceof Error ? err.message : t("page_product_not_found");
         showToast(message, "error");
         navigate("/");
       } finally {
@@ -234,9 +236,9 @@ const ProductPage: React.FC = () => {
             </div>
 
             {/* Quantity Picker & Add to Cart Controls */}
-            <div className="flex items-center gap-3 mt-2">
-              {!isOutOfStock && !showContact && (
-                <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-950 h-11 shrink-0 shadow-2xs">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
+                {!isOutOfStock && !showContact && (
+                  <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-950 h-10 sm:h-11 shrink-0 shadow-2xs">
                   <button
                     onClick={handleDecrement}
                     disabled={quantity <= 1}
@@ -271,17 +273,19 @@ const ProductPage: React.FC = () => {
               <button
                 onClick={handleAddToCart}
                 disabled={isOutOfStock || showContact || adding}
-                className="flex-1 h-11 bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.99] disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+                className="flex-1 min-w-[120px] sm:min-w-0 h-10 sm:h-11 bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.99] disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all shadow-xs cursor-pointer"
               >
                 {adding ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang thêm...
+                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                    <span className="hidden sm:inline">Đang thêm...</span>
+                    <span className="sm:hidden">...</span>
                   </>
                 ) : (
                   <>
-                    <ShoppingCart className="w-4 h-4" />
-                    Thêm vào giỏ hàng
+                    <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Thêm vào giỏ hàng</span>
+                    <span className="sm:hidden">Thêm</span>
                   </>
                 )}
               </button>

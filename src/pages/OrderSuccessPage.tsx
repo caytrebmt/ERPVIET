@@ -5,8 +5,10 @@ import client from "../api/client";
 import { Order } from "../types";
 import { formatPrice, formatDate } from "../utils/format";
 import { useToast } from "../contexts/ToastContext";
+import { useTranslation } from "react-i18next";
 
 const OrderSuccessPage: React.FC = () => {
+  const { t } = useTranslation();
   const { code } = useParams<{ code: string }>();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ const OrderSuccessPage: React.FC = () => {
     if (!order) return;
     navigator.clipboard.writeText(order.code);
     setCopied(true);
-    showToast("Đã sao chép mã đơn hàng!", "success");
+    showToast(t("page_order_success_copied"), "success");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -44,7 +46,7 @@ const OrderSuccessPage: React.FC = () => {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-2" />
-        <p className="text-xs text-gray-500 dark:text-gray-400">Đang chuẩn bị xác nhận đơn hàng...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{t("page_order_success_loading")}</p>
       </div>
     );
   }
@@ -53,9 +55,11 @@ const OrderSuccessPage: React.FC = () => {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center text-center p-4">
         <PackageOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-2" />
-        <h3 className="font-semibold text-gray-750 dark:text-gray-200">Không tìm thấy đơn hàng</h3>
+        <h3 className="font-semibold text-gray-750 dark:text-gray-200">{t("page_order_success_not_found")}</h3>
         <p className="text-xs text-gray-500 dark:text-gray-450 mt-1">
-          Mã đơn hàng <strong className="text-indigo-600 dark:text-indigo-400">"{code}"</strong> không hợp lệ hoặc không có quyền truy cập.
+          <p className="text-xs text-gray-500 dark:text-gray-450 mt-1">
+            {t("page_order_success_invalid")} <strong className="text-indigo-600 dark:text-indigo-400">"{code}"</strong>
+          </p>
         </p>
         <Link to="/" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-4">
           Quay lại trang chủ
@@ -82,14 +86,14 @@ const OrderSuccessPage: React.FC = () => {
         </p>
 
         {/* Copyable Order Code badge */}
-        <div className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2.5 mt-2 flex items-center gap-3 select-all">
-          <span className="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase">Mã đơn hàng:</span>
-          <span className="font-mono text-sm font-bold text-gray-950 dark:text-white">{order.code}</span>
+        <div className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-800 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 mt-2 flex flex-wrap items-center gap-2 sm:gap-3 select-all">
+          <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase">Mã đơn hàng:</span>
+          <span className="font-mono text-sm font-bold text-gray-950 dark:text-white truncate">{order.code}</span>
           <button
             onClick={copyCodeToClipboard}
-            className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-bold flex items-center gap-1 cursor-pointer hover:underline border-l border-gray-200 dark:border-gray-850 pl-3"
+            className="text-[10px] sm:text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-bold flex items-center gap-1 cursor-pointer hover:underline border-l border-gray-200 dark:border-gray-850 pl-2 sm:pl-3 whitespace-nowrap"
           >
-            <ClipboardCheck className="w-4 h-4 shrink-0" />
+            <ClipboardCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             {copied ? "Đã chép" : "Sao chép"}
           </button>
         </div>

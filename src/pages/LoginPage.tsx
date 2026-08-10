@@ -4,8 +4,10 @@ import { LogIn, Mail, Lock, Loader2, ArrowRight, Eye, EyeOff } from "lucide-reac
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { storage } from "../utils/storage";
+import { useTranslation } from "react-i18next";
 
 const LoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const { login, isAuthenticated, loading } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -28,7 +30,7 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      showToast("Vui lòng điền đầy đủ email và mật khẩu", "error");
+      showToast(t("page_login_email_password_required"), "error");
       return;
     }
 
@@ -42,7 +44,7 @@ const LoginPage: React.FC = () => {
         showToast(result.message, "error");
       }
     } catch (err) {
-      showToast("Có lỗi xảy ra khi kết nối máy chủ", "error");
+      showToast(t("page_login_server_error"), "error");
     } finally {
       setSubmitting(false);
     }
@@ -151,7 +153,7 @@ const LoginPage: React.FC = () => {
                try {
                  const clientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
                  if (!clientId || typeof window === 'undefined' || !(window as any).google?.accounts?.oauth2) {
-                   showToast('Không thể khởi tạo đăng nhập Google.', 'error');
+                    showToast(t("page_login_google_init_failed"), "error");
                    return;
                  }
                  setSubmitting(true);
@@ -175,13 +177,13 @@ const LoginPage: React.FC = () => {
                            storage.setAccessToken(data.data.access_token);
                            storage.setRefreshToken(data.data.refresh_token);
                            storage.setUser(data.data.customer);
-                           showToast(data.message || 'Đăng nhập Google thành công!', 'success');
+                            showToast(data.message || t("api_auth_google_login_success"), "success");
                            navigate(from, { replace: true });
                          } else {
                            showToast(data.message || 'Đăng nhập Google thất bại.', 'error');
                          }
                        } catch (e) {
-                         showToast('Lỗi kết nối máy chủ.', 'error');
+                          showToast(t("page_login_google_server_error"), "error");
                        } finally {
                          setSubmitting(false);
                        }
@@ -192,7 +194,7 @@ const LoginPage: React.FC = () => {
                  });
                  tokenClient.requestAccessToken();
                } catch (e) {
-                 showToast('Lỗi kết nối đăng nhập Google.', 'error');
+                  showToast(t("page_login_google_connect_error"), "error");
                  setSubmitting(false);
                }
              }}

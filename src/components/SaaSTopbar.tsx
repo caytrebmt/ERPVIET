@@ -134,8 +134,8 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
           title={t('topbar_language_toggle')}
         >
           <Globe className="h-3.5 w-3.5 text-blue-500" />
-          <span className="uppercase">{language}</span>
-          <span className="text-[10px] text-zinc-400">({language === 'vi' ? '🇻🇳 VN' : '🇬🇧 EN'})</span>
+          <span className="uppercase">{language === 'vi' ? 'EN' : 'VI'}</span>
+          <span className="text-[10px] text-zinc-400">({language === 'vi' ? '🇬🇧 EN' : '🇻🇳 VN'})</span>
         </button>
 
         {/* Theme Toggle */}

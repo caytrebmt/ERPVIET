@@ -35,7 +35,15 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import client from '../api/client';
+
+export interface Department {
+  id: string;
+  code: string;
+  nameVi: string;
+  nameEn: string;
+}
 
 export interface SaasUserItem {
   id: string;
@@ -44,6 +52,7 @@ export interface SaasUserItem {
   email: string;
   phone: string;
   department: string;
+  departmentId?: string;
   roleId: string;
   roleName: string;
   status: 'active' | 'locked';
@@ -171,6 +180,7 @@ const INITIAL_USERS: SaasUserItem[] = [];
 export const SaaSUsersRbacTab: React.FC = () => {
   const { addToast } = useToast();
   const { language } = useLanguage();
+  const { t } = useTranslation();
 
   // Active view tab: 'users_list' | 'webshop_users' | 'roles_matrix'
   const [subTab, setSubTab] = useState<'users_list' | 'webshop_users' | 'roles_matrix'>('users_list');
@@ -201,18 +211,27 @@ export const SaaSUsersRbacTab: React.FC = () => {
       .then((res) => {
         const items = res.data?.data?.items || [];
         if (items.length > 0) {
-          const mapped = items.map((it: any, idx: number) => ({
-            id: it.id,
-            code: `KH${String(it.id || idx + 1).padStart(3, '0')}`,
-            name: it.name || it.email?.split('@')[0] || 'Khách hàng',
-            phone: it.phone || '0901234567',
-            email: it.email,
-            taxCode: '-',
-            type: (idx % 3 === 0 ? 'Khách sỉ' : idx % 3 === 1 ? 'Đại lý' : 'Khách lẻ'),
-            creditLimit: 50000000,
-            currentDebt: 0,
-            password: it.passwordHash || 'web12345',
-          }));
+          const knownHashes: Record<string, string> = {
+            '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C': 'web12345',
+          };
+
+          const mapped = items.map((it: any, idx: number) => {
+            const hash = it.passwordHash || '';
+            const plaintext = knownHashes[hash] || (hash && !hash.startsWith('$2') ? hash : '');
+            
+            return {
+              id: it.id,
+              code: `KH${String(it.id || idx + 1).padStart(3, '0')}`,
+              name: it.name || it.email?.split('@')[0] || 'Khách hàng',
+              phone: it.phone || '0901234567',
+              email: it.email,
+              taxCode: '-',
+              type: (idx % 3 === 0 ? 'Khách sỉ' : idx % 3 === 1 ? 'Đại lý' : 'Khách lẻ'),
+              creditLimit: 50000000,
+              currentDebt: 0,
+              password: plaintext,
+            };
+          });
           setWebshopUsers(mapped);
           localStorage.setItem('saas_webshop_customers', JSON.stringify(mapped));
         }
@@ -222,19 +241,113 @@ export const SaaSUsersRbacTab: React.FC = () => {
       });
   }, []);
 
-  // Load Users List from LocalStorage (ensure passwords present)
+  // Cached plaintext passwords (separate from usersList, survives hash reloads)
+  const [cachedPasswords, setCachedPasswords] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('saas_users_passwords');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  // Load Users List from API + LocalStorage fallback
   const [usersList, setUsersList] = useState<SaasUserItem[]>(() => {
     const saved = localStorage.getItem('saas_users_list');
     if (saved) {
       const parsed: SaasUserItem[] = JSON.parse(saved);
-      // Ensure passwords exist for older stored data
       return parsed.map((u, idx) => ({
         ...u,
-        password: u.password || (INITIAL_USERS[idx]?.password || '123456'),
+        password: (u.password && !u.password.startsWith('$2a$') && !u.password.startsWith('$2b$')) ? u.password : '',
       }));
     }
-    return INITIAL_USERS;
+    return [];
   });
+
+  // Load users from backend API
+  useEffect(() => {
+    client
+      .get('/api/saas/users')
+      .then((res) => {
+        const items = res.data?.data || [];
+        if (items.length > 0) {
+          // Load cached plaintext passwords from localStorage (separate storage)
+          const savedPasswords = localStorage.getItem('saas_users_passwords');
+          const cachedPasswords: Record<string, string> = {};
+          if (savedPasswords) {
+            try {
+              Object.assign(cachedPasswords, JSON.parse(savedPasswords));
+            } catch {}
+          }
+
+          // Known demo bcrypt hashes -> plaintext mapping (for seed data)
+          const knownHashes: Record<string, string> = {
+            '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C': 'web12345',
+          };
+
+          const mapped: SaasUserItem[] = items.map((u: any) => {
+            const hash = u.password_hash || '';
+            let plaintext = cachedPasswords[String(u.id)];
+            
+            // If no cached plaintext, check if it's a known demo hash
+            if (!plaintext && knownHashes[hash]) {
+              plaintext = knownHashes[hash];
+              cachedPasswords[String(u.id)] = plaintext;
+            }
+            
+            return {
+              id: String(u.id),
+              username: u.username,
+              fullName: u.full_name || u.username,
+              email: u.email || '',
+              phone: u.phone || '',
+              department: (language === 'en' ? u.dept_name_en : u.dept_name_vi) || u.department_id || 'Chưa phân bổ',
+              departmentId: u.dept_id ? String(u.dept_id) : '',
+              roleId: String(u.role_id || 5),
+              roleName: u.role_name_vi || u.role_name_en || 'Nhân Viên',
+              status: u.status === 'locked' ? 'locked' : 'active',
+              createdAt: u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+              password: plaintext || '',
+            };
+          });
+          
+          // Save updated cache with any newly discovered demo passwords
+          if (Object.keys(cachedPasswords).length > 0) {
+            localStorage.setItem('saas_users_passwords', JSON.stringify(cachedPasswords));
+            setCachedPasswords(cachedPasswords);
+          }
+          
+          persistUsers(mapped);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch ERP users from backend:', err);
+      });
+  }, []);
+
+  // Load Departments from backend
+   const [allDepartments, setAllDepartments] = useState<Department[]>(() => {
+    const saved = localStorage.getItem('saas_departments');
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return [];
+  });
+  useEffect(() => {
+    client
+      .get('/api/saas/departments')
+      .then((res) => {
+        if (res.data?.ok && Array.isArray(res.data.data)) {
+          const mapped: Department[] = res.data.data.map((d: any) => ({
+            id: String(d.id),
+            code: d.code || '',
+            nameVi: d.name_vi || '',
+            nameEn: d.name_en || d.name_vi || '',
+          }));
+          setAllDepartments(mapped);
+          localStorage.setItem('saas_departments', JSON.stringify(mapped));
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch departments:', err);
+      });
+  }, []);
 
   // Load Roles Matrix from LocalStorage
   const [rolesList, setRolesList] = useState<SystemRole[]>(() => {
@@ -269,7 +382,8 @@ export const SaaSUsersRbacTab: React.FC = () => {
     fullName: '',
     email: '',
     phone: '',
-    department: 'Kinh Doanh',
+    department: '',
+    departmentId: '',
     roleId: 'sales_rep',
     password: '',
     status: 'active' as 'active' | 'locked',
@@ -293,6 +407,16 @@ export const SaaSUsersRbacTab: React.FC = () => {
   const persistUsers = (newList: SaasUserItem[]) => {
     setUsersList(newList);
     localStorage.setItem('saas_users_list', JSON.stringify(newList));
+
+    // Extract and cache plaintext passwords separately so they survive backend reloads
+    const plaintextPasswords: Record<string, string> = {};
+    for (const u of newList) {
+      if (u.password && !u.password.startsWith('$2a$') && !u.password.startsWith('$2b$')) {
+        plaintextPasswords[u.id] = u.password;
+      }
+    }
+    localStorage.setItem('saas_users_passwords', JSON.stringify(plaintextPasswords));
+    setCachedPasswords(plaintextPasswords);
   };
 
   // Save Roles to Storage
@@ -346,7 +470,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
     setNewResetPassword(rand);
   };
 
-  const handleSaveResetPassword = (e: React.FormEvent) => {
+  const handleSaveResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (resetWebshopTargetUser) {
       if (!newResetPassword.trim()) {
@@ -373,30 +497,48 @@ export const SaaSUsersRbacTab: React.FC = () => {
       return;
     }
 
-    const updated = usersList.map((u) =>
-      u.id === resetTargetUser.id ? { ...u, password: newResetPassword.trim() } : u
-    );
-
-    persistUsers(updated);
-    addToast(
-      language === 'en'
-        ? `Password for ${resetTargetUser.fullName} successfully reset!`
-        : `Đã cấp lại mật khẩu mới cho ${resetTargetUser.fullName} thành công!`,
-      'success'
-    );
+    try {
+      await client.put(`/api/saas/users/${resetTargetUser.id}`, { password: newResetPassword.trim() });
+      const updated = usersList.map((u) =>
+        u.id === resetTargetUser.id ? { ...u, password: newResetPassword.trim() } : u
+      );
+      persistUsers(updated);
+      addToast(
+        language === 'en'
+          ? `Password for ${resetTargetUser.fullName} successfully reset!`
+          : `Đã cấp lại mật khẩu mới cho ${resetTargetUser.fullName} thành công!`,
+        'success'
+      );
+    } catch (err: any) {
+      addToast(err.response?.data?.message || (language === 'en' ? 'Password reset failed' : 'Cấp lại mật khẩu thất bại'), 'error');
+    }
     setIsResetModalOpen(false);
     setResetTargetUser(null);
+  };
+
+  // Role ID mapping: frontend string ID -> backend numeric ID
+  const mapRoleIdToBackend = (roleId: string): number => {
+    const map: Record<string, number> = {
+      'admin': 1,
+      'manager': 2,
+      'accountant': 3,
+      'warehouse_keeper': 4,
+      'sales_rep': 5,
+    };
+    return map[roleId] || 5;
   };
 
   // User Action Handlers
   const handleOpenAddUser = () => {
     setEditingUserId(null);
+    const defaultDept = allDepartments[0];
     setUserFormData({
       username: '',
       fullName: '',
       email: '',
       phone: '',
-      department: 'Kinh Doanh',
+      department: defaultDept ? (language === 'en' ? defaultDept.nameEn : defaultDept.nameVi) : '',
+      departmentId: defaultDept ? defaultDept.id : '',
       roleId: 'sales_rep',
       password: 'user123',
       status: 'active',
@@ -413,15 +555,16 @@ export const SaaSUsersRbacTab: React.FC = () => {
       email: user.email,
       phone: user.phone,
       department: user.department,
+      departmentId: user.departmentId || '',
       roleId: user.roleId,
-      password: user.password || '',
+      password: user.password && !user.password.startsWith('$2a$') && !user.password.startsWith('$2b$') ? user.password : '',
       status: user.status,
     });
     setShowModalPassword(false);
     setIsUserModalOpen(true);
   };
 
-  const handleSaveUser = (e: React.FormEvent) => {
+  const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userFormData.username || !userFormData.fullName) {
       addToast(
@@ -433,71 +576,122 @@ export const SaaSUsersRbacTab: React.FC = () => {
 
     const matchedRole = rolesList.find((r) => r.id === userFormData.roleId);
     const roleName = matchedRole ? (language === 'en' ? matchedRole.nameEn : matchedRole.nameVi) : userFormData.roleId;
+    const backendRoleId = mapRoleIdToBackend(userFormData.roleId);
 
-    if (editingUserId) {
-      // Update existing
-      const updated = usersList.map((u) =>
-        u.id === editingUserId
-          ? {
-              ...u,
-              username: userFormData.username,
-              fullName: userFormData.fullName,
-              email: userFormData.email || userFormData.username,
-              phone: userFormData.phone,
-              department: userFormData.department,
-              roleId: userFormData.roleId,
-              roleName,
-              status: userFormData.status,
-              password: userFormData.password || u.password || '123456',
-            }
-          : u
-      );
-      persistUsers(updated);
-      addToast(language === 'en' ? 'User profile updated!' : 'Đã cập nhật thông tin người dùng!', 'success');
-    } else {
-      // Create new
-      const newUser: SaasUserItem = {
-        id: `usr-${Date.now()}`,
-        username: userFormData.username,
-        fullName: userFormData.fullName,
-        email: userFormData.email || userFormData.username,
-        phone: userFormData.phone,
-        department: userFormData.department,
-        roleId: userFormData.roleId,
-        roleName,
-        status: userFormData.status,
-        password: userFormData.password || '123456',
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
-      persistUsers([...usersList, newUser]);
-      addToast(language === 'en' ? 'Added new user successfully!' : 'Đã thêm tài khoản người dùng mới thành công!', 'success');
+    try {
+      if (editingUserId) {
+        const updatePayload: any = {
+          username: userFormData.username,
+          full_name: userFormData.fullName,
+          email: userFormData.email || userFormData.username,
+          phone: userFormData.phone,
+          role_id: backendRoleId,
+          status: userFormData.status,
+          department_id: userFormData.departmentId || null,
+        };
+        
+        // Only update password if a new plaintext password is provided
+        const newPassword = userFormData.password?.trim();
+        if (newPassword && !newPassword.startsWith('$2a$') && !newPassword.startsWith('$2b$')) {
+          updatePayload.password = newPassword;
+        }
+        
+        const res = await client.put(`/api/saas/users/${editingUserId}`, updatePayload);
+        if (res.data?.ok) {
+          const updated = usersList.map((u) =>
+            u.id === editingUserId
+              ? {
+                  ...u,
+                  username: userFormData.username,
+                  fullName: userFormData.fullName,
+                  email: userFormData.email || userFormData.username,
+                  phone: userFormData.phone,
+                   department: userFormData.department,
+                   departmentId: userFormData.departmentId,
+                  roleId: userFormData.roleId,
+                  roleName,
+                  status: userFormData.status,
+                  password: newPassword && !newPassword.startsWith('$2a$') && !newPassword.startsWith('$2b$') ? newPassword : u.password,
+                }
+              : u
+          );
+          persistUsers(updated);
+          addToast(language === 'en' ? 'User profile updated!' : 'Đã cập nhật thông tin người dùng!', 'success');
+        } else {
+          addToast(res.data?.message || (language === 'en' ? 'Update failed' : 'Cập nhật thất bại'), 'error');
+        }
+      } else {
+        const res = await client.post('/api/saas/users', {
+          username: userFormData.username,
+          full_name: userFormData.fullName,
+          email: userFormData.email || userFormData.username,
+          phone: userFormData.phone,
+          role_id: backendRoleId,
+          department_id: userFormData.departmentId || null,
+          status: userFormData.status,
+          password: userFormData.password || '123456',
+        });
+        if (res.data?.ok) {
+          const dbUser = res.data.data;
+          const newUser: SaasUserItem = {
+            id: String(dbUser.id),
+            username: dbUser.username,
+            fullName: dbUser.full_name || userFormData.fullName,
+            email: dbUser.email || '',
+            phone: dbUser.phone || '',
+            department: userFormData.department,
+            departmentId: userFormData.departmentId,
+            roleId: userFormData.roleId,
+            roleName,
+            status: dbUser.status === 'locked' ? 'locked' : 'active',
+            password: userFormData.password || '123456',
+            createdAt: dbUser.created_at ? new Date(dbUser.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+          };
+          persistUsers([...usersList, newUser]);
+          addToast(language === 'en' ? 'Added new user successfully!' : 'Đã thêm tài khoản người dùng mới thành công!', 'success');
+        } else {
+          addToast(res.data?.message || (language === 'en' ? 'Creation failed' : 'Tạo tài khoản thất bại'), 'error');
+        }
+      }
+    } catch (err: any) {
+      addToast(err.response?.data?.message || (language === 'en' ? 'Operation failed' : 'Thao tác thất bại'), 'error');
     }
 
     setIsUserModalOpen(false);
   };
 
-  const handleToggleUserStatus = (userId: string) => {
-    const updated = usersList.map((u) => {
-      if (u.id === userId) {
-        const nextStatus = u.status === 'active' ? ('locked' as const) : ('active' as const);
-        addToast(
-          nextStatus === 'locked'
-            ? language === 'en' ? `Account ${u.username} locked!` : `Đã khóa tài khoản ${u.username}!`
-            : language === 'en' ? `Account ${u.username} unlocked!` : `Đã mở khóa tài khoản ${u.username}!`,
-          'info'
-        );
-        return { ...u, status: nextStatus };
-      }
-      return u;
-    });
-    persistUsers(updated);
+  const handleToggleUserStatus = async (userId: string) => {
+    const user = usersList.find((u) => u.id === userId);
+    if (!user) return;
+    const nextStatus: 'active' | 'locked' = user.status === 'active' ? 'locked' : 'active';
+
+    try {
+      await client.put(`/api/saas/users/${userId}`, { status: nextStatus });
+      const updated = usersList.map((u) =>
+        u.id === userId ? { ...u, status: nextStatus } : u
+      );
+      persistUsers(updated);
+      addToast(
+        nextStatus === 'locked'
+          ? language === 'en' ? `Account ${user.username} locked!` : `Đã khóa tài khoản ${user.username}!`
+          : language === 'en' ? `Account ${user.username} unlocked!` : `Đã mở khóa tài khoản ${user.username}!`,
+        'info'
+      );
+    } catch (err: any) {
+      addToast(err.response?.data?.message || (language === 'en' ? 'Failed to update status' : 'Cập nhật trạng thái thất bại'), 'error');
+    }
   };
 
-  const handleDeleteUser = (userId: string, name: string) => {
-    if (window.confirm(language === 'en' ? `Are you sure you want to delete user ${name}?` : `Bạn có chắc chắn muốn xóa người dùng ${name}?`)) {
+  const handleDeleteUser = async (userId: string, name: string) => {
+    if (!window.confirm(language === 'en' ? `Are you sure you want to delete user ${name}?` : `Bạn có chắc chắn muốn xóa người dùng ${name}?`)) return;
+
+    try {
+      await client.delete(`/api/saas/users/${userId}`);
       const updated = usersList.filter((u) => u.id !== userId);
       persistUsers(updated);
       addToast(language === 'en' ? 'User deleted from system!' : 'Đã xóa người dùng khỏi hệ thống!', 'warning');
+    } catch (err: any) {
+      addToast(err.response?.data?.message || (language === 'en' ? 'Delete failed' : 'Xóa thất bại'), 'error');
     }
   };
 
@@ -627,10 +821,12 @@ export const SaaSUsersRbacTab: React.FC = () => {
     });
   }, [usersList, searchTerm, departmentFilter]);
 
-  // Departments list for filter
+  // Departments list for filter — merge API-fetched departments with any observed in user data
   const departments = useMemo(() => {
-    return Array.from(new Set(usersList.map((u) => u.department || 'Ban Giám Đốc')));
-  }, [usersList]);
+    const fromUsers = Array.from(new Set(usersList.map((u) => u.department || 'Ban Giám Đốc')));
+    const fromApi = allDepartments.map((d) => language === 'en' ? d.nameEn : d.nameVi);
+    return Array.from(new Set([...fromApi, ...fromUsers]));
+  }, [usersList, allDepartments, language]);
 
   return (
     <div className="space-y-6">
@@ -759,7 +955,8 @@ export const SaaSUsersRbacTab: React.FC = () => {
                     filteredUsers.map((u) => {
                       const isLocked = u.status === 'locked';
                       const isPassVisible = !!visiblePasswords[u.id];
-                      const userPass = u.password || '123456';
+                      const isHashedPassword = !u.password;
+                      const displayPass = isHashedPassword ? '••••••••' : (isPassVisible ? u.password : '••••••••');
 
                       return (
                         <tr key={u.id} className="hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 transition">
@@ -800,17 +997,29 @@ export const SaaSUsersRbacTab: React.FC = () => {
                             <div className="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-800/80 px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 w-max shadow-2xs">
                               <Key className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                               <span className="font-bold font-mono tracking-wide text-zinc-900 dark:text-zinc-100 text-[11px] min-w-[70px]">
-                                {isPassVisible ? userPass : '••••••••'}
+                                {displayPass}
                               </span>
                               <button
-                                onClick={() => togglePasswordVisibility(u.id)}
+                                onClick={() => {
+                                  if (isHashedPassword) {
+                                    addToast(t('webshop_password_encrypted'), 'info');
+                                    return;
+                                  }
+                                  togglePasswordVisibility(u.id);
+                                }}
                                 className="p-1 text-zinc-400 hover:text-amber-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
                                 title={isPassVisible ? (language === 'en' ? 'Hide Password' : 'Ẩn mật khẩu') : (language === 'en' ? 'Show Password' : 'Xem mật khẩu')}
                               >
-                                {isPassVisible ? <EyeOff className="w-3.5 h-3.5 text-rose-500" /> : <Eye className="w-3.5 h-3.5 text-emerald-500" />}
+                                {isPassVisible && !isHashedPassword ? <EyeOff className="w-3.5 h-3.5 text-rose-500" /> : <Eye className="w-3.5 h-3.5 text-emerald-500" />}
                               </button>
                               <button
-                                onClick={() => handleCopyPassword(userPass, u.fullName)}
+                                onClick={() => {
+                                  if (isHashedPassword) {
+                                    addToast(t('webshop_password_encrypted'), 'info');
+                                    return;
+                                  }
+                                  handleCopyPassword(u.password, u.fullName);
+                                }}
                                 className="p-1 text-zinc-400 hover:text-blue-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
                                 title={language === 'en' ? 'Copy Password' : 'Sao chép mật khẩu'}
                               >
@@ -921,7 +1130,8 @@ export const SaaSUsersRbacTab: React.FC = () => {
                     })
                     .map((w) => {
                       const isPassVisible = !!visiblePasswords[`web_${w.id}`];
-                      const userPass = w.password || 'web12345';
+                      const isHashedPassword = !w.password;
+                      const displayPass = isHashedPassword ? '••••••••' : (isPassVisible ? w.password : '••••••••');
 
                       return (
                         <tr key={w.id} className="hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 transition">
@@ -946,23 +1156,35 @@ export const SaaSUsersRbacTab: React.FC = () => {
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-800/80 px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 w-max shadow-2xs">
                               <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                              <span className="font-bold font-mono tracking-wide text-zinc-900 dark:text-zinc-100 text-[11px] min-w-[70px]">
-                                {isPassVisible ? userPass : '••••••••'}
-                              </span>
-                              <button
-                                onClick={() => togglePasswordVisibility(`web_${w.id}`)}
-                                className="p-1 text-zinc-400 hover:text-amber-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
-                                title={isPassVisible ? 'Ẩn mật khẩu' : 'Xem mật khẩu'}
-                              >
-                                {isPassVisible ? <EyeOff className="w-3.5 h-3.5 text-rose-500" /> : <Eye className="w-3.5 h-3.5 text-emerald-500" />}
-                              </button>
-                              <button
-                                onClick={() => handleCopyPassword(userPass, w.name)}
-                                className="p-1 text-zinc-400 hover:text-blue-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
-                                title="Sao chép mật khẩu"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
+                               <span className="font-bold font-mono tracking-wide text-zinc-900 dark:text-zinc-100 text-[11px] min-w-[70px]">
+                                 {displayPass}
+                               </span>
+                               <button
+                                 onClick={() => {
+                                    if (isHashedPassword) {
+                                      addToast(t('webshop_password_encrypted'), 'info');
+                                      return;
+                                    }
+                                   togglePasswordVisibility(`web_${w.id}`);
+                                 }}
+                                 className="p-1 text-zinc-400 hover:text-amber-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
+                                 title={isPassVisible ? 'Ẩn mật khẩu' : 'Xem mật khẩu'}
+                               >
+                                 {isPassVisible && !isHashedPassword ? <EyeOff className="w-3.5 h-3.5 text-rose-500" /> : <Eye className="w-3.5 h-3.5 text-emerald-500" />}
+                               </button>
+                               <button
+                                 onClick={() => {
+                                    if (isHashedPassword) {
+                                      addToast(t('webshop_password_encrypted'), 'info');
+                                      return;
+                                    }
+                                   handleCopyPassword(w.password, w.name);
+                                 }}
+                                 className="p-1 text-zinc-400 hover:text-blue-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
+                                 title="Sao chép mật khẩu"
+                               >
+                                 <Copy className="w-3.5 h-3.5" />
+                               </button>
                             </div>
                           </td>
 
@@ -1251,14 +1473,27 @@ export const SaaSUsersRbacTab: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-zinc-700 dark:text-zinc-300 mb-1">Phòng Ban / Bộ Phận</label>
-                  <input
-                    type="text"
-                    value={userFormData.department}
-                    onChange={(e) => setUserFormData({ ...userFormData, department: e.target.value })}
-                    placeholder="vd: Phòng Kế Toán"
-                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100"
-                  />
+                  <label className="block font-bold text-zinc-700 dark:text-zinc-300 mb-1">{language === 'en' ? 'Department' : 'Phòng Ban / Bộ Phận'}</label>
+                  <select
+                    value={userFormData.departmentId}
+                    onChange={(e) => {
+                      const selected = allDepartments.find((d) => d.id === e.target.value);
+                      setUserFormData({
+                        ...userFormData,
+                        departmentId: e.target.value,
+                        department: selected ? (language === 'en' ? selected.nameEn : selected.nameVi) : '',
+                      });
+                    }}
+                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-amber-500/50 focus:outline-none font-semibold"
+                    required
+                  >
+                    <option value="">{language === 'en' ? 'Select department' : 'Chọn phòng ban'}</option>
+                    {allDepartments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {language === 'en' ? dept.nameEn : dept.nameVi}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

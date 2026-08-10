@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import { query, isDbConnected } from '../db/index.js';
+
+const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
 
 export interface ShopTenantRequest extends Request {
   companyId?: number;
@@ -31,6 +34,27 @@ export async function shopTenantMiddleware(req: ShopTenantRequest, res: Response
         req.tenantName = result.rows[0].name_vi;
         req.companyId = companyId;
         (req as any).tenantSettings = result.rows[0].settings || {};
+      }
+    }
+
+    if (!companyId) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.split(' ')[1];
+          const decoded: any = jwt.verify(token, JWT_SECRET);
+          const jwtCompanyId = decoded.companyId as number | undefined;
+          if (jwtCompanyId) {
+            companyId = jwtCompanyId;
+          } else if (decoded.userId && isDbConnected()) {
+            const userResult = await query('SELECT company_id FROM sys_users WHERE id = $1', [decoded.userId]);
+            if (userResult.rows.length > 0 && userResult.rows[0].company_id) {
+              companyId = userResult.rows[0].company_id;
+            }
+          }
+        } catch (err) {
+          console.warn('[Shop Tenant Middleware] Invalid JWT, will fallback to default tenant');
+        }
       }
     }
 

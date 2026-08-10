@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
 import { useToast } from '../../contexts/ToastContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import client from '../../api/client';
 
 interface CustomerItem {
@@ -37,6 +39,8 @@ const INITIAL_CUSTOMERS: CustomerItem[] = [];
 
 export const SaaSCustomersPage: React.FC = () => {
   const { addToast } = useToast();
+  const { language } = useLanguage();
+  const { t } = useTranslation();
 
   const [customers, setCustomers] = useState<CustomerItem[]>([]);
 
@@ -56,7 +60,7 @@ export const SaaSCustomersPage: React.FC = () => {
             type: (idx % 3 === 0 ? 'Khách sỉ' : idx % 3 === 1 ? 'Đại lý' : 'Khách lẻ') as any,
             creditLimit: 50000000,
             currentDebt: 0,
-            password: it.passwordHash || 'web12345',
+            password: it.passwordHash && it.passwordHash.startsWith('$2') ? '' : (it.passwordHash || 'web12345'),
           }));
           setCustomers(mapped);
           localStorage.setItem('saas_webshop_customers', JSON.stringify(mapped));
@@ -292,23 +296,36 @@ export const SaaSCustomersPage: React.FC = () => {
       cell: ({ row }) => {
         const cust = row.original;
         const isPassVisible = !!visiblePasswords[cust.id];
-        const pass = cust.password || 'web12345';
+        const isHashedPassword = !cust.password;
+        const displayPass = isHashedPassword ? '••••••••' : (isPassVisible ? cust.password : '••••••••');
 
         return (
           <div className="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-800/80 px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 w-max shadow-2xs">
             <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
             <span className="font-bold font-mono tracking-wide text-zinc-900 dark:text-zinc-100 text-[11px] min-w-[70px]">
-              {isPassVisible ? pass : '••••••••'}
+              {displayPass}
             </span>
             <button
-              onClick={() => togglePasswordVisibility(cust.id)}
+              onClick={() => {
+                if (isHashedPassword) {
+                  addToast(t('webshop_password_encrypted'), 'info');
+                  return;
+                }
+                togglePasswordVisibility(cust.id);
+              }}
               className="p-1 text-zinc-400 hover:text-amber-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
               title={isPassVisible ? 'Ẩn mật khẩu' : 'Xem mật khẩu (Eye View)'}
             >
-              {isPassVisible ? <EyeOff className="w-3.5 h-3.5 text-rose-500" /> : <Eye className="w-3.5 h-3.5 text-emerald-500" />}
+              {isPassVisible && !isHashedPassword ? <EyeOff className="w-3.5 h-3.5 text-rose-500" /> : <Eye className="w-3.5 h-3.5 text-emerald-500" />}
             </button>
             <button
-              onClick={() => handleCopyPassword(pass, cust.name)}
+              onClick={() => {
+                if (isHashedPassword) {
+                  addToast(t('webshop_password_encrypted'), 'info');
+                  return;
+                }
+                handleCopyPassword(cust.password, cust.name);
+              }}
               className="p-1 text-zinc-400 hover:text-blue-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
               title="Sao chép mật khẩu"
             >

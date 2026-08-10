@@ -61,9 +61,7 @@ const CatalogPage: React.FC = () => {
       } catch (err) {
         console.error("Error loading catalog data", err);
         setError(
-          language === "en"
-            ? "Could not connect to services. Please check connection."
-            : "Không thể kết nối với hệ thống. Vui lòng kiểm tra lại kết nối."
+          t("catalog_connection_error")
         );
       } finally {
         setRefreshing(false);
@@ -163,10 +161,10 @@ const CatalogPage: React.FC = () => {
 
           {/* Search metadata indicator */}
           {searchQuery && (
-            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 flex items-center justify-between text-sm shadow-xs transition-colors duration-205">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2 text-sm shadow-xs">
               <span className="text-gray-500 dark:text-gray-400">
                  {t('catalog_search_results')}{" "}
-                <strong className="text-gray-900 dark:text-white">"{searchQuery}"</strong>
+                <strong className="text-gray-900 dark:text-white truncate max-w-[200px] sm:max-w-none inline-block align-bottom">"{searchQuery}"</strong>
               </span>
               <button
                 onClick={() => {
@@ -175,7 +173,7 @@ const CatalogPage: React.FC = () => {
                   params.set("page", "1");
                   setSearchParams(params);
                 }}
-                className="text-xs font-semibold text-red-600 hover:underline cursor-pointer"
+                className="text-xs font-semibold text-red-600 hover:underline cursor-pointer whitespace-nowrap"
               >
                  {t('catalog_clear_search')}
               </button>
@@ -216,9 +214,9 @@ const CatalogPage: React.FC = () => {
                {t('catalog_no_products')}
             </h4>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs mx-auto">
-              {language === 'en'
-                ? 'Please try searching with another keyword or select a different category.'
-                : 'Vui lòng thử lại với từ khóa khác hoặc chuyển danh mục sản phẩm khác.'}
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs mx-auto">
+                {t("catalog_empty_try_another")}
+              </p>
             </p>
           </div>
         ) : (
@@ -240,12 +238,12 @@ const CatalogPage: React.FC = () => {
           <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {language === 'en'
-                ? `Showing ${Math.min(total, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(total, currentPage * PAGE_SIZE)} of ${total} products`
-                : `Hiển thị ${Math.min(total, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(total, currentPage * PAGE_SIZE)} của ${total} sản phẩm`}
+                ? `${t("catalog_showing")} ${Math.min(total, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(total, currentPage * PAGE_SIZE)} ${t("catalog_of")} ${total} ${t("catalog_products")}`
+                : `${t("catalog_showing")} ${Math.min(total, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(total, currentPage * PAGE_SIZE)} ${t("catalog_of")} ${total} ${t("catalog_products")}`}
             </span>
 
             <nav
-              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1 shadow-xs text-sm"
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1 shadow-xs text-sm overflow-x-auto"
               aria-label="Pagination"
             >
               <button

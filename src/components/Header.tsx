@@ -58,19 +58,19 @@ const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
-      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-1 sm:gap-2 md:gap-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center font-bold text-zinc-950 text-lg leading-none shadow-xs">
+        <Link to="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-500 rounded-lg flex items-center justify-center font-bold text-zinc-950 text-base sm:text-lg leading-none shadow-xs">
             {slug !== 'default' ? name.charAt(0).toUpperCase() : 'W'}
           </div>
-          <span className="text-xl font-bold tracking-tight text-[#111827] dark:text-white flex items-center">
-            {slug !== 'default' ? name : 'WebShop'} <span className="text-amber-500 ml-1">SaaS</span>
+          <span className="hidden sm:inline text-base sm:text-xl font-bold tracking-tight text-[#111827] dark:text-white flex items-center">
+            {slug !== 'default' ? name : 'WebShop'} <span className="text-amber-500 ml-0.5 sm:ml-1">SaaS</span>
           </span>
         </Link>
 
         {/* Tenant Switcher (for local testing) */}
-        <div className="relative" ref={tenantDropdownRef}>
+        <div className="relative hidden sm:block" ref={tenantDropdownRef}>
           <button
             onClick={() => setShowTenantDropdown(!showTenantDropdown)}
             className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all cursor-pointer"
@@ -104,8 +104,8 @@ const Header: React.FC = () => {
           </button>
         </form>
 
-        {/* Right controls */}
-        <div className="flex items-center gap-2 sm:gap-3">
+         {/* Right controls */}
+         <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
           {/* Theme Toggle Button - Desktop */}
           <button
             onClick={toggleTheme}
@@ -119,10 +119,10 @@ const Header: React.FC = () => {
           <button
             onClick={toggleLanguage}
             className="flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-            title="Chuyển đổi ngôn ngữ / Switch Language"
+            title={t('topbar_language_toggle')}
           >
             <Globe className="w-3.5 h-3.5 text-blue-500" />
-            <span className="uppercase">{language}</span>
+            <span className="uppercase">{language === 'vi' ? 'EN' : 'VI'}</span>
           </button>
 
           {/* Tenant Badge */}
@@ -269,7 +269,7 @@ const Header: React.FC = () => {
       </div>
 
       {/* Search bar mobile */}
-      <form onSubmit={handleSearchSubmit} className="md:hidden px-4 pb-3">
+      <form onSubmit={handleSearchSubmit} className="md:hidden px-2 sm:px-4 pb-2 sm:pb-3">
         <div className="relative">
           <input
             type="text"

@@ -137,6 +137,7 @@ export interface ErpUser {
   email: string;
   full_name: string;
   phone?: string;
+  company_id?: number;
   role_code: "ADMIN" | "SALES" | "ACCOUNTANT" | "WAREHOUSE" | "PURCHASING" | string;
   role_name_vi: string;
   role_name_en: string;

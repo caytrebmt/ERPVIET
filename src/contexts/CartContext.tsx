@@ -3,6 +3,7 @@ import client from "../api/client";
 import { Cart, CartItem } from "../types";
 import { useToast } from "./ToastContext";
 import { useAuth } from "./AuthContext";
+import { useTranslation } from "react-i18next";
 
 interface CartContextType {
   cart: Cart | null;
@@ -17,6 +18,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { t } = useTranslation();
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { showToast } = useToast();
@@ -52,13 +54,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const res = await client.post("/api/shop/cart/items", { product_id, quantity });
       if (res.data && res.data.ok) {
         setCart(res.data.data);
-        showToast("Đã thêm sản phẩm vào giỏ hàng!", "success");
+        showToast(t("cart_added_success"), "success");
         return true;
       }
-      showToast(res.data.message || "Không thể thêm sản phẩm", "error");
+      showToast(res.data.message || t("cart_add_failed"), "error");
       return false;
     } catch (err: any) {
-      const msg = err.response?.data?.message || "Lỗi khi thêm vào giỏ hàng.";
+      const msg = err.response?.data?.message || t("cart_add_error");
       showToast(msg, "error");
       return false;
     }
@@ -69,13 +71,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const res = await client.put(`/api/shop/cart/items/${item_id}`, { quantity });
       if (res.data && res.data.ok) {
         setCart(res.data.data);
-        showToast("Đã cập nhật số lượng thành công!", "success");
+        showToast(t("cart_quantity_updated"), "success");
         return true;
       }
-      showToast(res.data.message || "Cập nhật số lượng thất bại", "error");
+      showToast(res.data.message || t("cart_quantity_update_failed"), "error");
       return false;
     } catch (err: any) {
-      const msg = err.response?.data?.message || "Lỗi khi cập nhật số lượng.";
+      const msg = err.response?.data?.message || t("cart_quantity_update_error");
       showToast(msg, "error");
       return false;
     }
@@ -86,12 +88,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const res = await client.delete(`/api/shop/cart/items/${item_id}`);
       if (res.data && res.data.ok) {
         setCart(res.data.data);
-        showToast("Đã xóa sản phẩm khỏi giỏ hàng", "info");
+        showToast(t("cart_removed_success"), "info");
         return true;
       }
       return false;
     } catch (err: any) {
-      showToast("Lỗi khi xóa sản phẩm.", "error");
+      showToast(t("cart_remove_error"), "error");
       return false;
     }
   };

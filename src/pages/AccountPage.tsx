@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { User, Phone, Mail, KeyRound, Loader2, Package, LogOut, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
+import { useTranslation } from "react-i18next";
 
 const AccountPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user, updateProfile, changePassword, logout } = useAuth();
   const { showToast } = useToast();
 
@@ -25,7 +27,7 @@ const AccountPage: React.FC = () => {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) {
-      showToast("Vui lòng không để trống họ tên hoặc số điện thoại", "error");
+      showToast(t("page_account_name_phone_required"), "error");
       return;
     }
 
@@ -38,7 +40,7 @@ const AccountPage: React.FC = () => {
         showToast(res.message, "error");
       }
     } catch (err) {
-      showToast("Lỗi khi cập nhật thông tin", "error");
+      showToast(t("page_account_update_error"), "error");
     } finally {
       setUpdatingProfile(false);
     }
@@ -47,17 +49,17 @@ const AccountPage: React.FC = () => {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword || !newPassword || !confirmPassword) {
-      showToast("Vui lòng điền đầy đủ thông tin đổi mật khẩu", "error");
+      showToast(t("page_account_password_required"), "error");
       return;
     }
 
     if (newPassword.length < 8) {
-      showToast("Mật khẩu mới phải dài tối thiểu 8 ký tự", "error");
+      showToast(t("page_account_password_min_length"), "error");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      showToast("Mật khẩu xác nhận không chính xác", "error");
+      showToast(t("page_account_password_mismatch"), "error");
       return;
     }
 
@@ -79,7 +81,7 @@ const AccountPage: React.FC = () => {
         showToast(res.message, "error");
       }
     } catch (err) {
-      showToast("Đổi mật khẩu không thành công", "error");
+      showToast(t("page_account_password_change_failed"), "error");
     } finally {
       setUpdatingPassword(false);
     }

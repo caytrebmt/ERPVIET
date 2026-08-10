@@ -160,10 +160,10 @@ export const SaaSAuditLogsPage: React.FC = () => {
                     <span>{item.user_name}</span>
                   </td>
                   <td className="px-4 py-3.5 font-mono text-xs font-semibold text-amber-600 dark:text-amber-400">
-                    {item.action}
+                    {t(`audit_action_${item.action}`, item.action)}
                   </td>
                   <td className="px-4 py-3.5 text-zinc-600 dark:text-zinc-400 text-xs">
-                    <span className="font-semibold">{item.entity_type}</span> ({item.entity_id})
+                    <span className="font-semibold">{t(`audit_entity_${item.entity_type}`, item.entity_type)}</span> ({item.entity_id})
                   </td>
                   <td className="px-4 py-3.5 text-zinc-600 dark:text-zinc-400 text-xs font-mono">
                     {item.ip_address}

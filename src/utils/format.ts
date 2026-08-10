@@ -1,3 +1,5 @@
+import i18n from "../i18n";
+
 export function formatPrice(price: number): string {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -92,12 +94,12 @@ export function generateSmartSKU(
  */
 export function readVietnameseNumber(amount: number): string {
   if (isNaN(amount) || amount === null || amount === undefined) {
-    return "Không đồng";
+    return i18n.t("format_zero_amount");
   }
 
   const roundedAmount = Math.round(Math.abs(amount));
   if (roundedAmount === 0) {
-    return "Không đồng";
+    return i18n.t("format_zero_amount");
   }
 
   const defaultNumbers = [
@@ -178,7 +180,7 @@ export function readVietnameseNumber(amount: number): string {
   }
 
   resultWords = resultWords.trim();
-  if (!resultWords) return "Không đồng";
+  if (!resultWords) return i18n.t("format_zero_amount");
 
   // Capitalize first letter
   let capitalized = resultWords.charAt(0).toUpperCase() + resultWords.slice(1);

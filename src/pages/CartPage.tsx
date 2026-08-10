@@ -86,7 +86,7 @@ const CartPage: React.FC = () => {
 
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {cart.items.map((item) => (
-                <div key={item.id} className="p-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-center relative">
+                <div key={item.id} className="p-3 sm:p-4 grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-4 items-center relative">
                   {updatingItemId === item.id && (
                     <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/60 z-10 flex items-center justify-center backdrop-blur-[1px]">
                       <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />

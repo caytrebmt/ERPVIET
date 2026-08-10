@@ -29,18 +29,20 @@ import {
   Sliders,
   Globe,
   Languages,
+  FileJson,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SaaSTranslationsTab } from '../../components/SaaSTranslationsTab';
+import { SaaSTranslationsJsonTab } from '../../components/SaaSTranslationsJsonTab';
 import { SaaSUsersRbacTab } from '../../components/SaaSUsersRbacTab';
 
 export const SaaSSettingsPage: React.FC = () => {
   const { user } = useAuth();
   const { addToast } = useToast();
   const { language, t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'users_rbac' | 'translations' | 'company' | 'menu' | 'inventory' | 'api' | 'notifications' | 'backup'>('users_rbac');
+  const [activeTab, setActiveTab] = useState<'users_rbac' | 'translations' | 'translations_json' | 'company' | 'menu' | 'inventory' | 'api' | 'notifications' | 'backup'>('users_rbac');
 
   // Tab 1: Company Profile & PDF Print Settings
   const [companyInfo, setCompanyInfo] = useState(() => {
@@ -272,7 +274,7 @@ export const SaaSSettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -307,78 +309,188 @@ export const SaaSSettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs Bar */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-zinc-200 dark:border-zinc-800 no-scrollbar">
-        {[
-          {
-            id: 'users_rbac',
-             label: t('settings_users_rbac'),
-            icon: ShieldCheck,
-          },
-          {
-            id: 'translations',
-             label: t('settings_translations_languages'),
-            icon: Globe,
-          },
-          {
-            id: 'company',
-             label: t('settings_company_templates'),
-            icon: Building2,
-          },
-          {
-            id: 'menu',
-             label: t('settings_db_menu'),
-            icon: Database,
-          },
-          {
-            id: 'inventory',
-             label: t('settings_warehouse_rules'),
-            icon: Boxes,
-          },
-          {
-            id: 'api',
-             label: t('settings_backend_api'),
-            icon: Server,
-          },
-          {
-            id: 'notifications',
-             label: t('settings_alerts_notifications'),
-            icon: BellRing,
-          },
-          {
-            id: 'backup',
-             label: t('settings_backup_restore'),
-            icon: Download,
-          },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all flex items-center gap-2 ${
-                isActive
-                  ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
+        {/* Sidebar Navigation */}
+        <div className="hidden lg:block">
+          <div className="sticky top-6 space-y-6">
+            {/* Group 1: Quản Trị & Nhân Sự */}
+            <div>
+              <h3 className="px-3 text-[11px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">
+                {language === 'en' ? 'Administration & HR' : 'Quản Trị & Nhân Sự'}
+              </h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveTab('users_rbac')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'users_rbac'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <ShieldCheck className="h-4 w-4 shrink-0" />
+                  {t('settings_users_rbac')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('translations')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'translations'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <Globe className="h-4 w-4 shrink-0" />
+                  {t('settings_translations_languages')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('translations_json')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'translations_json'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <FileJson className="h-4 w-4 shrink-0" />
+                  {language === 'en' ? 'JSON Translation Editor' : 'Trình Dịch Thuật JSON'}
+                </button>
+              </nav>
+            </div>
 
-      {/* TAB 0: USERS MANAGEMENT & RBAC PERMISSION MATRIX */}
-      {activeTab === 'users_rbac' && <SaaSUsersRbacTab />}
+            {/* Group 2: Hệ Thống & Doanh Nghiệp */}
+            <div>
+              <h3 className="px-3 text-[11px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">
+                {language === 'en' ? 'System & Enterprise' : 'Hệ Thống & Doanh Nghiệp'}
+              </h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveTab('company')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'company'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <Building2 className="h-4 w-4 shrink-0" />
+                  {t('settings_company_templates')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('menu')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'menu'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <Database className="h-4 w-4 shrink-0" />
+                  {t('settings_db_menu')}
+                </button>
+              </nav>
+            </div>
 
-      {/* TAB 1: TRANSLATIONS & SYSTEM LANGUAGES */}
-      {activeTab === 'translations' && <SaaSTranslationsTab />}
+            {/* Group 3: Nghiệp Vụ & Kết Nối */}
+            <div>
+              <h3 className="px-3 text-[11px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">
+                {language === 'en' ? 'Operations & Integration' : 'Nghiệp Vụ & Kết Nối'}
+              </h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveTab('inventory')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'inventory'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <Boxes className="h-4 w-4 shrink-0" />
+                  {t('settings_warehouse_rules')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('api')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'api'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <Server className="h-4 w-4 shrink-0" />
+                  {t('settings_backend_api')}
+                </button>
+              </nav>
+            </div>
 
-      {/* TAB 1: COMPANY PROFILE & PRINT TEMPLATES */}
-      {activeTab === 'company' && (
-        <form onSubmit={handleSaveCompany} className="space-y-6">
+            {/* Group 4: Vận Hành & Dữ Liệu */}
+            <div>
+              <h3 className="px-3 text-[11px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">
+                {language === 'en' ? 'Operations & Data' : 'Vận Hành & Dữ Liệu'}
+              </h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveTab('notifications')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'notifications'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <BellRing className="h-4 w-4 shrink-0" />
+                  {t('settings_alerts_notifications')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('backup')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'backup'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <Download className="h-4 w-4 shrink-0" />
+                  {t('settings_backup_restore')}
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Dropdown */}
+        <div className="lg:hidden">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value as any)}
+            className="w-full px-3 py-2.5 text-xs font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 cursor-pointer"
+          >
+            <optgroup label={language === 'en' ? 'Administration & HR' : 'Quản Trị & Nhân Sự'}>
+              <option value="users_rbac">{t('settings_users_rbac')}</option>
+              <option value="translations">{t('settings_translations_languages')}</option>
+              <option value="translations_json">{language === 'en' ? 'JSON Translation Editor' : 'Trình Dịch Thuật JSON'}</option>
+            </optgroup>
+            <optgroup label={language === 'en' ? 'System & Enterprise' : 'Hệ Thống & Doanh Nghiệp'}>
+              <option value="company">{t('settings_company_templates')}</option>
+              <option value="menu">{t('settings_db_menu')}</option>
+            </optgroup>
+            <optgroup label={language === 'en' ? 'Operations & Integration' : 'Nghiệp Vụ & Kết Nối'}>
+              <option value="inventory">{t('settings_warehouse_rules')}</option>
+              <option value="api">{t('settings_backend_api')}</option>
+            </optgroup>
+            <optgroup label={language === 'en' ? 'Operations & Data' : 'Vận Hành & Dữ Liệu'}>
+              <option value="notifications">{t('settings_alerts_notifications')}</option>
+              <option value="backup">{t('settings_backup_restore')}</option>
+            </optgroup>
+          </select>
+        </div>
+
+        {/* Main Content Panel */}
+        <div className="min-w-0">
+          {/* TAB 0: USERS MANAGEMENT & RBAC PERMISSION MATRIX */}
+          {activeTab === 'users_rbac' && <SaaSUsersRbacTab />}
+
+          {/* TAB 1: TRANSLATIONS & SYSTEM LANGUAGES */}
+          {activeTab === 'translations' && <SaaSTranslationsTab />}
+
+          {/* TAB 1b: JSON TRANSLATION EDITOR */}
+          {activeTab === 'translations_json' && <SaaSTranslationsJsonTab />}
+
+          {/* TAB 1: COMPANY PROFILE & PRINT TEMPLATES */}
+          {activeTab === 'company' && (
+            <form onSubmit={handleSaveCompany} className="space-y-6">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <Building2 className="h-5 w-5 text-amber-500" /> Thông Tin Pháp Lý Doanh Nghiệp (In trên hóa đơn & báo giá)
@@ -1097,9 +1209,11 @@ export const SaaSSettingsPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
+         </div>
+       )}
+      </div>
     </div>
+  </div>
   );
 };
 

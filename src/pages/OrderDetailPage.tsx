@@ -6,8 +6,10 @@ import { Order } from "../types";
 import { formatPrice, formatDate } from "../utils/format";
 import { useToast } from "../contexts/ToastContext";
 import { useCart } from "../contexts/CartContext";
+import { useTranslation } from "react-i18next";
 
 const OrderDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -25,12 +27,12 @@ const OrderDetailPage: React.FC = () => {
       if (res.data && res.data.ok) {
         setOrder(res.data.data);
       } else {
-        showToast("Không tìm thấy thông tin đơn hàng này.", "error");
+        showToast(t("page_order_not_found"), "error");
         navigate("/orders");
       }
     } catch (err) {
       console.error("Error loading order detail page", err);
-      showToast("Có lỗi xảy ra khi tải thông tin đơn hàng.", "error");
+      showToast(t("page_order_load_error"), "error");
       navigate("/orders");
     } finally {
       setLoading(false);
@@ -51,19 +53,19 @@ const OrderDetailPage: React.FC = () => {
 
   const handleCancelOrder = async () => {
     if (!order) return;
-    if (!window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) return;
+    if (!window.confirm(t("page_order_cancel_confirm"))) return;
 
     try {
       setSubmittingAction(true);
       const res = await client.post(`/api/shop/orders/${order.id}/cancel`);
       if (res.data && res.data.ok) {
-        showToast("Hủy đơn hàng thành công!", "success");
+        showToast(t("page_order_cancel_success"), "success");
         setOrder(res.data.data); // Update status locally
       } else {
-        showToast(res.data.message || "Không thể hủy đơn hàng", "error");
+        showToast(res.data.message || t("page_order_cancel_failed"), "error");
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || "Lỗi khi hủy đơn hàng.";
+      const msg = err.response?.data?.message || t("page_order_cancel_error");
       showToast(msg, "error");
     } finally {
       setSubmittingAction(false);
@@ -76,14 +78,14 @@ const OrderDetailPage: React.FC = () => {
       setSubmittingAction(true);
       const res = await client.post(`/api/shop/orders/${order.id}/reorder`);
       if (res.data && res.data.ok) {
-        showToast("Sản phẩm đã được thêm vào giỏ hàng thành công!", "success");
+        showToast(t("page_order_reorder_success"), "success");
         await fetchCart(); // Force update cart badge count
         navigate("/cart");
       } else {
-        showToast(res.data.message || "Không thể mua lại", "error");
+        showToast(res.data.message || t("page_order_reorder_failed"), "error");
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || "Lỗi khi thực hiện mua lại.";
+      const msg = err.response?.data?.message || t("page_order_reorder_error");
       showToast(msg, "error");
     } finally {
       setSubmittingAction(false);

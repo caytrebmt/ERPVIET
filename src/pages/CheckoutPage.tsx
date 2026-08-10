@@ -6,8 +6,10 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { formatPrice } from "../utils/format";
 import client from "../api/client";
+import { useTranslation } from "react-i18next";
 
 const CheckoutPage: React.FC = () => {
+  const { t } = useTranslation();
   const { cart, clearCart } = useCart();
   const { user, isAuthenticated } = useAuth();
   const { showToast } = useToast();
@@ -68,12 +70,12 @@ const CheckoutPage: React.FC = () => {
           discount: res.data.data.discount_amount,
           desc: res.data.data.description,
         });
-        showToast("Áp dụng mã giảm giá thành công!", "success");
+        showToast(t("page_checkout_promo_applied"), "success");
       } else {
-        showToast(res.data.message || "Mã giảm giá không hợp lệ", "error");
+        showToast(t("page_checkout_promo_invalid"), "error");
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || "Mã giảm giá không chính xác hoặc không đủ điều kiện.";
+      const msg = err.response?.data?.message || t("page_checkout_promo_incorrect");
       showToast(msg, "error");
     } finally {
       setValidatingPromo(false);
@@ -91,7 +93,7 @@ const CheckoutPage: React.FC = () => {
     e.preventDefault();
 
     if (!customerName.trim() || !customerPhone.trim() || !shippingAddress.trim()) {
-      showToast("Vui lòng điền đầy đủ thông tin nhận hàng bắt buộc", "error");
+      showToast(t("page_checkout_shipping_required"), "error");
       return;
     }
 
@@ -119,14 +121,14 @@ const CheckoutPage: React.FC = () => {
 
       if (res.data && res.data.ok) {
         const orderCode = (res.data.data.order || res.data.data).code;
-        showToast("Đặt hàng thành công! Đơn hàng đã được ghi nhận trên hệ thống ERPACC.", "success");
+        showToast(t("page_checkout_order_success"), "success");
         await clearCart();
         navigate(`/order-success/${orderCode}`);
       } else {
-        showToast(res.data.message || "Không thể tạo đơn hàng", "error");
+        showToast(res.data.message || t("page_checkout_order_failed"), "error");
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || "Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.";
+      const msg = err.response?.data?.message || t("page_checkout_order_error");
       showToast(msg, "error");
     } finally {
       setSubmitting(false);
@@ -224,7 +226,7 @@ const CheckoutPage: React.FC = () => {
               2. PHƯƠNG THỨC THANH TOÁN
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {/* COD */}
               <button
                 type="button"

@@ -90,6 +90,21 @@ export async function autoMigrateDatabase() {
   if (!connected) return;
 
   try {
+    // Check if database already has data to avoid overwriting existing tables
+    const checkResult = await pool.query("SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('sys_users', 'companies', 'web_customers')");
+    const existingTables = checkResult.rows[0]?.count || 0;
+    
+    if (existingTables > 0) {
+      // Check if sys_users has data
+      const userCount = await pool.query('SELECT COUNT(*) as count FROM sys_users');
+      const hasUsers = userCount.rows[0]?.count > 0;
+      
+      if (hasUsers) {
+        console.log('[Database] Existing user data detected. Skipping schema.sql and insertdata.sql to preserve existing data.');
+        return;
+      }
+    }
+
     const schemaPath = path.join(process.cwd(), 'schema.sql');
     if (fs.existsSync(schemaPath)) {
       console.log('[Database] Applying schema.sql migrations...');

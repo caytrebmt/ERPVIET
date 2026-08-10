@@ -3,8 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { storage } from "../utils/storage";
+import { useTranslation } from "react-i18next";
 
 const GoogleCallbackPage: React.FC = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setUser } = useAuth();
@@ -15,13 +17,13 @@ const GoogleCallbackPage: React.FC = () => {
     const error = searchParams.get("error");
 
     if (error) {
-      showToast("Đăng nhập Google bị huỷ hoặc thất bại.", "error");
+      showToast(t("page_google_cancel_error"), "error");
       navigate("/login", { replace: true });
       return;
     }
 
     if (!code) {
-      showToast("Thiếu mã xác thực từ Google.", "error");
+      showToast(t("page_google_missing_code"), "error");
       navigate("/login", { replace: true });
       return;
     }
@@ -40,14 +42,14 @@ const GoogleCallbackPage: React.FC = () => {
           storage.setRefreshToken(refresh_token);
           storage.setUser(customer);
           setUser(customer);
-          showToast(data.message || "Đăng nhập Google thành công!", "success");
+          showToast(data.message || t("auth_login_success"), "success");
           navigate("/", { replace: true });
         } else {
-          showToast(data.message || "Đăng nhập Google thất bại.", "error");
+          showToast(data.message || t("erp_login_failed"), "error");
           navigate("/login", { replace: true });
         }
       } catch (e) {
-        showToast("Lỗi kết nối máy chủ.", "error");
+        showToast(t("page_google_server_error"), "error");
         navigate("/login", { replace: true });
       }
     })();
@@ -56,7 +58,7 @@ const GoogleCallbackPage: React.FC = () => {
   return (
     <div className="max-w-md w-full mx-auto my-auto flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col gap-4 items-center justify-center">
-        <p className="text-xs text-gray-500 dark:text-gray-400">Đang xử lý đăng nhập Google...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{t("page_google_server_error")}</p>
       </div>
     </div>
   );

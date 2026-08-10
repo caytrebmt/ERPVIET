@@ -19,6 +19,8 @@ interface LanguageContextType {
   translationsList: TranslationItem[];
   updateTranslation: (key: string, vi: string, en: string, category?: string) => Promise<void>;
   deleteTranslation: (key: string) => Promise<void>;
+  createTranslation: (key: string, vi: string, en: string, category?: string) => Promise<void>;
+  saveAllToJSON: () => Promise<{ ok: boolean; message: string }>;
   resetToDefaults: () => void;
   refreshTranslations: () => Promise<void>;
   loadLocaleTranslations: () => Promise<void>;
@@ -132,7 +134,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshTranslations();
   }, [refreshTranslations]);
 
-   const setLanguage = (lang: Language) => {
+  const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     try {
       i18n.changeLanguage(lang).catch(() => {});
@@ -174,6 +176,21 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (e) {
       // Fallback saved locally
     }
+
+    try {
+      await fetch('/api/saas/translations/json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, lang: 'vi', value: vi }),
+      });
+      await fetch('/api/saas/translations/json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, lang: 'en', value: en }),
+      });
+    } catch (e) {
+      // JSON save is a bonus; DB save is the source of truth
+    }
   };
 
   const deleteTranslation = async (key: string) => {
@@ -187,6 +204,62 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
     } catch (e) {
       // Fallback deleted locally
+    }
+  };
+
+  const createTranslation = async (key: string, vi: string, en: string, category: string = 'common') => {
+    if (!key.trim()) return;
+
+    const existingIndex = translationsList.findIndex((item) => item.key === key);
+    let updated: TranslationItem[];
+
+    if (existingIndex >= 0) {
+      updated = [...translationsList];
+      updated[existingIndex] = { ...updated[existingIndex], vi, en, category, isCustom: true };
+    } else {
+      updated = [{ key, category, vi, en, isCustom: true }, ...translationsList];
+    }
+
+    setTranslationsList(updated);
+    localStorage.setItem('saas_translation_dictionary', JSON.stringify(updated));
+
+    try {
+      await fetch('/api/saas/translations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, category, vi, en }),
+      });
+      await fetch('/api/saas/translations/json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, lang: 'vi', value: vi }),
+      });
+      await fetch('/api/saas/translations/json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, lang: 'en', value: en }),
+      });
+    } catch (e) {
+      // Fallback saved locally
+    }
+  };
+
+  const saveAllToJSON = async (): Promise<{ ok: boolean; message: string }> => {
+    const translations: Record<string, any> = {};
+    translationsList.forEach((item) => {
+      translations[item.key] = { vi: item.vi, en: item.en };
+    });
+
+    try {
+      const res = await fetch('/api/saas/translations/json/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ translations }),
+      });
+      const data = await res.json();
+      return { ok: data.ok, message: data.message || 'Saved to JSON files.' };
+    } catch (e: any) {
+      return { ok: false, message: e.message || 'Failed to save to JSON files.' };
     }
   };
 
@@ -204,7 +277,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         t,
         translationsList,
         updateTranslation,
+        createTranslation,
         deleteTranslation,
+        saveAllToJSON,
         resetToDefaults,
         refreshTranslations,
         loadLocaleTranslations,

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import client from "../api/client";
 import { storage } from "../utils/storage";
 import { ErpUser } from "../types";
+import { useTranslation } from "react-i18next";
 
 interface SaaSAuthContextType {
   erpUser: ErpUser | null;
@@ -17,6 +18,7 @@ interface SaaSAuthContextType {
 const SaaSAuthContext = createContext<SaaSAuthContextType | undefined>(undefined);
 
 export const SaaSAuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { t } = useTranslation();
   const [erpUser, setErpUser] = useState<ErpUser | null>(null);
   const [erpLoading, setErpLoading] = useState<boolean>(true);
 
@@ -64,11 +66,11 @@ export const SaaSAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
         storage.setErpToken(token);
         storage.setErpUser(user);
         setErpUser(user);
-        return { ok: true, message: res.data.message || "Đăng nhập ERP thành công" };
+        return { ok: true, message: t("erp_login_success") };
       }
-      return { ok: false, message: res.data.message || "Đăng nhập ERP thất bại" };
+      return { ok: false, message: res.data.message || t("erp_login_failed") };
     } catch (error: any) {
-      const errMsg = error.response?.data?.message || "Đăng nhập ERP thất bại. Vui lòng thử lại.";
+      const errMsg = error.response?.data?.message || t("erp_login_failed_detail");
       return { ok: false, message: errMsg };
     }
   };

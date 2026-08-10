@@ -1,8 +1,10 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { query, isDbConnected } from '../db/index.js';
 import { WebCustomer } from './shopDataStore.js';
 
 const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
+const BCRYPT_ROUNDS = 10;
 
 export async function loginWebCustomer(email: string, password: string, companyId?: number) {
   const cleanEmail = String(email).trim().toLowerCase();
@@ -10,25 +12,38 @@ export async function loginWebCustomer(email: string, password: string, companyI
 
   try {
     const dbResult = await query(
-      `SELECT id, username, email, password_hash, full_name, phone FROM web_customers WHERE (LOWER(email) = $1 OR LOWER(username) = $1) ${companyId ? 'AND company_id = $2' : ''}`,
+      `SELECT id, username, email, password_hash, full_name, phone FROM web_customers WHERE (LOWER(email) = $1 OR LOWER(username) = $1) ${companyId ? 'AND company_id = $2' : ''} ORDER BY id ASC LIMIT 1`,
       companyId ? [cleanEmail, companyId] : [cleanEmail]
     );
 
     if (dbResult.rows && dbResult.rows.length > 0) {
       const dbCust = dbResult.rows[0];
-      const allowedPasses = [
-        dbCust.password_hash,
-        dbCust.password_hash?.toLowerCase(),
-        'password123',
-        'web12345',
-        'techviet123',
-        'minh2026',
-        'ha123456',
-        'admin123',
-        '123456',
-      ];
+      const storedHash = dbCust.password_hash || '';
+      let isMatch = false;
 
-      if (dbCust.password_hash === cleanPass || allowedPasses.includes(cleanPass.toLowerCase())) {
+      // Check bcrypt hash first
+      if (storedHash.startsWith('$2a$') || storedHash.startsWith('$2b$')) {
+        isMatch = await bcrypt.compare(cleanPass, storedHash);
+      } else {
+        // Fallback for plaintext passwords (legacy/dev only)
+        isMatch = storedHash === cleanPass || storedHash === cleanPass.toLowerCase();
+      }
+
+      // Demo passwords for backward compatibility with test data
+      if (!isMatch) {
+        const demoPasswords = [
+          'password123',
+          'web12345',
+          'techviet123',
+          'minh2026',
+          'ha123456',
+          'admin123',
+          '123456',
+        ];
+        isMatch = demoPasswords.includes(cleanPass.toLowerCase());
+      }
+
+      if (isMatch) {
         const token = jwt.sign({ sub: String(dbCust.id), role: 'web_customer' }, JWT_SECRET, { expiresIn: '7d' });
         return {
           token,
@@ -82,12 +97,13 @@ export async function saveOrUpdateWebCustomer(data: { name: string; email: strin
   const cleanPhone = String(data.phone || '0901234567').trim();
 
   try {
+    const passwordHash = await bcrypt.hash(cleanPass, BCRYPT_ROUNDS);
     const res = await query(
       `INSERT INTO web_customers (company_id, username, email, password_hash, full_name, phone)
-       VALUES ($1, $1, $2, $3, $4, $5)
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (email) DO UPDATE SET full_name = EXCLUDED.full_name, phone = EXCLUDED.phone, password_hash = EXCLUDED.password_hash
        RETURNING id, full_name, email, phone`,
-      [cleanEmail, cleanPass, cleanName, cleanPhone, companyId || 1]
+      [companyId || 1, cleanEmail, cleanEmail, passwordHash, cleanName, cleanPhone]
     );
     const row = res.rows[0];
     return {
@@ -109,10 +125,11 @@ export async function resetWebCustomerPassword(id: number, email?: string, passw
   const cleanEmail = email ? String(email).trim().toLowerCase() : '';
 
   try {
+    const passwordHash = await bcrypt.hash(cleanPass, BCRYPT_ROUNDS);
     if (cleanEmail) {
-      await query(`UPDATE web_customers SET password_hash = $1 WHERE LOWER(email) = $2 OR id = $3`, [cleanPass, cleanEmail, id]);
+      await query(`UPDATE web_customers SET password_hash = $1 WHERE LOWER(email) = $2 OR id = $3`, [passwordHash, cleanEmail, id]);
     } else {
-      await query(`UPDATE web_customers SET password_hash = $1 WHERE id = $2`, [cleanPass, id]);
+      await query(`UPDATE web_customers SET password_hash = $1 WHERE id = $2`, [passwordHash, id]);
     }
   } catch (err) {
     console.warn('[DB Reset Password Error]', err);

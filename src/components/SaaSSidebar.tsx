@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { useSaaSAuth } from '../contexts/SaaSAuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { storage } from '../utils/storage';
 
 interface SaaSSidebarProps {
   isOpen: boolean;
@@ -55,7 +56,40 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
   const location = useLocation();
   const isEn = language === 'en';
 
-   const role = erpUser?.role_code || 'ADMIN';
+  const [companyInfo, setCompanyInfo] = useState<{ name_vi?: string; name_en?: string; plan_type?: string; subscription_status?: string } | null>(null);
+
+  const role = erpUser?.role_code || 'ADMIN';
+
+  const planLabel = (() => {
+    if (!companyInfo?.plan_type) return isEn ? 'Plan' : 'Gói';
+    const p = companyInfo.plan_type;
+    if (p === 'free') return isEn ? 'Free' : 'Miễn phí';
+    if (p === 'starter') return isEn ? 'Starter' : 'Starter';
+    if (p === 'professional') return isEn ? 'Professional' : 'Professional';
+    if (p === 'enterprise') return isEn ? 'Enterprise' : 'Enterprise';
+    return p;
+  })();
+
+  useEffect(() => {
+    async function fetchCompanyInfo() {
+      const token = storage.getErpToken();
+      if (!token) return;
+      try {
+        const res = await fetch('/api/saas/tenants/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && data.data) {
+            setCompanyInfo(data.data);
+          }
+        }
+      } catch (err) {
+        console.warn('[SaaSSidebar] Failed to fetch company info', err);
+      }
+    }
+    fetchCompanyInfo();
+  }, [erpUser?.company_id]);
 
   // Role based filtering logic
   const isAllowedPath = (path: string): boolean => {
@@ -203,11 +237,18 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
             {!isCollapsed && (
               <div className="truncate">
                 <h1 className="font-bold text-base text-zinc-100 tracking-tight leading-tight truncate">
-                  ERP-VIET
+                  {companyInfo?.name_vi || companyInfo?.name_en || 'ERP-VIET'}
                 </h1>
-                <span className="text-[10px] text-amber-400 font-medium px-1.5 py-0.5 rounded-xs bg-amber-500/10 border border-amber-500/20">
-                  Enterprise
-                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] text-amber-400 font-medium px-1.5 py-0.5 rounded-xs bg-amber-500/10 border border-amber-500/20">
+                    {companyInfo ? (isEn ? 'Workspace' : 'Không gian làm việc') : 'Enterprise'}
+                  </span>
+                  {companyInfo?.plan_type && (
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-xs bg-zinc-800 text-zinc-300 border border-zinc-700/60">
+                      {planLabel}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>

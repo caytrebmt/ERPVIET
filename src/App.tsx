@@ -111,7 +111,7 @@ export default function App() {
                         path="/saas/web-orders"
                         element={
                           <SaaSProtectedRoute allowedRoles={["ADMIN", "SALES", "ACCOUNTANT"]}>
-                            <SaaSLayout title="Quản Lý Đơn Hàng Web">
+                            <SaaSLayout title={t('layout_web_orders')}>
                               <SaaSWebOrdersPage />
                             </SaaSLayout>
                           </SaaSProtectedRoute>

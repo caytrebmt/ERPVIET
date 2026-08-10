@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { storage } from "../utils/storage";
+import i18n from "../i18n";
 
 // Since frontend and backend run on the same Origin in AI Studio (Port 3000), 
 // we use a relative base URL or fall back to window.location.origin
@@ -13,9 +14,15 @@ const client = axios.create({
 // Interceptor for sending access token and guest cart session ID
 client.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const accessToken = storage.getAccessToken();
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    // SaaS endpoints require the ERP JWT token; shop endpoints use the shop access token.
+    // Fall back to whichever token is available so mixed-origin calls still authenticate.
+    const erpToken = storage.getErpToken();
+    const shopToken = storage.getAccessToken();
+    const isSaasApi = config.url?.startsWith('/api/saas/');
+    const token = isSaasApi ? (erpToken || shopToken) : (shopToken || erpToken);
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     // Always inject the guest cart session ID so the server can track guest carts
@@ -110,7 +117,7 @@ client.interceptors.response.use(
           }
           return client(originalRequest);
         } else {
-          throw new Error("Không thể refresh token");
+          throw new Error(i18n.t("api_refresh_token_error"));
         }
       } catch (refreshError) {
         processQueue(refreshError, null);

@@ -3,8 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, User, Mail, Phone, Lock, Loader2, ArrowLeft, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
+import { useTranslation } from "react-i18next";
 
 const RegisterPage: React.FC = () => {
+  const { t } = useTranslation();
   const { register, isAuthenticated, loading } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -29,17 +31,17 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
 
     if (!name.trim() || !email.trim() || !phone.trim() || !password || !confirmPassword) {
-      showToast("Vui lòng điền đầy đủ tất cả các trường dữ liệu bắt buộc", "error");
+      showToast(t("page_register_all_fields_required"), "error");
       return;
     }
 
     if (password.length < 8) {
-      showToast("Mật khẩu bảo mật phải chứa ít nhất 8 ký tự", "error");
+      showToast(t("page_register_password_min_length"), "error");
       return;
     }
 
     if (password !== confirmPassword) {
-      showToast("Mật khẩu và xác nhận mật khẩu không khớp. Vui lòng kiểm tra lại!", "error");
+      showToast(t("page_register_password_mismatch"), "error");
       return;
     }
 
@@ -61,7 +63,7 @@ const RegisterPage: React.FC = () => {
         showToast(result.message, "error");
       }
     } catch (err) {
-      showToast("Đăng ký tài khoản không thành công. Thử lại sau.", "error");
+      showToast(t("page_register_failed"), "error");
     } finally {
       setSubmitting(false);
     }
