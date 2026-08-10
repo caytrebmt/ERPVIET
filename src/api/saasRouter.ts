@@ -5,6 +5,9 @@ import { query, isDbConnected, pool } from '../db/index';
 import { tenantMiddleware, TenantRequest } from '../middleware/tenant.js';
 import { postInventoryMovement } from '../services/inventoryService.js';
 
+import viLocales from '../../public/locales/vi.json';
+import enLocales from '../../public/locales/en.json';
+
 const BCRYPT_ROUNDS = 10;
 
 export const saasRouter = Router();
@@ -344,25 +347,31 @@ saasRouter.get('/locales/:lang', async (req: Request, res: Response) => {
   }
 
   try {
-    const fs = await import('fs');
-    const path = await import('path');
+    let content: string = '';
+    let found = false;
 
-    const possiblePaths = [
-      path.join(process.cwd(), 'public', 'locales', `${lang}.json`),
-      path.join(process.cwd(), 'dist', 'locales', `${lang}.json`),
-      path.join(process.cwd(), 'locales', `${lang}.json`),
-    ];
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const possiblePaths = [
+        path.join(process.cwd(), 'public', 'locales', `${lang}.json`),
+        path.join(process.cwd(), 'dist', 'locales', `${lang}.json`),
+      ];
 
-    let content: string | null = null;
-    for (const localePath of possiblePaths) {
-      if (fs.existsSync(localePath)) {
-        content = fs.readFileSync(localePath, 'utf8');
-        break;
+      for (const localePath of possiblePaths) {
+        try {
+          if (fs.existsSync(localePath)) {
+            content = fs.readFileSync(localePath, 'utf8');
+            found = true;
+            break;
+          }
+        } catch { }
       }
-    }
+    } catch { }
 
-    if (!content) {
-      return res.status(404).json({ ok: false, error: `Locale file not found: ${lang}.json` });
+    if (!found) {
+      const fallback = lang === 'vi' ? (viLocales as any).default || viLocales : (enLocales as any).default || enLocales;
+      content = JSON.stringify(fallback);
     }
 
     res.setHeader('Content-Type', 'application/json');
