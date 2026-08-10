@@ -22,8 +22,3 @@
 
 # Serve locale JSON files from the Express-backed Netlify Function
 # (prevents SPA fallback from intercepting /locales/*.json requests).
-[[redirects]]
-  from = "/locales/:lang.json"
-  to = "/.netlify/functions/api/locales/:lang.json"
-  status = 200
-  force = true
