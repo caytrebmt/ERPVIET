@@ -28,6 +28,11 @@ interface LanguageContextType {
 
 const fetchLocaleFile = async (lang: Language): Promise<Record<string, string>> => {
   try {
+    const apiRes = await fetch(`/api/saas/locales/${lang}`, { cache: "no-store" });
+    if (apiRes.ok) return (await apiRes.json()) as Record<string, string>;
+  } catch { }
+
+  try {
     const res = await fetch(`/locales/${lang}.json`, { cache: "no-store" });
     if (!res.ok) return {};
     return (await res.json()) as Record<string, string>;

@@ -5,6 +5,11 @@ export type AppLanguage = "vi" | "en";
 
 const fetchLocale = async (lng: AppLanguage): Promise<Record<string, string>> => {
   try {
+    const apiRes = await fetch(`/api/saas/locales/${lng}`, { cache: "no-store" });
+    if (apiRes.ok) return ((await apiRes.json()) as Record<string, string>);
+  } catch { }
+
+  try {
     const res = await fetch(`/locales/${lng}.json`, { cache: "no-store" });
     return res.ok ? ((await res.json()) as Record<string, string>) : {};
   } catch {

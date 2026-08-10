@@ -38,6 +38,41 @@ const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
 
 shopRouter.use(shopTenantMiddleware);
 
+shopRouter.get('/locales/:lang', async (req: Request, res: Response) => {
+  const { lang } = req.params;
+  if (!['vi', 'en'].includes(lang)) {
+    return res.status(400).json({ ok: false, error: 'Invalid language code' });
+  }
+
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const possiblePaths = [
+      path.join(process.cwd(), 'public', 'locales', `${lang}.json`),
+      path.join(process.cwd(), 'dist', 'locales', `${lang}.json`),
+      path.join(process.cwd(), 'locales', `${lang}.json`),
+    ];
+
+    let content: string | null = null;
+    for (const localePath of possiblePaths) {
+      if (fs.existsSync(localePath)) {
+        content = fs.readFileSync(localePath, 'utf8');
+        break;
+      }
+    }
+
+    if (!content) {
+      return res.status(404).json({ ok: false, error: `Locale file not found: ${lang}.json` });
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.send(content);
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
 async function serializeCart(cart: CartData) {
   const items = await Promise.all(cart.items.map(async (item) => {
     const product = await fetchProductByIdOrSlug(String(item.product_id));
