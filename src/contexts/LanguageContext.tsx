@@ -18,9 +18,10 @@ interface LanguageContextType {
   t: (key: string, defaultText?: string) => string;
   translationsList: TranslationItem[];
   updateTranslation: (key: string, vi: string, en: string, category?: string) => Promise<void>;
-  deleteTranslation: (key: string) => Promise<void>;
   createTranslation: (key: string, vi: string, en: string, category?: string) => Promise<void>;
+  deleteTranslation: (key: string) => Promise<void>;
   saveAllToJSON: () => Promise<{ ok: boolean; message: string }>;
+  publishToJSON: () => Promise<{ ok: boolean; message: string; data?: any }>;
   resetToDefaults: () => void;
   refreshTranslations: () => Promise<void>;
   loadLocaleTranslations: () => Promise<void>;
@@ -181,21 +182,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (e) {
       // Fallback saved locally
     }
-
-    try {
-      await fetch('/api/saas/translations/json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, lang: 'vi', value: vi }),
-      });
-      await fetch('/api/saas/translations/json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, lang: 'en', value: en }),
-      });
-    } catch (e) {
-      // JSON save is a bonus; DB save is the source of truth
-    }
   };
 
   const deleteTranslation = async (key: string) => {
@@ -234,16 +220,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, category, vi, en }),
       });
-      await fetch('/api/saas/translations/json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, lang: 'vi', value: vi }),
-      });
-      await fetch('/api/saas/translations/json', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, lang: 'en', value: en }),
-      });
     } catch (e) {
       // Fallback saved locally
     }
@@ -268,6 +244,19 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const publishToJSON = async (): Promise<{ ok: boolean; message: string; data?: any }> => {
+    try {
+      const res = await fetch('/api/saas/translations/json/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      return { ok: data.ok, message: data.message || 'Published to JSON files.', data: data.data };
+    } catch (e: any) {
+      return { ok: false, message: e.message || 'Failed to publish to JSON files.' };
+    }
+  };
+
   const resetToDefaults = () => {
     localStorage.removeItem('saas_translation_dictionary');
     loadLocaleTranslations();
@@ -281,10 +270,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         toggleLanguage,
         t,
         translationsList,
-        updateTranslation,
+         updateTranslation,
         createTranslation,
         deleteTranslation,
         saveAllToJSON,
+        publishToJSON,
         resetToDefaults,
         refreshTranslations,
         loadLocaleTranslations,

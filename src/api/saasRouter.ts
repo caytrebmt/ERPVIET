@@ -381,6 +381,34 @@ saasRouter.get('/locales/:lang', async (req: Request, res: Response) => {
   }
 });
 
+saasRouter.get('/locales/:lang/db', async (req: Request, res: Response) => {
+  const { lang } = req.params;
+  if (!['vi', 'en'].includes(lang)) {
+    return res.status(400).json({ ok: false, error: 'Invalid language code' });
+  }
+
+  try {
+    const viField = 'vi_text';
+    const enField = 'en_text';
+    const sql = lang === 'vi'
+      ? `SELECT key_name as key, vi_text as value FROM sys_translations WHERE vi_text IS NOT NULL ORDER BY key_name ASC`
+      : `SELECT key_name as key, en_text as value FROM sys_translations WHERE en_text IS NOT NULL ORDER BY key_name ASC`;
+
+    const result = await query(sql);
+    const flat: Record<string, string> = {};
+    (result.rows || []).forEach((row: any) => {
+      if (!String(row.key).startsWith('_')) {
+        flat[row.key] = row.value;
+      }
+    });
+
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(flat));
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
 saasRouter.get('/languages', async (req, res) => {
   try {
     const result = await query('SELECT * FROM sys_languages WHERE is_active = TRUE ORDER BY is_default DESC');
@@ -526,6 +554,52 @@ saasRouter.post('/translations/json/bulk', tenantMiddleware, async (req: TenantR
     fs.writeFileSync(enPath, JSON.stringify(enContent, null, 2) + '\n');
 
     res.json({ ok: true, message: `Saved ${Object.keys(translations).length} translations to JSON locale files.` });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+saasRouter.post('/translations/json/publish', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const viPath = path.join(process.cwd(), 'public', 'locales', 'vi.json');
+    const enPath = path.join(process.cwd(), 'public', 'locales', 'en.json');
+
+    let viContent: Record<string, any> = {};
+    let enContent: Record<string, any> = {};
+
+    try { viContent = JSON.parse(fs.readFileSync(viPath, 'utf8')); } catch { }
+    try { enContent = JSON.parse(fs.readFileSync(enPath, 'utf8')); } catch { }
+
+    const result = await query(
+      `SELECT key_name as key, category, vi_text as vi, en_text as en
+       FROM sys_translations ORDER BY key_name ASC`
+    );
+
+    const dbTranslations = result.rows || [];
+
+    for (const row of dbTranslations) {
+      const key = String(row.key);
+      if (key.startsWith('_')) continue;
+
+      if (row.vi) viContent[key] = row.vi;
+      if (row.en) enContent[key] = row.en;
+      if (row.vi && !row.en) enContent[key] = row.vi;
+      if (row.en && !row.vi) viContent[key] = row.en;
+
+      if (row.category && row.category !== 'common') {
+        if (!viContent._groups) viContent._groups = {};
+        if (!Array.isArray(viContent._groups[row.category])) viContent._groups[row.category] = [];
+        if (!viContent._groups[row.category].includes(key)) viContent._groups[row.category].push(key);
+      }
+    }
+
+    fs.writeFileSync(viPath, JSON.stringify(viContent, null, 2) + '\n');
+    fs.writeFileSync(enPath, JSON.stringify(enContent, null, 2) + '\n');
+
+    res.json({ ok: true, data: { viKeys: Object.keys(viContent).length, enKeys: Object.keys(enContent).length, published: dbTranslations.length }, message: `Published ${dbTranslations.length} translations from DB to JSON files.` });
   } catch (error: any) {
     res.status(500).json({ ok: false, error: error.message });
   }

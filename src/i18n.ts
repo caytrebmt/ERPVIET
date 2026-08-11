@@ -10,6 +10,11 @@ const fetchLocale = async (lng: AppLanguage): Promise<Record<string, string>> =>
   } catch { }
 
   try {
+    const dbRes = await fetch(`/api/saas/locales/${lng}/db`, { cache: "no-store" });
+    if (dbRes.ok) return ((await dbRes.json()) as Record<string, string>);
+  } catch { }
+
+  try {
     const res = await fetch(`/locales/${lng}.json`, { cache: "no-store" });
     return res.ok ? ((await res.json()) as Record<string, string>) : {};
   } catch {

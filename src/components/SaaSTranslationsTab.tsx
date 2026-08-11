@@ -35,6 +35,7 @@ export const SaaSTranslationsTab: React.FC = () => {
     refreshTranslations,
     loadLocaleTranslations,
     saveAllToJSON,
+    publishToJSON,
     t,
   } = useLanguage();
 
@@ -192,11 +193,16 @@ export const SaaSTranslationsTab: React.FC = () => {
   };
 
   const handleSaveAllToJSON = async () => {
-    const result = await saveAllToJSON();
+    const result = await publishToJSON();
     if (result.ok) {
-      addToast(language === 'en' ? `Saved ${totalKeys} keys to JSON files!` : `Đã lưu ${totalKeys} từ khóa vào file JSON!`, 'success');
+      addToast(
+        language === 'en'
+          ? `Published ${result.data?.published || 0} translations from DB to JSON files!`
+          : `Đã xuất bản ${result.data?.published || 0} bản dịch từ DB ra JSON!`,
+        'success'
+      );
     } else {
-      addToast(language === 'en' ? `Failed to save to JSON: ${result.message}` : `Lỗi lưu JSON: ${result.message}`, 'error');
+      addToast(language === 'en' ? `Failed to publish: ${result.message}` : `Lỗi xuất bản: ${result.message}`, 'error');
     }
   };
 
@@ -319,7 +325,7 @@ export const SaaSTranslationsTab: React.FC = () => {
               title={language === 'en' ? 'Save all translations to JSON locale files' : 'Lưu tất cả dịch thuật vào file JSON'}
             >
               <Save className="w-3.5 h-3.5 text-emerald-500" />
-              <span>{language === 'en' ? 'Save to JSON' : 'Lưu ra JSON'}</span>
+              <span>{language === 'en' ? 'Publish to JSON' : 'Xuất bản ra JSON'}</span>
             </button>
           </div>
         </div>

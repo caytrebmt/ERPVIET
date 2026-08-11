@@ -16,6 +16,7 @@ import {
   ArrowLeftRight,
   Plus,
   AlertTriangle,
+  Upload,
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '../contexts/ToastContext';
@@ -34,6 +35,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
   const [translations, setTranslations] = useState<TranslationEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -195,6 +197,32 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
     }
   };
 
+  const handlePublishFromDB = async () => {
+    if (!window.confirm(language === 'en' ? 'Publish all DB translations to JSON files? This will overwrite existing JSON content.' : 'Xuất bản tất cả bản dịch từ DB ra file JSON? Thao tác này sẽ ghi đè nội dung JSON hiện tại.')) {
+      return;
+    }
+
+    setPublishing(true);
+    try {
+      const res = await client.post('/api/saas/translations/json/publish');
+      if (res.data?.ok) {
+        addToast(
+          language === 'en'
+            ? `Published ${res.data.data.published} translations from DB to JSON (${res.data.data.viKeys} VI, ${res.data.data.enKeys} EN)!`
+            : `Đã xuất bản ${res.data.data.published} bản dịch từ DB ra JSON (${res.data.data.viKeys} từ VI, ${res.data.data.enKeys} từ EN)!`,
+          'success'
+        );
+        loadTranslations();
+      } else {
+        addToast(res.data?.error || 'Failed to publish to JSON', 'error');
+      }
+    } catch (err: any) {
+      addToast(err.response?.data?.error || 'Failed to publish to JSON', 'error');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   const handleAddNewKey = async (e: React.FormEvent) => {
     e.preventDefault();
     const formattedKey = newKey.trim().toLowerCase().replace(/\s+/g, '_');
@@ -284,6 +312,19 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
               <Save className="w-3.5 h-3.5" />
             )}
             {language === 'en' ? 'Save All to JSON' : 'Lưu Tất Cả ra JSON'}
+          </button>
+
+          <button
+            onClick={handlePublishFromDB}
+            disabled={publishing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white shadow transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            {publishing ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Upload className="w-3.5 h-3.5" />
+            )}
+            {language === 'en' ? 'Publish from DB' : 'Xuất bản từ DB'}
           </button>
           <button
             onClick={loadTranslations}
