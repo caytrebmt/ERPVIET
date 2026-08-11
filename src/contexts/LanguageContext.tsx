@@ -42,15 +42,18 @@ const fetchLocaleFile = async (lang: Language): Promise<Record<string, string>> 
   }
 };
 
-const buildTranslationItems = (enData: Record<string, string>, viData: Record<string, string>): TranslationItem[] => {
+const buildTranslationItems = (enData: Record<string, any>, viData: Record<string, any>): TranslationItem[] => {
   const keys = new Set([...Object.keys(enData), ...Object.keys(viData)]);
   const items: TranslationItem[] = [];
   keys.forEach((key) => {
+    if (key.startsWith('_')) return;
+    const viVal = typeof viData[key] === 'string' ? viData[key] : '';
+    const enVal = typeof enData[key] === 'string' ? enData[key] : '';
     items.push({
       key,
       category: 'common',
-      vi: viData[key] || enData[key] || key,
-      en: enData[key] || viData[key] || key,
+      vi: viVal || enVal || key,
+      en: enVal || viVal || key,
     });
   });
   return items;

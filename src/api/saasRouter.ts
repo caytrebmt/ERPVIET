@@ -471,16 +471,28 @@ saasRouter.delete('/translations/:key', async (req: Request, res: Response) => {
 
 saasRouter.get('/translations/json', tenantMiddleware, async (req: TenantRequest, res: Response) => {
   try {
-    const fs = await import('fs');
-    const path = await import('path');
-    const viPath = path.join(process.cwd(), 'public', 'locales', 'vi.json');
-    const enPath = path.join(process.cwd(), 'public', 'locales', 'en.json');
-    
-    const viContent = JSON.parse(fs.readFileSync(viPath, 'utf8'));
-    const enContent = JSON.parse(fs.readFileSync(enPath, 'utf8'));
-    
-    res.json({ 
-      ok: true, 
+    let viContent: Record<string, any> = {};
+    let enContent: Record<string, any> = {};
+
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const viPath = path.join(process.cwd(), 'public', 'locales', 'vi.json');
+      const enPath = path.join(process.cwd(), 'public', 'locales', 'en.json');
+
+      try { viContent = JSON.parse(fs.readFileSync(viPath, 'utf8')); } catch { }
+      try { enContent = JSON.parse(fs.readFileSync(enPath, 'utf8')); } catch { }
+    } catch { }
+
+    if (Object.keys(viContent).length === 0) {
+      viContent = (viLocales as any).default || viLocales;
+    }
+    if (Object.keys(enContent).length === 0) {
+      enContent = (enLocales as any).default || enLocales;
+    }
+
+    res.json({
+      ok: true,
       data: {
         vi: viContent,
         en: enContent,
@@ -494,24 +506,34 @@ saasRouter.get('/translations/json', tenantMiddleware, async (req: TenantRequest
 
 saasRouter.put('/translations/json', tenantMiddleware, async (req: TenantRequest, res: Response) => {
   const { key, lang, value } = req.body;
-  if (!key || !lang || !value) {
+  if (!key || !lang || value === undefined) {
     return res.status(400).json({ ok: false, error: 'Key, lang, and value are required' });
   }
-  
+
   try {
     const fs = await import('fs');
     const path = await import('path');
     const targetPath = path.join(process.cwd(), 'public', 'locales', lang === 'en' ? 'en.json' : 'vi.json');
-    
-    const content = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
-    if (!(key in content)) {
-      return res.status(404).json({ ok: false, error: 'Key not found' });
+
+    let content: Record<string, any> = {};
+    try { content = JSON.parse(fs.readFileSync(targetPath, 'utf8')); } catch { }
+
+    if (Object.keys(content).length === 0 && lang === 'vi') {
+      content = { ...((viLocales as any).default || viLocales) };
     }
-    
+    if (Object.keys(content).length === 0 && lang === 'en') {
+      content = { ...((enLocales as any).default || enLocales) };
+    }
+
     content[key] = value;
-    fs.writeFileSync(targetPath, JSON.stringify(content, null, 2) + '\n');
-    
-    res.json({ ok: true, message: 'Translation updated' });
+
+    try {
+      fs.writeFileSync(targetPath, JSON.stringify(content, null, 2) + '\n');
+    } catch (writeErr: any) {
+      return res.status(500).json({ ok: false, error: 'Cannot write to locale file (filesystem read-only). Use Publish from DB instead.', detail: writeErr.message });
+    }
+
+    res.json({ ok: true, message: 'Translation updated in JSON file' });
   } catch (error: any) {
     res.status(500).json({ ok: false, error: error.message });
   }
@@ -534,6 +556,13 @@ saasRouter.post('/translations/json/bulk', tenantMiddleware, async (req: TenantR
 
     try { viContent = JSON.parse(fs.readFileSync(viPath, 'utf8')); } catch { }
     try { enContent = JSON.parse(fs.readFileSync(enPath, 'utf8')); } catch { }
+
+    if (Object.keys(viContent).length === 0) {
+      viContent = { ...((viLocales as any).default || viLocales) };
+    }
+    if (Object.keys(enContent).length === 0) {
+      enContent = { ...((enLocales as any).default || enLocales) };
+    }
 
     const isObj = (v: any) => v && typeof v === 'object' && !Array.isArray(v);
 
@@ -572,6 +601,13 @@ saasRouter.post('/translations/json/publish', tenantMiddleware, async (req: Tena
 
     try { viContent = JSON.parse(fs.readFileSync(viPath, 'utf8')); } catch { }
     try { enContent = JSON.parse(fs.readFileSync(enPath, 'utf8')); } catch { }
+
+    if (Object.keys(viContent).length === 0) {
+      viContent = { ...((viLocales as any).default || viLocales) };
+    }
+    if (Object.keys(enContent).length === 0) {
+      enContent = { ...((enLocales as any).default || enLocales) };
+    }
 
     const result = await query(
       `SELECT key_name as key, category, vi_text as vi, en_text as en
