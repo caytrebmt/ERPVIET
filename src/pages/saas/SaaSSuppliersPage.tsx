@@ -3,6 +3,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Truck, Plus, Phone, Mail, MapPin, Edit2, Trash2, X } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
 import { useToast } from '../../contexts/ToastContext';
+import { useTranslation } from 'react-i18next';
 
 interface SupplierItem {
   id: number;
@@ -17,6 +18,7 @@ interface SupplierItem {
 
 export const SaaSSuppliersPage: React.FC = () => {
   const { addToast } = useToast();
+  const { t } = useTranslation();
   const [suppliers, setSuppliers] = useState<SupplierItem[]>([]);
 
   const [showModal, setShowModal] = useState(false);
@@ -77,7 +79,7 @@ export const SaaSSuppliersPage: React.FC = () => {
             : s
         )
       );
-      addToast('Cập nhật nhà cung cấp thành công!', 'success');
+      addToast(t('pages.saas.suppliers.update_success'), 'success');
     } else {
       const newSupplier: SupplierItem = {
         id: Date.now(),
@@ -90,22 +92,22 @@ export const SaaSSuppliersPage: React.FC = () => {
         payableDebt: Number(formData.payableDebt),
       };
       setSuppliers([newSupplier, ...suppliers]);
-      addToast('Thêm nhà cung cấp mới thành công!', 'success');
+      addToast(t('pages.saas.suppliers.add_success'), 'success');
     }
     setShowModal(false);
   };
 
   const handleDelete = (id: number, name: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa nhà cung cấp "${name}"?`)) {
+    if (window.confirm(t('pages.saas.suppliers.confirm_delete', { name }))) {
       setSuppliers(suppliers.filter((s) => s.id !== id));
-      addToast(`Đã xóa nhà cung cấp "${name}"`, 'warning');
+      addToast(t('pages.saas.suppliers.deleted', { name }), 'warning');
     }
   };
 
   const columns: ColumnDef<SupplierItem>[] = [
     {
       accessorKey: 'code',
-      header: 'Mã NCC',
+      header: t('pages.saas.suppliers.table.code'),
       cell: (info) => (
         <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
           {info.getValue() as string}
@@ -114,16 +116,16 @@ export const SaaSSuppliersPage: React.FC = () => {
     },
     {
       accessorKey: 'name',
-      header: 'Tên Nhà Cung Cấp',
+      header: t('pages.saas.suppliers.table.name'),
       cell: (info) => <span className="font-bold text-zinc-900 dark:text-zinc-100">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'contactPerson',
-      header: 'Người Liên Hệ',
+      header: t('pages.saas.suppliers.table.contact'),
     },
     {
       accessorKey: 'phone',
-      header: 'Số Điện Thoại / Email',
+      header: t('pages.saas.suppliers.table.phone_email'),
       cell: (info) => (
         <div className="text-xs space-y-0.5">
           <div className="flex items-center gap-1 font-medium text-zinc-800 dark:text-zinc-200">
@@ -139,7 +141,7 @@ export const SaaSSuppliersPage: React.FC = () => {
     },
     {
       accessorKey: 'address',
-      header: 'Địa Chỉ Kho',
+      header: t('pages.saas.suppliers.table.address'),
       cell: (info) => (
         <div className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 max-w-xs truncate">
           <MapPin className="h-3 w-3 text-zinc-400 shrink-0" />
@@ -149,7 +151,7 @@ export const SaaSSuppliersPage: React.FC = () => {
     },
     {
       accessorKey: 'payableDebt',
-      header: 'Nợ Phải Trả',
+      header: t('pages.saas.suppliers.table.payableDebt'),
       cell: (info) => {
         const debt = info.getValue() as number;
         return (
@@ -161,20 +163,20 @@ export const SaaSSuppliersPage: React.FC = () => {
     },
     {
       id: 'actions',
-      header: 'Thao Tác',
+      header: t('pages.saas.suppliers.table.actions'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => handleOpenEdit(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-            title="Chỉnh sửa thông tin"
+            title={t('pages.saas.suppliers.action.edit')}
           >
             <Edit2 className="h-4 w-4 text-amber-500" />
           </button>
           <button
             onClick={() => handleDelete(row.original.id, row.original.name)}
             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors"
-            title="Xóa nhà cung cấp"
+            title={t('pages.saas.suppliers.action.delete')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -188,21 +190,19 @@ export const SaaSSuppliersPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Truck className="h-6 w-6 text-amber-500" /> Nhà Cung Cấp & Đối Tác
+            <Truck className="h-6 w-6 text-amber-500" /> {t('pages.saas.suppliers.title')}
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Quản lý thông tin đầu mối nhập hàng, công nợ phải trả và đánh giá nhà cung ứng.
-          </p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{t('pages.saas.suppliers.description')}</p>
         </div>
         <button
           onClick={handleOpenAdd}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all"
         >
-          <Plus className="h-4 w-4" /> Thêm nhà cung cấp
+          <Plus className="h-4 w-4" /> {t('pages.saas.suppliers.btn.add')}
         </button>
       </div>
 
-      <DataTable columns={columns} data={suppliers} searchPlaceholder="Tìm tên nhà cung cấp, mã NCC, SĐT..." />
+      <DataTable columns={columns} data={suppliers} searchPlaceholder={t('pages.saas.suppliers.search_placeholder')} />
 
       {/* Modal Add/Edit Supplier */}
       {showModal && (
@@ -211,7 +211,7 @@ export const SaaSSuppliersPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <Truck className="h-5 w-5 text-amber-500" />
-                {editingSupplier ? 'Chỉnh Sửa Nhà Cung Cấp' : 'Thêm Nhà Cung Cấp Mới'}
+                {editingSupplier ? t('pages.saas.suppliers.modal.edit_title') : t('pages.saas.suppliers.modal.add_title')}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -223,30 +223,30 @@ export const SaaSSuppliersPage: React.FC = () => {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Tên Nhà Cung Cấp *</label>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('pages.saas.suppliers.form.label.name')} *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Nhập tên doanh nghiệp / nhà cung cấp"
+                  placeholder={t('pages.saas.suppliers.form.placeholder.name')}
                   className="w-full px-3 py-2 text-sm font-semibold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Người Liên Hệ</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('pages.saas.suppliers.form.label.contact')}</label>
                   <input
                     type="text"
                     value={formData.contactPerson}
                     onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                    placeholder="Nguyễn Văn A"
+                    placeholder={t('pages.saas.suppliers.form.placeholder.contact')}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Số Điện Thoại</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('pages.saas.suppliers.form.label.phone')}</label>
                   <input
                     type="text"
                     value={formData.phone}
@@ -259,7 +259,7 @@ export const SaaSSuppliersPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Email NCC</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('pages.saas.suppliers.form.label.email')}</label>
                   <input
                     type="email"
                     value={formData.email}
@@ -269,7 +269,7 @@ export const SaaSSuppliersPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Số Dư Nợ Đầu Kỳ (VND)</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('pages.saas.suppliers.form.label.debt')}</label>
                   <input
                     type="number"
                     value={formData.payableDebt}
@@ -280,12 +280,12 @@ export const SaaSSuppliersPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Địa Chỉ Văn Phòng / Kho Hàng</label>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('pages.saas.suppliers.form.label.address')}</label>
                 <input
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="KCN Sài Đồng, Long Biên, Hà Nội"
+                  placeholder={t('pages.saas.suppliers.form.placeholder.address')}
                   className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 />
               </div>
@@ -296,13 +296,13 @@ export const SaaSSuppliersPage: React.FC = () => {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
                 >
-                  Hủy Bỏ
+                  {t('pages.saas.suppliers.btn.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg shadow-xs"
                 >
-                  {editingSupplier ? 'Cập Nhật Nhà Cung Cấp' : 'Lưu Nhà Cung Cấp'}
+                  {editingSupplier ? t('pages.saas.suppliers.btn.update') : t('pages.saas.suppliers.btn.save')}
                 </button>
               </div>
             </form>

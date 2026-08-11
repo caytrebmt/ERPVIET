@@ -1,0 +1,5 @@
+[
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Cập nhật nhà cung cấp thành công!","key":"pages.saas.suppliers.update_success","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Thêm nhà cung cấp mới thành công!","key":"pages.saas.suppliers.add_success","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Bạn có chắc chắn muốn xóa nhà cung cấp \"${name}\"?","key":"pages.saas.suppliers.confirm_delete","params":["name"]}
+]
