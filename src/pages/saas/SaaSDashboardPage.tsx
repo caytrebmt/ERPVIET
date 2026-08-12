@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
 import { useLanguage } from '../../contexts/LanguageContext';
-import api from '../../services/api';
+import client from '../../api/client';
 
 interface StockAlertItem {
   id: number;
@@ -45,7 +45,7 @@ export const SaaSDashboardPage: React.FC = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await api.get('/shop/catalog');
+        const res = await client.get('/shop/catalog');
         if (res.data?.ok && Array.isArray(res.data.data?.products)) {
           const prods = res.data.data.products;
           const lowStock = prods

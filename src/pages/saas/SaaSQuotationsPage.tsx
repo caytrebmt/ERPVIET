@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { FileSpreadsheet, Plus, Printer, ArrowRightLeft, Edit2, Trash2, X, Calculator, Send } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
@@ -8,6 +8,7 @@ import { SaaSDateFilterBar, DateFilterValue, filterByDateRange } from '../../com
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { useToast } from '../../contexts/ToastContext';
 import { generateERPCode } from '../../utils/format';
+import client from '../../api/client';
 
 interface QuotationLineItem {
   id: string;
@@ -36,14 +37,27 @@ interface QuotationItem {
   status: 'Đã gửi' | 'Chấp nhận' | 'Đã xuất hóa đơn' | 'Nháp';
 }
 
-const SAMPLE_PRODUCTS = [];
+interface ProductOption {
+  id: string;
+  name: string;
+  sku: string;
+  unit: string;
+  price: number;
+}
 
-const SAMPLE_CUSTOMERS = [];
+interface CustomerOption {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+}
 
 export const SaaSQuotationsPage: React.FC = () => {
   const { addToast } = useToast();
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ preset: 'all', fromDate: '', toDate: '' });
 
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [quotations, setQuotations] = useState<QuotationItem[]>([]);
 
   const [printModalOpen, setPrintModalOpen] = useState(false);
@@ -74,6 +88,41 @@ export const SaaSQuotationsPage: React.FC = () => {
       unitPrice: 18000000,
     },
   ]);
+
+  useEffect(() => {
+    const loadDropdownData = async () => {
+      try {
+        const [prodRes, custRes] = await Promise.all([
+          client.get('/api/shop/admin/products?limit=1000&include_inactive=true'),
+          client.get('/api/saas/customers'),
+        ]);
+        if (prodRes.data?.ok && Array.isArray(prodRes.data.data?.items)) {
+          setProducts(
+            prodRes.data.data.items.map((p: any) => ({
+              id: String(p.id),
+              name: p.name_vi || p.name || p.name_en || 'Sản phẩm',
+              sku: p.sku || '',
+              unit: p.unit_vi || p.unit || p.unit_en || 'Cái',
+              price: p.salePrice || p.costPrice || 0,
+            }))
+          );
+        }
+        if (custRes.data?.ok && Array.isArray(custRes.data.data)) {
+          setCustomers(
+            custRes.data.data.map((c: any) => ({
+              id: String(c.id),
+              name: c.name || 'Khách hàng',
+              phone: c.phone || '',
+              address: c.address || '',
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn('Failed to load dropdown data:', err);
+      }
+    };
+    loadDropdownData();
+  }, []);
 
   const handleOpenPrint = (quotation: QuotationItem) => {
     setSelectedQuotation(quotation);
@@ -131,7 +180,7 @@ export const SaaSQuotationsPage: React.FC = () => {
   };
 
   const handleAddLineItem = () => {
-    const p = SAMPLE_PRODUCTS[0];
+    const p = products[0] || { id: 'p1', name: 'Sản phẩm mẫu', sku: 'SP001', unit: 'Cái', price: 0 };
     const newItem: QuotationLineItem = {
       id: `qitem-${Date.now()}`,
       productId: p.id,
@@ -153,7 +202,7 @@ export const SaaSQuotationsPage: React.FC = () => {
   };
 
   const handleProductChange = (lineId: string, productId: string) => {
-    const prod = SAMPLE_PRODUCTS.find((p) => p.id === productId);
+    const prod = products.find((p) => p.id === productId);
     if (!prod) return;
     setLineItems(
       lineItems.map((item) =>
@@ -188,7 +237,7 @@ export const SaaSQuotationsPage: React.FC = () => {
       return;
     }
 
-    const cust = SAMPLE_CUSTOMERS.find((c) => c.id === formState.customerId) || SAMPLE_CUSTOMERS[0];
+    const cust = customers.find((c) => c.id === formState.customerId) || customers[0] || { id: 'c1', name: 'Khách hàng mặc định', phone: '', address: '' };
 
     if (editingQuotation) {
       setQuotations(
@@ -436,7 +485,7 @@ export const SaaSQuotationsPage: React.FC = () => {
                     value={formState.customerId}
                     onChange={(val) => setFormState({ ...formState, customerId: val })}
                     placeholder="Tìm khách hàng..."
-                    options={SAMPLE_CUSTOMERS.map((c) => ({
+                    options={customers.map((c) => ({
                       value: c.id,
                       label: c.name,
                       code: c.id.toUpperCase(),
@@ -494,7 +543,7 @@ export const SaaSQuotationsPage: React.FC = () => {
                               value={item.productId}
                               onChange={(val) => handleProductChange(item.id, val)}
                               placeholder="Gõ tên hoặc SKU sản phẩm..."
-                              options={SAMPLE_PRODUCTS.map((p) => ({
+                              options={products.map((p) => ({
                                 value: p.id,
                                 label: p.name,
                                 code: p.sku,

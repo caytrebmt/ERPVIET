@@ -48,7 +48,7 @@ interface StockOutVoucher {
 
 interface WebShopOrder {
   id: string;
-  code: string; // WEB-260730-001
+  code: string;
   date: string;
   customerName: string;
   customerPhone: string;
@@ -60,15 +60,29 @@ interface WebShopOrder {
   status: 'Chờ duyệt xuất kho' | 'Đã duyệt & Xuất kho (PX)';
 }
 
-const SAMPLE_PRODUCTS = [];
+interface ProductOption {
+  id: string;
+  name: string;
+  sku: string;
+  unit: string;
+  stock: number;
+  price: number;
+}
 
-const SAMPLE_CUSTOMERS = [];
+interface CustomerOption {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+}
 
 export const SaaSStockOutPage: React.FC = () => {
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'erp' | 'webshop'>('erp');
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ preset: 'all', fromDate: '', toDate: '' });
 
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [webOrders, setWebOrders] = useState<WebShopOrder[]>([]);
 
   useEffect(() => {
@@ -99,6 +113,42 @@ export const SaaSStockOutPage: React.FC = () => {
     };
 
     fetchWebOrders();
+  }, []);
+
+  useEffect(() => {
+    const loadDropdownData = async () => {
+      try {
+        const [prodRes, custRes] = await Promise.all([
+          client.get('/api/shop/admin/products?limit=1000&include_inactive=true'),
+          client.get('/api/saas/customers'),
+        ]);
+        if (prodRes.data?.ok && Array.isArray(prodRes.data.data?.items)) {
+          setProducts(
+            prodRes.data.data.items.map((p: any) => ({
+              id: String(p.id),
+              name: p.name_vi || p.name || p.name_en || 'Sản phẩm',
+              sku: p.sku || '',
+              unit: p.unit_vi || p.unit || p.unit_en || 'Cái',
+              stock: p.stock || 0,
+              price: p.salePrice || p.costPrice || 0,
+            }))
+          );
+        }
+        if (custRes.data?.ok && Array.isArray(custRes.data.data)) {
+          setCustomers(
+            custRes.data.data.map((c: any) => ({
+              id: String(c.id),
+              name: c.name || 'Khách hàng',
+              phone: c.phone || '',
+              address: c.address || '',
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn('Failed to load dropdown data:', err);
+      }
+    };
+    loadDropdownData();
   }, []);
 
   const [stockOuts, setStockOuts] = useState<StockOutVoucher[]>([]);
@@ -252,7 +302,7 @@ export const SaaSStockOutPage: React.FC = () => {
   };
 
   const handleAddLineItem = () => {
-    const defaultProd = SAMPLE_PRODUCTS[0];
+    const defaultProd = products[0] || { id: 'p1', name: 'Sản phẩm mẫu', sku: 'SP001', unit: 'Cái', stock: 0, price: 0 };
     const newItem: StockOutLineItem = {
       id: `item-${Date.now()}`,
       productId: defaultProd.id,
@@ -277,7 +327,7 @@ export const SaaSStockOutPage: React.FC = () => {
   };
 
   const handleProductChange = (lineId: string, productId: string) => {
-    const prod = SAMPLE_PRODUCTS.find((p) => p.id === productId);
+    const prod = products.find((p) => p.id === productId);
     if (!prod) return;
     setLineItems(
       lineItems.map((item) =>
@@ -325,7 +375,7 @@ export const SaaSStockOutPage: React.FC = () => {
       return;
     }
 
-    const cust = SAMPLE_CUSTOMERS.find((c) => c.id === voucherForm.customerId) || SAMPLE_CUSTOMERS[0];
+    const cust = customers.find((c) => c.id === voucherForm.customerId) || customers[0] || { id: 'c1', name: 'Khách hàng mặc định', phone: '', address: '' };
 
     const sub = calcSubtotal;
     const vat = calcVatAmount();
@@ -739,7 +789,7 @@ export const SaaSStockOutPage: React.FC = () => {
                       value={voucherForm.customerId}
                       onChange={(val) => setVoucherForm({ ...voucherForm, customerId: val })}
                       placeholder="Tìm khách hàng theo tên, SĐT..."
-                      options={SAMPLE_CUSTOMERS.map((c) => ({
+                      options={customers.map((c) => ({
                         value: c.id,
                         label: c.name,
                         code: c.id.toUpperCase(),
@@ -900,7 +950,7 @@ export const SaaSStockOutPage: React.FC = () => {
                                 value={item.productId}
                                 onChange={(val) => handleProductChange(item.id, val)}
                                 placeholder="Gõ tên hoặc SKU để tìm nhanh..."
-                                options={SAMPLE_PRODUCTS.map((p) => ({
+                                options={products.map((p) => ({
                                   value: p.id,
                                   label: p.name,
                                   code: p.sku,

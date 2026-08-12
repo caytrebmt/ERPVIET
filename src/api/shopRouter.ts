@@ -650,7 +650,14 @@ shopRouter.put('/admin/orders/:id/status', async (req: ShopTenantRequest, res: R
   try {
     const orderId = Number(req.params.id);
     const { status } = req.body || {};
-    const updated = await updateOrderStatus(orderId, status);
+    const statusMap: Record<string, string> = {
+      processing: 'DA_XAC_NHAN',
+      completed: 'DA_GIAO',
+      cancelled: 'HUY',
+      new: 'CHO_XAC_NHAN',
+    };
+    const dbStatus = statusMap[status] || status;
+    const updated = await updateOrderStatus(orderId, dbStatus);
     if (!updated) {
       return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng.' });
     }

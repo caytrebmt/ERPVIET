@@ -202,9 +202,13 @@ export async function createNewOrder(orderPayload: any, companyId?: number): Pro
 
 export async function updateOrderStatus(orderId: number, status: string): Promise<OrderData | null> {
   try {
-    await query(`UPDATE web_orders SET order_status = $1 WHERE id = $2`, [status, orderId]);
+    const result = await query(`UPDATE web_orders SET order_status = $1 WHERE id = $2 RETURNING *`, [status, orderId]);
+    if (!result.rowCount || result.rowCount === 0) {
+      return null;
+    }
   } catch (err) {
-    console.warn('[DB Update Order Status Error]', err);
+    console.error('[DB Update Order Status Error]', err);
+    return null;
   }
 
   const all = await fetchOrders();

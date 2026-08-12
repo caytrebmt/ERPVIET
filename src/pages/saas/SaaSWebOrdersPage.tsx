@@ -127,7 +127,9 @@ export const SaaSWebOrdersPage: React.FC = () => {
 
       if (res.data?.ok) {
         addToast(t('saas_web_orders_da_duyet_d_n_order_code_va_tu_dong_chuyen_thanh_phieu_xuat_kho_pxcode', { order_code: order.code, pxCode }), 'success');
-        fetchWebOrders();
+        await fetchWebOrders();
+      } else {
+        addToast(t('saas_web_orders_khong_the_duyet_don_hang_webshop'), 'error');
       }
     } catch (err) {
       addToast(t('saas_web_orders_loi_khi_duyet_d_n_hang'), 'error');
@@ -144,8 +146,10 @@ export const SaaSWebOrdersPage: React.FC = () => {
 
       if (res.data?.ok) {
         addToast(t('saas_web_orders_da_cap_nhat_d_n_order_code_giao_hang_thanh_cong_da_chuyen_trang_thai_hoan_tat_finish', { order_code: order.code }), 'success');
-        fetchWebOrders();
+        await fetchWebOrders();
         if (detailModalOpen) setDetailModalOpen(false);
+      } else {
+        addToast(t('saas_web_orders_khong_the_cap_nhat_giao_hang_thanh_cong'), 'error');
       }
     } catch (err) {
       addToast(t('saas_web_orders_khong_the_cap_nhat_giao_hang_thanh_cong'), 'error');
@@ -178,7 +182,9 @@ export const SaaSWebOrdersPage: React.FC = () => {
         addToast(t('saas_web_orders_da_cap_nhat_don', { order_code: selectedOrder.code, erp_status: editingStatus.erpStatus, web_status: targetStatus === 'completed' ? t('saas_web_orders_hoan_tat_finish') : targetStatus }), 'success');
         setStatusModalOpen(false);
         if (detailModalOpen) setDetailModalOpen(false);
-        fetchWebOrders();
+        await fetchWebOrders();
+      } else {
+        addToast(t('saas_web_orders_khong_the_cap_nhat_trang_thai'), 'error');
       }
     } catch (err) {
       addToast(t('saas_web_orders_khong_the_cap_nhat_trang_thai'), 'error');
@@ -646,8 +652,8 @@ export const SaaSWebOrdersPage: React.FC = () => {
 
               {(selectedOrder.erp_status.includes('Chờ') || selectedOrder.status === 'new') && (
                 <button
-                  onClick={() => {
-                    handleApproveAndCreatePXK(selectedOrder);
+                  onClick={async () => {
+                    await handleApproveAndCreatePXK(selectedOrder);
                     setDetailModalOpen(false);
                   }}
                   className="px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 flex items-center gap-1.5 shadow-xs"

@@ -25,6 +25,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
+    "glob": "^13.0.6",
     "i18next": "^26.3.6",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.546.0",
@@ -50,6 +51,7 @@
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "jscodeshift": "^17.4.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2"

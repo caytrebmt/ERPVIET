@@ -21,6 +21,7 @@ import { SaaSDateFilterBar, DateFilterValue, filterByDateRange } from '../../com
 import { SearchableSelect, SelectOption } from '../../components/SearchableSelect';
 import { useToast } from '../../contexts/ToastContext';
 import { generateERPCode } from '../../utils/format';
+import client from '../../api/client';
 import {
   PurchaseOrder,
   getStoredPOs,
@@ -61,14 +62,28 @@ interface StockInVoucher {
   po_number?: string;
 }
 
-const SAMPLE_PRODUCTS = [];
+interface ProductOption {
+  id: string;
+  name: string;
+  sku: string;
+  unit: string;
+  price: number;
+}
 
-const SAMPLE_SUPPLIERS = [];
+interface SupplierOption {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+}
 
 export const SaaSStockInPage: React.FC = () => {
   const { addToast } = useToast();
   const location = useLocation();
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ preset: 'all', fromDate: '', toDate: '' });
+
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
 
   const [availablePOs, setAvailablePOs] = useState<PurchaseOrder[]>([]);
   const [linkedPONumber, setLinkedPONumber] = useState<string>('');
@@ -108,7 +123,41 @@ export const SaaSStockInPage: React.FC = () => {
     },
   ]);
 
-  // Read stored POs and check if passed from PO list
+  useEffect(() => {
+    const loadDropdownData = async () => {
+      try {
+        const [prodRes, suppRes] = await Promise.all([
+          client.get('/api/shop/admin/products?limit=1000&include_inactive=true'),
+          client.get('/api/saas/suppliers'),
+        ]);
+        if (prodRes.data?.ok && Array.isArray(prodRes.data.data?.items)) {
+          setProducts(
+            prodRes.data.data.items.map((p: any) => ({
+              id: String(p.id),
+              name: p.name_vi || p.name || p.name_en || 'Sản phẩm',
+              sku: p.sku || '',
+              unit: p.unit_vi || p.unit || p.unit_en || 'Cái',
+              price: p.salePrice || p.costPrice || 0,
+            }))
+          );
+        }
+        if (suppRes.data?.ok && Array.isArray(suppRes.data.data)) {
+          setSuppliers(
+            suppRes.data.data.map((s: any) => ({
+              id: String(s.id),
+              name: s.name || 'Nhà cung cấp',
+              phone: s.phone || '',
+              address: s.address || '',
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn('Failed to load dropdown data:', err);
+      }
+    };
+    loadDropdownData();
+  }, []);
+
   useEffect(() => {
     const storedPOs = getStoredPOs();
     setAvailablePOs(storedPOs);
@@ -211,7 +260,7 @@ export const SaaSStockInPage: React.FC = () => {
   };
 
   const handleAddLineItem = () => {
-    const defaultProd = SAMPLE_PRODUCTS[0];
+    const defaultProd = products[0] || { id: 'p1', name: 'Sản phẩm mẫu', sku: 'SP001', unit: 'Cái', price: 0 };
     const newItem: StockInLineItem = {
       id: `item-${Date.now()}`,
       productId: defaultProd.id,
@@ -234,7 +283,7 @@ export const SaaSStockInPage: React.FC = () => {
   };
 
   const handleProductChange = (lineId: string, productId: string) => {
-    const prod = SAMPLE_PRODUCTS.find((p) => p.id === productId);
+    const prod = products.find((p) => p.id === productId);
     if (!prod) return;
     setLineItems(
       lineItems.map((item) =>
@@ -280,7 +329,7 @@ export const SaaSStockInPage: React.FC = () => {
       return;
     }
 
-    const supp = SAMPLE_SUPPLIERS.find((s) => s.id === voucherForm.supplierId) || SAMPLE_SUPPLIERS[0];
+    const supp = suppliers.find((s) => s.id === voucherForm.supplierId) || suppliers[0] || { id: 's1', name: 'Nhà cung cấp mặc định', phone: '', address: '' };
 
     const sub = calcSubtotal;
     const vat = calcVatAmount();
@@ -651,7 +700,7 @@ export const SaaSStockInPage: React.FC = () => {
                       value={voucherForm.supplierId}
                       onChange={(val) => setVoucherForm({ ...voucherForm, supplierId: val })}
                       placeholder="Tìm NCC theo tên, mã, MST..."
-                      options={SAMPLE_SUPPLIERS.map((s) => ({
+                      options={suppliers.map((s) => ({
                         value: s.id,
                         label: s.name,
                         code: s.id.toUpperCase(),
@@ -791,7 +840,7 @@ export const SaaSStockInPage: React.FC = () => {
                                 value={item.productId}
                                 onChange={(val) => handleProductChange(item.id, val)}
                                 placeholder="Gõ tên hoặc SKU để tìm nhanh..."
-                                options={SAMPLE_PRODUCTS.map((p) => ({
+                                options={products.map((p) => ({
                                   value: p.id,
                                   label: p.name,
                                   code: p.sku,
