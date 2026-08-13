@@ -66,10 +66,10 @@ export const SaaSPrintModal: React.FC<SaaSPrintModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto no-scrollbar">
-      <div className="bg-white text-zinc-900 rounded-2xl max-w-3xl w-full p-8 shadow-2xl space-y-6 print:p-0 print:shadow-none print:max-w-none print:rounded-none">
+    <div className="fixed inset-0 z-50 bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white text-zinc-900 rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden print:p-0 print:shadow-none print:max-w-none print:rounded-none print:max-h-none">
         {/* Action Header - Hidden during actual browser printing */}
-        <div className="flex items-center justify-between border-b border-zinc-200 pb-4 print:hidden">
+        <div className="flex items-center justify-between border-b border-zinc-200 p-3 sm:p-4 print:hidden shrink-0 bg-white">
           <div className="flex items-center gap-2">
             <span className="font-bold text-sm text-zinc-800">Xem Trước Mẫu In Chuẩn ERP Doanh Nghiệp</span>
             <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
@@ -94,7 +94,7 @@ export const SaaSPrintModal: React.FC<SaaSPrintModalProps> = ({
         </div>
 
         {/* PRINTABLE DOCUMENT BODY */}
-        <div id="printable-area" className="space-y-6 font-sans">
+        <div id="printable-area" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 font-sans print:p-0 print:overflow-visible print:max-h-none">
           {/* Company Letterhead */}
           <div className="flex justify-between items-start border-b-2 border-zinc-900 pb-4">
             <div className="space-y-1">
