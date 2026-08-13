@@ -25,7 +25,7 @@ interface NotificationItem {
 
 export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
   onOpenSidebar,
-  title = 'Tổng quan hệ thống',
+  title = {t('tong-quan-he-thong')},
   isCollapsed = false,
   onToggleCollapse,
 }) => {
@@ -251,7 +251,15 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
                 {erpUser?.full_name || t('topbar_erp_staff')}
               </p>
               <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold leading-tight flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 inline" /> {erpUser?.role_name_vi || erpUser?.role_code || 'Role'}
+              {/* <ShieldCheck className="w-3 h-3 inline" /> {erpUser?.role_name_vi || erpUser?.role_name_en || 'ROLE'}*/}
+              <div className="inline-flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" /> 
+              <span>
+    {language === 'en' 
+      ? (erpUser?.role_name_en || erpUser?.role_name_vi || 'ROLE') 
+      : (erpUser?.role_name_vi || erpUser?.role_name_en || 'ROLE')}
+  </span>
+</div>
               </p>
             </div>
             <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${showUserDropdown ? 'rotate-180' : ''}`} />
@@ -270,7 +278,7 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
                     </p>
                     <p className="text-[10px] text-zinc-500 truncate">@{erpUser?.username} • {erpUser?.email}</p>
                     <span className="inline-block mt-1 px-2 py-0.5 text-[9px] font-extrabold uppercase rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                      Vai trò: {erpUser?.role_code}
+                      {erpUser?.role_code}
                     </span>
                   </div>
                 </div>
@@ -283,7 +291,7 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
                   className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
                 >
                   <ShoppingBag className="w-4 h-4 text-amber-500" />
-                  <span>Xem Storefront WebShop</span>
+                  <span>{t('xem-webshop')}</span>
                 </Link>
 
                 <button
@@ -294,7 +302,7 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
                   className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer font-semibold"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Đăng Xuất Tài Khoản ERP</span>
+                  <span>{t('dang-xuat-tai-khoan-erp')}</span>
                 </button>
               </div>
             </div>

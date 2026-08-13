@@ -1,0 +1,21 @@
+[
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Cập nhật nhà cung cấp thành công!","key":"pages.saas.suppliers.update_success","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Thêm nhà cung cấp mới thành công!","key":"pages.saas.suppliers.add_success","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Bạn có chắc chắn muốn xóa nhà cung cấp \"${name}\"?","key":"pages.saas.suppliers.confirm_delete","params":["name"]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Mã NCC","key":"pages.saas.suppliers.table.code","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Tên Nhà Cung Cấp","key":"pages.saas.suppliers.table.name","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Người Liên Hệ","key":"pages.saas.suppliers.table.contact","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Số Điện Thoại / Email","key":"pages.saas.suppliers.table.phone_email","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Địa Chỉ Kho","key":"pages.saas.suppliers.table.address","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Nợ Phải Trả","key":"pages.saas.suppliers.table.payableDebt","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Thao Tác","key":"pages.saas.suppliers.table.actions","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Nhà Cung Cấp & Đối Tác","key":"pages.saas.suppliers.title","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Quản lý thông tin đầu mối nhập hàng, công nợ phải trả và đánh giá nhà cung ứng.","key":"pages.saas.suppliers.description","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Thêm nhà cung cấp","key":"pages.saas.suppliers.btn.add","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Tìm tên nhà cung cấp, mã NCC, SĐT...","key":"pages.saas.suppliers.search_placeholder","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Chỉnh Sửa Nhà Cung Cấp","key":"pages.saas.suppliers.modal.edit_title","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Thêm Nhà Cung Cấp Mới","key":"pages.saas.suppliers.modal.add_title","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Hủy Bỏ","key":"pages.saas.suppliers.btn.cancel","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Cập Nhật Nhà Cung Cấp","key":"pages.saas.suppliers.btn.update","params":[]},
+  {"file":"src/pages/saas/SaaSSuppliersPage.tsx","original":"Lưu Nhà Cung Cấp","key":"pages.saas.suppliers.btn.save","params":[]}
+]

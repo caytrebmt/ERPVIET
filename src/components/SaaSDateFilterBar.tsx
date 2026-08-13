@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Calendar, Filter, RotateCcw } from 'lucide-react';
+import { Calendar, RotateCcw } from 'lucide-react';
+import { useTranslation } from 'react-i18next'; // Thêm import hook dịch thuật
 
 export type DateFilterPreset = 'all' | 'today' | '7days' | 'thisMonth' | 'thisQuarter' | 'custom';
 
@@ -15,6 +16,7 @@ interface SaaSDateFilterBarProps {
 }
 
 export const SaaSDateFilterBar: React.FC<SaaSDateFilterBarProps> = ({ onFilterChange, className = '' }) => {
+  const { t } = useTranslation(); // Khởi tạo hàm dịch t()
   const [preset, setPreset] = useState<DateFilterPreset>('all');
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
@@ -80,7 +82,7 @@ export const SaaSDateFilterBar: React.FC<SaaSDateFilterBarProps> = ({ onFilterCh
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 mr-1">
           <Calendar className="h-4 w-4 text-amber-500" />
-          Thời gian:
+          {t('date_filter.label')}
         </span>
 
         <button
@@ -91,7 +93,7 @@ export const SaaSDateFilterBar: React.FC<SaaSDateFilterBarProps> = ({ onFilterCh
               : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
           }`}
         >
-          Tất cả
+          {t('date_filter.presets.all')}
         </button>
 
         <button
@@ -102,7 +104,7 @@ export const SaaSDateFilterBar: React.FC<SaaSDateFilterBarProps> = ({ onFilterCh
               : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
           }`}
         >
-          Hôm nay
+          {t('date_filter.presets.today')}
         </button>
 
         <button
@@ -113,7 +115,7 @@ export const SaaSDateFilterBar: React.FC<SaaSDateFilterBarProps> = ({ onFilterCh
               : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
           }`}
         >
-          7 ngày qua
+          {t('date_filter.presets.seven_days')}
         </button>
 
         <button
@@ -124,7 +126,7 @@ export const SaaSDateFilterBar: React.FC<SaaSDateFilterBarProps> = ({ onFilterCh
               : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
           }`}
         >
-          Tháng này
+          {t('date_filter.presets.this_month')}
         </button>
 
         <button
@@ -135,7 +137,7 @@ export const SaaSDateFilterBar: React.FC<SaaSDateFilterBarProps> = ({ onFilterCh
               : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
           }`}
         >
-          Quý này
+          {t('date_filter.presets.this_quarter')}
         </button>
 
         <button
@@ -146,14 +148,14 @@ export const SaaSDateFilterBar: React.FC<SaaSDateFilterBarProps> = ({ onFilterCh
               : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
           }`}
         >
-          Tùy chọn
+          {t('date_filter.presets.custom')}
         </button>
       </div>
 
       {preset === 'custom' && (
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
-            <span className="text-zinc-500 font-medium">Từ:</span>
+            <span className="text-zinc-500 font-medium">{t('date_filter.custom_range.from')}</span>
             <input
               type="date"
               value={fromDate}
@@ -162,7 +164,7 @@ export const SaaSDateFilterBar: React.FC<SaaSDateFilterBarProps> = ({ onFilterCh
             />
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-zinc-500 font-medium">Đến:</span>
+            <span className="text-zinc-500 font-medium">{t('date_filter.custom_range.to')}</span>
             <input
               type="date"
               value={toDate}
@@ -177,10 +179,10 @@ export const SaaSDateFilterBar: React.FC<SaaSDateFilterBarProps> = ({ onFilterCh
         <button
           onClick={handleReset}
           className="p-1.5 text-zinc-500 hover:text-amber-500 transition-colors flex items-center gap-1 font-semibold"
-          title="Đặt lại bộ lọc thời gian"
+          title={t('date_filter.actions.reset_tooltip')}
         >
           <RotateCcw className="h-3.5 w-3.5" />
-          Xóa lọc
+          {t('date_filter.actions.reset')}
         </button>
       )}
     </div>

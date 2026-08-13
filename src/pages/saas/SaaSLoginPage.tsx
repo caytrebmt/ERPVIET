@@ -14,15 +14,15 @@ export const SaaSLoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const from = (location.state as any)?.from?.pathname || "/saas/dashboard";
   const isEn = language === "en";
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {
       showToast(t("page_saas_login_erp_required"), "error");
@@ -165,7 +165,7 @@ export const SaaSLoginPage: React.FC = () => {
                  <label className="flex items-center gap-2 text-zinc-400 cursor-pointer">
                    <input
                      type="checkbox"
-                     defaultChecked
+                     
                      className="rounded bg-zinc-950 border-zinc-800 text-amber-500 focus:ring-0"
                    />
                    <span>{t('saas_login_remember')}</span>
