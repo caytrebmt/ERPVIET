@@ -25,7 +25,7 @@ interface NotificationItem {
 
 export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
   onOpenSidebar,
-  title = {t('tong-quan-he-thong')},
+  title = 'Tổng quan hệ thống',
   isCollapsed = false,
   onToggleCollapse,
 }) => {
