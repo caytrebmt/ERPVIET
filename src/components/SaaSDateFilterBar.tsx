@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, RotateCcw } from 'lucide-react';
-import { useTranslation } from 'react-i18next'; // Thêm import hook dịch thuật
+import { useTranslation } from 'react-i18next'; // import hook dịch thuật
 
 export type DateFilterPreset = 'all' | 'today' | '7days' | 'thisMonth' | 'thisQuarter' | 'custom';
 

@@ -55,24 +55,22 @@ const LoginPage: React.FC = () => {
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col gap-6 transition-colors duration-200">
         {/* Title branding header */}
         <div className="text-center flex flex-col items-center gap-1">
-          <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 flex items-center">
-            WebShop <span className="text-indigo-850 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 px-2 py-0.5 rounded-md ml-1 text-sm font-semibold uppercase">ERPACC</span>
-          </span>
-          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-2">Đăng nhập tài khoản</h2>
+
+          <h2 className="text-xl font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-2">{t('dang-nhap-tai-khoan')}</h2>
         </div>
 
-        {/* Credentials guide panel */}
+        {/* Credentials guide panel 
         <div className="bg-indigo-50/70 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-xl p-4 text-[11px] leading-relaxed text-indigo-850 dark:text-indigo-300 flex flex-col gap-1">
           <span className="font-bold">Tài khoản demo có sẵn:</span>
           <p className="m-0">Email: <strong className="select-all">test@example.com</strong></p>
           <p className="m-0">Mật khẩu: <strong className="select-all">password123</strong></p>
         </div>
-
+          */}
         {/* Login form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
-              <Mail className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> Email đăng nhập
+              <Mail className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> {t('email_login')}
             </label>
             <input
               type="email"
@@ -86,7 +84,7 @@ const LoginPage: React.FC = () => {
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> Mật khẩu bảo mật
+              <Lock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> {t('mat-khau-login-web')}
             </label>
             <div className="relative">
               <input
@@ -101,7 +99,7 @@ const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 cursor-pointer"
-                title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                title={showPassword ? t('auth_web.hidePassword') : t('auth_web.showPassword')}
               >
                 {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
@@ -116,12 +114,13 @@ const LoginPage: React.FC = () => {
             {submitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Đang kiểm tra...
+                {t('dang-kiem-tra')}
               </>
             ) : (
               <>
                 <LogIn className="w-4 h-4" />
-                Đăng nhập ngay
+              
+                {t('dang-nhap')} 
               </>
             )}
           </button>
@@ -130,9 +129,9 @@ const LoginPage: React.FC = () => {
         {/* Footer links */}
         <div className="border-t border-gray-100 dark:border-gray-800 pt-4 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400 m-0">
-            Chưa có tài khoản WebShop?{" "}
+            {t('chua-co-tai-khoan-webshop')}{" "}
             <Link to="/register" className="font-bold text-indigo-600 dark:text-indigo-450 hover:underline inline-flex items-center gap-0.5">
-              Đăng ký tài khoản <ArrowRight className="w-3 h-3" />
+              {t('dang-ky-tai-khoan')} <ArrowRight className="w-3 h-3" />
             </Link>
           </p>
         </div>
@@ -144,7 +143,7 @@ const LoginPage: React.FC = () => {
                <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
              </div>
              <div className="relative flex justify-center text-xs">
-               <span className="bg-white dark:bg-gray-900 px-2 text-gray-500 dark:text-gray-400">Hoặc đăng nhập với</span>
+               <span className="bg-white dark:bg-gray-900 px-2 text-gray-500 dark:text-gray-400">{t('hoac-dang-nhap-voi')}</span>
              </div>
            </div>
            <button
@@ -207,7 +206,7 @@ const LoginPage: React.FC = () => {
                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
              </svg>
-             Đăng nhập bằng Google
+             {t('dang-nhap-bang-google')}
            </button>
          </div>
       </div>

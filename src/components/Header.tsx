@@ -64,8 +64,8 @@ const Header: React.FC = () => {
           <div className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-500 rounded-lg flex items-center justify-center font-bold text-zinc-950 text-base sm:text-lg leading-none shadow-xs">
             {slug !== 'default' ? name.charAt(0).toUpperCase() : 'W'}
           </div>
-          <span className="hidden sm:inline text-base sm:text-xl font-bold tracking-tight text-[#111827] dark:text-white flex items-center">
-            {slug !== 'default' ? name : 'WebShop'} <span className="text-amber-500 ml-0.5 sm:ml-1">SaaS</span>
+          <span className="hidden sm:inline text-base sm:text-xl font-bold tracking-tight text-[#111827] dark:text-white flex items-left uppercase">
+            {slug !== 'default' ? name : 'WebShop'} <span className="text-amber-500 ml-0.5 sm:ml-1"></span>
           </span>
         </Link>
 

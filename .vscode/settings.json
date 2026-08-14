@@ -4,8 +4,9 @@
   "i18n-ally-next.displayLanguage": "en",
   "i18n-ally-next.extract.autoDetect": true,
   "i18n-ally-next.keystyle": "nested",
-  "i18n-ally-next.usage.derivedKeyRules": ["audit_action_*", "audit_entity_*", "saas_register_plan_*"],
-  "i18n-ally.localesPaths": [
-    "public/locales"
-  ]
+  "i18n-ally-next.keepFulfilled": true,
+  "i18n-ally-next.sortKeys": true,
+  "i18n-ally-next.enabledParsers": ["json"],
+  "i18n-ally-next.namespace": true,
+  "i18n-ally.localesPaths": ["public/locales"]
 }

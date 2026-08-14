@@ -48,11 +48,11 @@ const Footer: React.FC = () => {
               W
             </div>
             <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white flex items-center uppercase">
-              WebShop <span className="text-indigo-600 dark:text-indigo-400 ml-1">SaaS</span>
+              WebShop <span className="text-indigo-600 dark:text-indigo-400 ml-1"></span>
             </span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-4">
-            {t("footer_webshop_desc", "Hệ thống webshop mang lại trải nghiệm mua sắm nhanh chóng, chính xác.")}
+            {t("footer_webshop_desc", "Hệ thống mang lại trải nghiệm mua sắm nhanh chóng, chính xác.")}
           </p>
         </div>
 
