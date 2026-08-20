@@ -18,8 +18,14 @@ client.interceptors.request.use(
     // Fall back to whichever token is available so mixed-origin calls still authenticate.
     const erpToken = storage.getErpToken();
     const shopToken = storage.getAccessToken();
+    // Endpoint quản trị WebShop (/api/shop/admin/*) chỉ chấp nhận JWT nhân viên ERP
+    const isAdminShopApi = config.url?.startsWith('/api/shop/admin');
     const isSaasApi = config.url?.startsWith('/api/saas/');
-    const token = isSaasApi ? (erpToken || shopToken) : (shopToken || erpToken);
+    const token = isAdminShopApi
+      ? erpToken
+      : isSaasApi
+        ? (erpToken || shopToken)
+        : (shopToken || erpToken);
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

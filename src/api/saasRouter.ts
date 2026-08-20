@@ -661,8 +661,8 @@ saasRouter.get('/menus', async (req: Request, res: Response) => {
   const lang = getLang(req);
   try {
     const result = await query(
-      `SELECT id, code, path, icon, parent_id, sort_order, 
-              CASE WHEN $1 = 'en' THEN title_en ELSE title_vi END as title 
+      `SELECT id, code, path_url as path, icon_name as icon, parent_id, sort_order,
+              CASE WHEN $1 = 'en' THEN title_en ELSE title_vi END as title
        FROM sys_menus WHERE is_active = TRUE ORDER BY sort_order ASC`,
       [lang]
     );
@@ -681,7 +681,7 @@ saasRouter.get('/roles', async (req: Request, res: Response) => {
     const result = await query(
       `SELECT id, code, 
               CASE WHEN $1 = 'en' THEN name_en ELSE name_vi END as name,
-              CASE WHEN $1 = 'en' THEN description_en ELSE description_vi END as description
+              description
        FROM sys_roles ORDER BY id ASC`,
       [lang]
     );
@@ -891,9 +891,9 @@ saasRouter.get('/crm/opportunities', tenantMiddleware, async (req: TenantRequest
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query(
-      `SELECT o.*, c.company_name, c.contact_name
+      `SELECT o.*, l.company_name, l.contact_name
        FROM crm_opportunities o
-       LEFT JOIN crm_contacts c ON o.contact_id = c.id
+       LEFT JOIN crm_leads l ON o.lead_id = l.id
        WHERE ($1::int IS NULL OR o.company_id = $1)
        ORDER BY o.id DESC`,
       [companyId]

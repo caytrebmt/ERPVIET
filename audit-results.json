@@ -1,0 +1,479 @@
+[
+  {
+    "group": "SaaS Auth",
+    "name": "POST /auth/login (admin/admin123)",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 69,
+    "note": ""
+  },
+  {
+    "group": "SaaS Auth",
+    "name": "POST /auth/login sai mật khẩu (kỳ vọng 401)",
+    "ok": true,
+    "status": 401,
+    "expect": 401,
+    "ms": 5,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /auth/me",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 5,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /users",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 11,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /departments",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 3,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /products",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 26,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /categories",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 6,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /uom",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 4,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /customers",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 7,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /suppliers",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 5,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /quotations",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 3,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /orders",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 52,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /crm/leads",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 10,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /crm/opportunities",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 4,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /purchasing/orders",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 3,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /purchasing/requests",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 2,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /assets",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 3,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /audit-logs",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 2,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /settings",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 2,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /menus",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 3,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /roles",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 2,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /notifications",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 8,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /tenants/me",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 3,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /tenants/list",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 1,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /inventory/balances",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 29,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /inventory/movements?limit=5",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 5,
+    "note": ""
+  },
+  {
+    "group": "SaaS GET",
+    "name": "GET /inventory/xnt?from=2026-01-01&to=2026-12-31",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 4,
+    "note": ""
+  },
+  {
+    "group": "SaaS Write",
+    "name": "POST /inventory/movements (nhập kho +7)",
+    "ok": true,
+    "status": 200,
+    "expect": [
+      200,
+      201
+    ],
+    "ms": 13,
+    "note": ""
+  },
+  {
+    "group": "SaaS Write",
+    "name": "Tồn kho thay đổi sau nhập (+7)",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 28,
+    "note": "before=128 after=135"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /products (tạo SP ERP)",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 3,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "PUT /products/1 (sửa SP ERP)",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 2,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /quotations (tạo báo giá)",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 1,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "PUT /quotations/1",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 1,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /purchasing/orders (tạo PO)",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 2,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /suppliers",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 2,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /warehouses",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 1,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /crm/leads",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 2,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /assets (TSCD)",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 1,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /vat/invoices (hóa đơn)",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 2,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /accounting/vouchers (phần kế toán)",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 1,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /debts/payments (thanh toán công nợ)",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 1,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "SaaS Missing",
+    "name": "POST /stocktaking (kiểm kê)",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 1,
+    "note": "KHÔNG TỒN TẠI — UI không gọi được"
+  },
+  {
+    "group": "Shop",
+    "name": "GET /categories",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 4,
+    "note": ""
+  },
+  {
+    "group": "Shop",
+    "name": "GET /catalog",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 7,
+    "note": ""
+  },
+  {
+    "group": "Shop",
+    "name": "POST /cart/items (guest)",
+    "ok": true,
+    "status": 200,
+    "expect": [
+      200,
+      201
+    ],
+    "ms": 8,
+    "note": ""
+  },
+  {
+    "group": "Shop",
+    "name": "GET /cart (guest)",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 3,
+    "note": ""
+  },
+  {
+    "group": "Shop",
+    "name": "POST /auth/register (khách mới)",
+    "ok": true,
+    "status": 200,
+    "expect": [
+      200,
+      201
+    ],
+    "ms": 100,
+    "note": ""
+  },
+  {
+    "group": "Shop",
+    "name": "POST /auth/login",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 90,
+    "note": ""
+  },
+  {
+    "group": "Shop Admin",
+    "name": "GET /orders?admin=true",
+    "ok": true,
+    "status": 200,
+    "expect": 200,
+    "ms": 407,
+    "note": ""
+  },
+  {
+    "group": "Shop Missing",
+    "name": "POST /promotions/validate",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 3,
+    "note": "KHÔNG TỒN TẠI — UI đang gọi"
+  },
+  {
+    "group": "Shop Missing",
+    "name": "POST /orders/1/cancel",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 2,
+    "note": "KHÔNG TỒN TẠI — UI đang gọi"
+  },
+  {
+    "group": "Shop Missing",
+    "name": "POST /orders/1/reorder",
+    "ok": true,
+    "status": 404,
+    "expect": 404,
+    "ms": 2,
+    "note": "KHÔNG TỒN TẠI — UI đang gọi"
+  }
+]

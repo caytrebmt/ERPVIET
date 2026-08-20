@@ -70,6 +70,16 @@ export async function ensureProductImageSchema(): Promise<void> {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_stock_movement_items_movement ON stock_movement_items(movement_id, product_id)');
 }
 
+// Bổ sung cột còn thiếu cho web_orders (phiên bản schema cũ không có) — idempotent.
+// Giúp lưu tracking_token / vat_amount / note để luồng tra cứu đơn hàng & VAT hoạt động đúng.
+export async function ensureWebOrderSchema(): Promise<void> {
+  await pool.query('ALTER TABLE web_orders ADD COLUMN IF NOT EXISTS tracking_token VARCHAR(50)');
+  await pool.query('ALTER TABLE web_orders ADD COLUMN IF NOT EXISTS vat_amount NUMERIC(15, 2) DEFAULT 0');
+  await pool.query('ALTER TABLE web_orders ADD COLUMN IF NOT EXISTS note TEXT DEFAULT \'\'');
+  await pool.query('ALTER TABLE web_orders ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_web_orders_tracking_token ON web_orders(tracking_token)');
+}
+
 // Execute query helper with parameters
 export async function query(text: string, params?: any[]) {
   const start = Date.now();

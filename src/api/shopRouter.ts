@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import {
   CartData,
@@ -39,6 +39,27 @@ export const shopRouter = Router();
 const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
 
 shopRouter.use(shopTenantMiddleware);
+
+// Bảo vệ endpoint quản trị /admin/*: chỉ chấp nhận JWT nhân viên ERP (role ≠ web_customer).
+// (Trước đây bất kỳ ai cũng gọi được: tạo/sửa/xóa sản phẩm, xem DS khách, đổi mật khẩu khách!)
+async function requireSaasStaff(req: ShopTenantRequest, res: Response, next: NextFunction) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ ok: false, message: 'Yêu cầu đăng nhập tài khoản nhân viên ERP.' });
+    }
+    const decoded: any = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+    if (String(decoded.role || '').toUpperCase() === 'WEB_CUSTOMER') {
+      return res.status(403).json({ ok: false, message: 'Tài khoản khách hàng WebShop không có quyền quản trị.' });
+    }
+    (req as any).staffRole = decoded.role;
+    // Ưu tiên company_id trong token ERP để bảo đảm tách dữ liệu đa tenant
+    if (decoded.companyId) req.companyId = Number(decoded.companyId);
+    next();
+  } catch {
+    return res.status(401).json({ ok: false, message: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.' });
+  }
+}
 
 shopRouter.get('/locales/:lang', async (req: Request, res: Response) => {
   const { lang } = req.params;
@@ -133,7 +154,7 @@ shopRouter.get('/categories', async (req: ShopTenantRequest, res: Response) => {
 });
 
 // Admin product endpoints (ERP Master Management)
-shopRouter.get('/admin/products', async (req: ShopTenantRequest, res: Response) => {
+shopRouter.get('/admin/products', requireSaasStaff, async (req: ShopTenantRequest, res: Response) => {
   try {
     const result = await fetchProducts({ limit: 1000, includeInactive: true, companyId: req.companyId });
     const items = result.items.map((p) => ({
@@ -165,7 +186,7 @@ shopRouter.get('/admin/products', async (req: ShopTenantRequest, res: Response) 
   }
 });
 
-shopRouter.post('/admin/products', async (req: Request, res: Response) => {
+shopRouter.post('/admin/products', requireSaasStaff, async (req: Request, res: Response) => {
   try {
     const newProd = await createProduct(req.body || {});
     return res.json({ ok: true, data: newProd, message: 'Thêm mới sản phẩm thành công!' });
@@ -174,7 +195,7 @@ shopRouter.post('/admin/products', async (req: Request, res: Response) => {
   }
 });
 
-shopRouter.put('/admin/products/:id', async (req: Request, res: Response) => {
+shopRouter.put('/admin/products/:id', requireSaasStaff, async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     const updated = await updateProduct(id, req.body || {});
@@ -184,7 +205,7 @@ shopRouter.put('/admin/products/:id', async (req: Request, res: Response) => {
   }
 });
 
-shopRouter.delete('/admin/products/:id', async (req: Request, res: Response) => {
+shopRouter.delete('/admin/products/:id', requireSaasStaff, async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     await deleteProduct(id);
@@ -605,7 +626,7 @@ shopRouter.post('/orders/:code/erp-status', async (req: ShopTenantRequest, res: 
 
 // ================= 5. ADMIN WEBSHOP MANAGEMENT =================
 
-shopRouter.get('/admin/customers', async (req: ShopTenantRequest, res: Response) => {
+shopRouter.get('/admin/customers', requireSaasStaff, async (req: ShopTenantRequest, res: Response) => {
   try {
     const items = await fetchAllWebCustomers(req.companyId);
     return res.json({ ok: true, data: { items } });
@@ -614,7 +635,7 @@ shopRouter.get('/admin/customers', async (req: ShopTenantRequest, res: Response)
   }
 });
 
-shopRouter.post('/admin/customers', async (req: ShopTenantRequest, res: Response) => {
+shopRouter.post('/admin/customers', requireSaasStaff, async (req: ShopTenantRequest, res: Response) => {
   try {
     const cust = await saveOrUpdateWebCustomer(req.body || {}, req.companyId);
     return res.json({ ok: true, data: cust, message: 'Đã lưu tài khoản khách hàng WebShop.' });
@@ -623,7 +644,7 @@ shopRouter.post('/admin/customers', async (req: ShopTenantRequest, res: Response
   }
 });
 
-shopRouter.put('/admin/customers/:id/password', async (req: ShopTenantRequest, res: Response) => {
+shopRouter.put('/admin/customers/:id/password', requireSaasStaff, async (req: ShopTenantRequest, res: Response) => {
   try {
     const targetId = Number(req.params.id);
     const { password, email } = req.body || {};
@@ -637,7 +658,7 @@ shopRouter.put('/admin/customers/:id/password', async (req: ShopTenantRequest, r
   }
 });
 
-shopRouter.get('/admin/orders', async (req: ShopTenantRequest, res: Response) => {
+shopRouter.get('/admin/orders', requireSaasStaff, async (req: ShopTenantRequest, res: Response) => {
   try {
     const orders = await fetchOrders(undefined, req.companyId);
     return res.json({ ok: true, data: { items: orders } });
@@ -646,7 +667,7 @@ shopRouter.get('/admin/orders', async (req: ShopTenantRequest, res: Response) =>
   }
 });
 
-shopRouter.put('/admin/orders/:id/status', async (req: ShopTenantRequest, res: Response) => {
+shopRouter.put('/admin/orders/:id/status', requireSaasStaff, async (req: ShopTenantRequest, res: Response) => {
   try {
     const orderId = Number(req.params.id);
     const { status } = req.body || {};

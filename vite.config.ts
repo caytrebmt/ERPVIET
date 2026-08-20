@@ -48,6 +48,9 @@ export default defineConfig(() => {
     },
     server: {
       port: 3000,
+      host: true,
+      // Cho phép truy cập qua domain preview/proxy (e2b.app, netlify...) thay vì chỉ localhost
+      allowedHosts: true,
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },

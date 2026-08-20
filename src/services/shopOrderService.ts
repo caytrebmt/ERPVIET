@@ -95,7 +95,7 @@ export async function fetchOrderByCodeOrToken(codeOrToken: string, companyId?: n
     const whereCompany = companyId ? ' AND company_id = $2' : '';
     const params = companyId ? [codeOrToken, companyId] : [codeOrToken];
     const res = await query(
-      `SELECT id, code FROM web_orders WHERE code = $1 ${whereCompany} LIMIT 1`,
+      `SELECT id, code FROM web_orders WHERE (code = $1 OR tracking_token = $1) ${whereCompany} LIMIT 1`,
       params
     );
     if (res.rows && res.rows.length > 0) {
@@ -162,8 +162,9 @@ export async function createNewOrder(orderPayload: any, companyId?: number): Pro
     const orderRes = await query(
       `INSERT INTO web_orders (
         company_id, code, customer_id, customer_name, customer_phone, customer_email,
-        shipping_address, payment_method, subtotal, discount_amount, shipping_fee, total_amount, order_status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'CHO_XAC_NHAN') RETURNING id`,
+        shipping_address, payment_method, subtotal, discount_amount, shipping_fee, total_amount, order_status,
+        tracking_token, vat_amount, note
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'CHO_XAC_NHAN', $13, $14, $15) RETURNING id`,
       [
         companyId || 1,
         code,
@@ -177,6 +178,9 @@ export async function createNewOrder(orderPayload: any, companyId?: number): Pro
         discount,
         shippingFee,
         total,
+        trackingToken,
+        vat,
+        newOrder.note || '',
       ]
     );
 

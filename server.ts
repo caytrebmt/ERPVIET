@@ -4,7 +4,7 @@ import cors from "cors";
 import compression from "compression";
 import { shopRouter } from "./src/api/shopRouter.js";
 import { saasRouter } from "./src/api/saasRouter.js";
-import { autoMigrateDatabase, ensureProductImageSchema, testDbConnection } from "./src/db/index.js";
+import { autoMigrateDatabase, ensureProductImageSchema, ensureWebOrderSchema, testDbConnection } from "./src/db/index.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -30,16 +30,25 @@ app.use("/api/saas", saasRouter);
 // --- ĐOẠN CŨ BỊ XÓA Ở ĐÂY ĐỂ TRÁNH LỖI ĐỌC THƯ MỤC DIST KHI CHẠY DEV ---
 
 async function startServer() {
-  if (await testDbConnection()) {
-    await ensureProductImageSchema();
-  }
+  const connected = await testDbConnection();
 
   // Run database migrations only when explicitly enabled to avoid overwriting an existing production database.
+  // QUAN TRỌNG: migrate TRƯỚC để tạo bảng, rồi mới chỉnh sửa schema — tránh crash trên DB mới (bảng chưa tồn tại).
   const shouldAutoMigrate = process.env.AUTO_MIGRATE_DATABASE === 'true';
-  if (shouldAutoMigrate) {
-    autoMigrateDatabase().catch((err) => console.error("[DB Boot Error]", err));
+  if (connected && shouldAutoMigrate) {
+    await autoMigrateDatabase().catch((err) => console.error("[DB Boot Error]", err));
   } else {
     console.log('[Database] Auto migration disabled. Set AUTO_MIGRATE_DATABASE=true to enable schema.sql execution on startup.');
+  }
+
+  // Chỉnh lý schema tăng cường (index/ALTER) — bọc try/catch để không làm sập server khi DB mới/DB thiếu bảng.
+  if (connected) {
+    await ensureProductImageSchema().catch((err) => {
+      console.warn("[DB Boot Warning] ensureProductImageSchema failed:", err.message);
+    });
+    await ensureWebOrderSchema().catch((err) => {
+      console.warn("[DB Boot Warning] ensureWebOrderSchema failed:", err.message);
+    });
   }
 
   // Phân chia cấu hình Dev và Production chuẩn xác
@@ -48,7 +57,7 @@ async function startServer() {
     const vite = await createServer({
       configFile: path.join(process.cwd(), "vite.config.ts"),
       root: path.join(process.cwd()),
-      server: { middlewareMode: true, port: 3000, host: true },
+      server: { middlewareMode: true, port: 3000, host: true, allowedHosts: true },
       appType: "spa",
     });
     // Trình phục vụ mã nguồn React trực tiếp khi dev (Hot Reload)

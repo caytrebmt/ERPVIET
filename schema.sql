@@ -1496,8 +1496,14 @@ CREATE TABLE web_orders (
     shipping_fee NUMERIC(15, 2) DEFAULT 0,
     total_amount NUMERIC(15, 2) NOT NULL,
     erp_sales_order_id INT REFERENCES sales_orders(id),
+    tracking_token VARCHAR(50),
+    vat_amount NUMERIC(15, 2) DEFAULT 0,
+    note TEXT DEFAULT '',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_web_orders_tracking_token ON web_orders(tracking_token);
 
 INSERT INTO web_orders (id, code, customer_id, customer_name, customer_phone, customer_email, shipping_address, subtotal, total_amount, order_status) VALUES
 (1, 'WEB-2026-001', 1, 'Nguyễn Văn Mua Hàng Lẻ', '0988.777.666', 'demo.customer@gmail.com', '789 Nguyễn Trãi, Q.5, TP.HCM', 182000, 182000, 'DA_XAC_NHAN');
