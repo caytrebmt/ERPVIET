@@ -30,11 +30,11 @@ import {
   PurchaseRequest,
   RequestForQuotation,
   PurchaseOrder,
-  getStoredPRs,
+  fetchPRs,
   savePRs,
-  getStoredRFQs,
+  fetchRFQs,
   saveRFQs,
-  getStoredPOs,
+  fetchPOs,
   savePOs,
   PRItem,
   SupplierQuote,
@@ -80,24 +80,42 @@ export const SaaSPurchasingPage: React.FC = () => {
   });
 
   useEffect(() => {
-    setPRs(getStoredPRs());
-    setRFQs(getStoredRFQs());
-    setPOs(getStoredPOs());
+    let cancelled = false;
+    (async () => {
+      const [loadedPRs, loadedRFQs, loadedPOs] = await Promise.all([
+        fetchPRs().catch(() => [] as PurchaseRequest[]),
+        fetchRFQs().catch(() => [] as RequestForQuotation[]),
+        fetchPOs().catch(() => [] as PurchaseOrder[]),
+      ]);
+      if (cancelled) return;
+      setPRs(loadedPRs);
+      setRFQs(loadedRFQs);
+      setPOs(loadedPOs);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const updatePRList = (newPRs: PurchaseRequest[]) => {
     setPRs(newPRs);
-    savePRs(newPRs);
+    savePRs(newPRs).catch(() => {
+      showToast(isEn ? 'Failed to save PR' : 'Lưu Yêu Cầu Mua Hàng thất bại', 'error');
+    });
   };
 
   const updateRFQList = (newRFQs: RequestForQuotation[]) => {
     setRFQs(newRFQs);
-    saveRFQs(newRFQs);
+    saveRFQs(newRFQs).catch(() => {
+      showToast(isEn ? 'Failed to save RFQ' : 'Lưu Yêu Cầu Báo Giá thất bại', 'error');
+    });
   };
 
   const updatePOList = (newPOs: PurchaseOrder[]) => {
     setPOs(newPOs);
-    savePOs(newPOs);
+    savePOs(newPOs).catch(() => {
+      showToast(isEn ? 'Failed to save PO' : 'Lưu Đơn Mua Hàng thất bại', 'error');
+    });
   };
 
   // --- ACTIONS: PR ---

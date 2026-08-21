@@ -143,5 +143,6 @@ export interface ErpUser {
   role_name_en: string;
   permissions: string[];
   preferred_lang?: string;
+  is_super_admin?: boolean;
 }
 

@@ -8,10 +8,10 @@
     "build": "vite build --config vite.config.ts && esbuild server.ts --bundle --platform=node --format=esm --packages=external --sourcemap --outfile=dist/server.js",
     "start": "node dist/server.js",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit --project tsconfig.json"
+    "lint": "tsc --noEmit --project tsconfig.json",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
     "@supabase/server": "^1.4.1",
     "@supabase/supabase-js": "^2.112.0",
     "@tailwindcss/vite": "^4.1.14",
@@ -25,13 +25,12 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.5.1",
     "glob": "^13.0.6",
     "i18next": "^26.3.6",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
-    "next-i18next": "^16.0.10",
-    "next-intl": "^4.13.5",
     "pg": "^8.22.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
@@ -55,6 +54,7 @@
     "jscodeshift": "^17.4.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
-    "typescript": "~5.8.2"
+    "typescript": "~5.8.2",
+    "vitest": "^2.1.9"
   }
 }

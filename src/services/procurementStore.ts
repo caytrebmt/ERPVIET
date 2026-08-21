@@ -1,3 +1,12 @@
+import client from '../api/client';
+
+// ============================================================
+// PROCUREMENT (PR / RFQ / PO) — Types + DB-backed API client
+// ============================================================
+// Trước đây dữ liệu được lưu ở localStorage. Nay chuyển sang DB (bảng
+// procurement_lists) thông qua API /api/saas/purchasing/procurement/:type,
+// giúp dữ liệu bền vững và dùng chung giữa các người dùng trong doanh nghiệp.
+
 export interface PRItem {
   id: string;
   productId: string;
@@ -78,55 +87,25 @@ export interface PurchaseOrder {
   vat_amount: number;
   total_amount: number;
   creator: string;
-  stock_in_vouchers?: string[]; // Array of PN codes
+  stock_in_vouchers?: string[];
 }
 
-const INITIAL_PRS: PurchaseRequest[] = [];
-const INITIAL_RFQS: RequestForQuotation[] = [];
-const INITIAL_POS: PurchaseOrder[] = [];
-
-const STORAGE_KEY_PR = 'erp_procurement_prs_v1';
-const STORAGE_KEY_RFQ = 'erp_procurement_rfqs_v1';
-const STORAGE_KEY_PO = 'erp_procurement_pos_v1';
-
-export const getStoredPRs = (): PurchaseRequest[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_PR);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    console.error(e);
+async function fetchList<T>(type: 'prs' | 'rfqs' | 'pos'): Promise<T[]> {
+  const res = await client.get(`/api/saas/purchasing/procurement/${type}`);
+  if (res.data && res.data.ok && Array.isArray(res.data.data)) {
+    return res.data.data as T[];
   }
   return [];
-};
+}
 
-export const savePRs = (prs: PurchaseRequest[]) => {
-  localStorage.setItem(STORAGE_KEY_PR, JSON.stringify(prs));
-};
+async function saveList(type: 'prs' | 'rfqs' | 'pos', payload: unknown[]): Promise<void> {
+  await client.put(`/api/saas/purchasing/procurement/${type}`, { data: payload });
+}
 
-export const getStoredRFQs = (): RequestForQuotation[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_RFQ);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    console.error(e);
-  }
-  return [];
-};
+export const fetchPRs = (): Promise<PurchaseRequest[]> => fetchList<PurchaseRequest>('prs');
+export const fetchRFQs = (): Promise<RequestForQuotation[]> => fetchList<RequestForQuotation>('rfqs');
+export const fetchPOs = (): Promise<PurchaseOrder[]> => fetchList<PurchaseOrder>('pos');
 
-export const saveRFQs = (rfqs: RequestForQuotation[]) => {
-  localStorage.setItem(STORAGE_KEY_RFQ, JSON.stringify(rfqs));
-};
-
-export const getStoredPOs = (): PurchaseOrder[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_PO);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    console.error(e);
-  }
-  return [];
-};
-
-export const savePOs = (pos: PurchaseOrder[]) => {
-  localStorage.setItem(STORAGE_KEY_PO, JSON.stringify(pos));
-};
+export const savePRs = (prs: PurchaseRequest[]): Promise<void> => saveList('prs', prs);
+export const saveRFQs = (rfqs: RequestForQuotation[]): Promise<void> => saveList('rfqs', rfqs);
+export const savePOs = (pos: PurchaseOrder[]): Promise<void> => saveList('pos', pos);

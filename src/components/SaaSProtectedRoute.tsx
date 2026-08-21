@@ -6,9 +6,10 @@ import { ShieldAlert, ArrowLeft, Lock } from "lucide-react";
 interface SaaSProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[];
+  superAdminOnly?: boolean;
 }
 
-const SaaSProtectedRoute: React.FC<SaaSProtectedRouteProps> = ({ children, allowedRoles }) => {
+const SaaSProtectedRoute: React.FC<SaaSProtectedRouteProps> = ({ children, allowedRoles, superAdminOnly }) => {
   const { isErpAuthenticated, erpLoading, erpUser, hasRole } = useSaaSAuth();
   const location = useLocation();
 
@@ -25,6 +26,29 @@ const SaaSProtectedRoute: React.FC<SaaSProtectedRouteProps> = ({ children, allow
 
   if (!isErpAuthenticated) {
     return <Navigate to="/saas/login" state={{ from: location }} replace />;
+  }
+
+  if (superAdminOnly && !erpUser?.is_super_admin) {
+    return (
+      <div className="min-h-[75vh] flex flex-col items-center justify-center p-6 text-center bg-zinc-900/50 rounded-2xl border border-zinc-800 my-4">
+        <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mb-4">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-zinc-100 mb-2">
+          403 - Không Có Quyền Truy Cập
+        </h2>
+        <p className="text-xs text-zinc-400 max-w-md mb-6">
+          Chỉ <strong className="text-amber-400">quản trị viên nền tảng</strong> mới có quyền truy cập tính năng này.
+        </p>
+        <button
+          onClick={() => window.history.back()}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Quay lại trang trước</span>
+        </button>
+      </div>
+    );
   }
 
   if (allowedRoles && allowedRoles.length > 0 && !hasRole(allowedRoles)) {

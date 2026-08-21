@@ -24,7 +24,7 @@ import { generateERPCode } from '../../utils/format';
 import client from '../../api/client';
 import {
   PurchaseOrder,
-  getStoredPOs,
+  fetchPOs,
   savePOs,
 } from '../../services/procurementStore';
 
@@ -159,13 +159,20 @@ export const SaaSStockInPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const storedPOs = getStoredPOs();
-    setAvailablePOs(storedPOs);
+    let cancelled = false;
+    fetchPOs()
+      .catch(() => [] as PurchaseOrder[])
+      .then((pos) => {
+        if (!cancelled) setAvailablePOs(pos);
+      });
 
     const fromPO: PurchaseOrder | undefined = (location.state as any)?.fromPO;
     if (fromPO) {
       applyPOToForm(fromPO);
     }
+    return () => {
+      cancelled = true;
+    };
   }, [location.state]);
 
   const applyPOToForm = (po: PurchaseOrder) => {
@@ -396,21 +403,24 @@ export const SaaSStockInPage: React.FC = () => {
 
     // Update PO status to DA_NHAP_KHO in store if linked to PO
     if (linkedPONumber) {
-      const storedPOs = getStoredPOs();
-      const updatedPOs = storedPOs.map((p) => {
-        if (p.po_number === linkedPONumber) {
-          const vouchers = p.stock_in_vouchers || [];
-          if (!vouchers.includes(voucherCode)) vouchers.push(voucherCode);
-          return {
-            ...p,
-            status: 'DA_NHAP_KHO' as const,
-            stock_in_vouchers: vouchers,
-          };
-        }
-        return p;
-      });
-      savePOs(updatedPOs);
-      setAvailablePOs(updatedPOs);
+      fetchPOs()
+        .then((storedPOs) => {
+          const updatedPOs = storedPOs.map((p) => {
+            if (p.po_number === linkedPONumber) {
+              const vouchers = p.stock_in_vouchers || [];
+              if (!vouchers.includes(voucherCode)) vouchers.push(voucherCode);
+              return {
+                ...p,
+                status: 'DA_NHAP_KHO' as const,
+                stock_in_vouchers: vouchers,
+              };
+            }
+            return p;
+          });
+          setAvailablePOs(updatedPOs);
+          return savePOs(updatedPOs);
+        })
+        .catch(() => {});
       addToast(`Đã tự động cập nhật trạng thái Đơn Mua Hàng ${linkedPONumber} ➔ Đã Nhập Kho!`, 'success');
     }
 

@@ -1,9 +1,10 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { query, isDbConnected } from '../db/index.js';
 import { WebCustomer } from './shopDataStore.js';
+import { JWT_SECRET } from '../config.js';
 
-const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
 const BCRYPT_ROUNDS = 10;
 
 export async function loginWebCustomer(email: string, password: string, companyId?: number) {
@@ -24,23 +25,9 @@ export async function loginWebCustomer(email: string, password: string, companyI
       // Check bcrypt hash first
       if (storedHash.startsWith('$2a$') || storedHash.startsWith('$2b$')) {
         isMatch = await bcrypt.compare(cleanPass, storedHash);
-      } else {
-        // Fallback for plaintext passwords (legacy/dev only)
+      } else if (process.env.NODE_ENV !== 'production') {
+        // Fallback plaintext chỉ dùng cho dữ liệu legacy trong môi trường dev.
         isMatch = storedHash === cleanPass || storedHash === cleanPass.toLowerCase();
-      }
-
-      // Demo passwords for backward compatibility with test data
-      if (!isMatch) {
-        const demoPasswords = [
-          'password123',
-          'web12345',
-          'techviet123',
-          'minh2026',
-          'ha123456',
-          'admin123',
-          '123456',
-        ];
-        isMatch = demoPasswords.includes(cleanPass.toLowerCase());
       }
 
       if (isMatch) {
@@ -79,7 +66,7 @@ export async function fetchAllWebCustomers(companyId?: number): Promise<WebCusto
         name: row.name || 'Khách Hàng',
         email: row.email,
         phone: row.phone,
-        passwordHash: row.passwordHash || 'web12345',
+        passwordHash: row.passwordHash || '',
         customer_id: Number(row.customer_id),
       }));
     }
@@ -92,7 +79,9 @@ export async function fetchAllWebCustomers(companyId?: number): Promise<WebCusto
 
 export async function saveOrUpdateWebCustomer(data: { name: string; email: string; phone?: string; password?: string }, companyId?: number) {
   const cleanEmail = String(data.email).trim().toLowerCase();
-  const cleanPass = String(data.password || 'web12345').trim();
+  // Không dùng mật khẩu mặc định yếu: nếu admin tạo khách hàng không cấp mật khẩu,
+  // sinh mật khẩu ngẫu nhiên (không thể đoán được).
+  const cleanPass = data.password ? String(data.password).trim() : randomBytes(16).toString('hex');
   const cleanName = String(data.name || cleanEmail.split('@')[0]).trim();
   const cleanPhone = String(data.phone || '0901234567').trim();
 
