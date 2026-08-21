@@ -4,17 +4,23 @@ import cors from "cors";
 import compression from "compression";
 import { shopRouter } from "../../src/api/shopRouter.js";
 import { saasRouter } from "../../src/api/saasRouter.js";
-import { testDbConnection } from "../../src/db/index.js";
+import { runMigrations, testDbConnection } from "../../src/db/index.js";
 
 // Single Express app reused across warm Lambda invocations. Routes are mounted
 // under the original "/api" prefix so the frontend's relative /api/* calls
 // keep working behind the Netlify rewrite.
 const api = express();
 
-api.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
+api.use(cors({
+  origin: allowedOrigins.length
+    ? (origin: any, cb: any) => cb(null, !origin || allowedOrigins.includes(origin))
+    : true,
+  credentials: true,
+}));
 api.use(compression());
-api.use(express.json({ limit: "50mb" }));
-api.use(express.urlencoded({ limit: "50mb", extended: true }));
+api.use(express.json({ limit: "10mb" }));
+api.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 api.use("/api/shop", shopRouter);
 api.use("/api/saas", saasRouter);
@@ -36,6 +42,11 @@ export const handler = async (event: any, context: any): Promise<any> => {
       return false;
     });
     console.log(`[Function] Supabase database connected: ${ok}`);
+    if (ok) {
+      await runMigrations().catch((err: any) =>
+        console.warn("[Function] runMigrations failed:", err?.message ?? err)
+      );
+    }
   }
   return baseHandler(event, context);
 };

@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { query, isDbConnected } from '../db/index.js';
-
-const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
+import { JWT_SECRET } from '../config.js';
 
 export interface ShopTenantRequest extends Request {
   companyId?: number;

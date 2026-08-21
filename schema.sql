@@ -3,6 +3,12 @@
 -- Complete Enterprise Resource Planning (ERP) + Accounting TT200
 -- + Inventory + Sales + Purchasing + CRM + Webshop + Security
 -- ============================================================
+--
+-- SOURCE OF TRUTH: đây là file schema duy nhất được auto-migrate cho DB mới.
+-- Mọi thay đổi DB dần dần (delta) thực hiện qua hệ thống migration có phiên bản
+-- trong src/db/index.ts (runMigrations + bảng schema_migrations), KHÔNG sửa trực
+-- tiếp file này đối với DB đã tồn tại dữ liệu.
+-- Các file schema cũ đã được chuyển sang thư mục archive/ (deprecated).
 
 -- Drop views in reverse dependency order
 DROP VIEW IF EXISTS vw_webshop_conversion_metrics CASCADE;
@@ -399,15 +405,20 @@ CREATE TABLE sys_users (
     role_id INT REFERENCES sys_roles(id),
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'locked', 'disabled')),
     preferred_lang VARCHAR(10) DEFAULT 'vi',
+    is_super_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT INTO sys_users (id, company_id, branch_id, department_id, username, email, password_hash, full_name, phone, role_id, preferred_lang) VALUES
-(1, 1, 1, 1, 'admin', 'admin@erpacc.vn', '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C', 'Nguyễn Văn Quản Trị', '0912345678', 1, 'vi'),
-(2, 1, 1, 2, 'accountant1', 'ketoan.tran@erpacc.vn', '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C', 'Trần Thị Thu Kế Toán', '0911223344', 3, 'vi'),
-(3, 1, 1, 3, 'thukho1', 'thukho.le@erpacc.vn', '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C', 'Lê Hoàng Minh Thủ Kho', '0903555666', 4, 'vi'),
-(4, 1, 1, 4, 'sales1', 'saler.pham@erpacc.vn', '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C', 'Phạm Ngọc Anh Sale', '0977888999', 5, 'en');
+(1, 1, 1, 1, 'admin', 'admin@erpacc.vn', '$2b$10$nOhEow9TW63DW0ZDzsUc4u5velQhnmkI.NNu7oCMp1NLsCRS.J92.', 'Nguyễn Văn Quản Trị', '0912345678', 1, 'vi'),
+(2, 1, 1, 2, 'accountant1', 'ketoan.tran@erpacc.vn', '$2b$10$nOhEow9TW63DW0ZDzsUc4u5velQhnmkI.NNu7oCMp1NLsCRS.J92.', 'Trần Thị Thu Kế Toán', '0911223344', 3, 'vi'),
+(3, 1, 1, 3, 'thukho1', 'thukho.le@erpacc.vn', '$2b$10$nOhEow9TW63DW0ZDzsUc4u5velQhnmkI.NNu7oCMp1NLsCRS.J92.', 'Lê Hoàng Minh Thủ Kho', '0903555666', 4, 'vi'),
+(4, 1, 1, 4, 'sales1', 'saler.pham@erpacc.vn', '$2b$10$nOhEow9TW63DW0ZDzsUc4u5velQhnmkI.NNu7oCMp1NLsCRS.J92.', 'Phạm Ngọc Anh Sale', '0977888999', 5, 'en');
+
+-- admin nền tảng ERPACC (quản lý MỌI tenant). Admin của từng tenant (tạo qua
+-- /tenants/register) giữ is_super_admin = FALSE.
+UPDATE sys_users SET is_super_admin = TRUE WHERE username = 'admin';
 
 ALTER TABLE companies ADD CONSTRAINT fk_companies_owner_user FOREIGN KEY (owner_user_id) REFERENCES sys_users(id) ON DELETE SET NULL;
 
@@ -1445,7 +1456,7 @@ CREATE TABLE web_customers (
 );
 
 INSERT INTO web_customers (id, username, email, password_hash, full_name, phone, address, city) VALUES
-(1, 'khachhang.demo', 'demo.customer@gmail.com', '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C', 'Nguyễn Văn Mua Hàng Lẻ', '0988.777.666', '789 Nguyễn Trãi, Q.5', 'TP.Hồ Chí Minh');
+(1, 'khachhang.demo', 'demo.customer@gmail.com', '$2b$10$nOhEow9TW63DW0ZDzsUc4u5velQhnmkI.NNu7oCMp1NLsCRS.J92.', 'Nguyễn Văn Mua Hàng Lẻ', '0988.777.666', '789 Nguyễn Trãi, Q.5', 'TP.Hồ Chí Minh');
 
 CREATE TABLE web_promotions (
     id SERIAL PRIMARY KEY,
@@ -2696,7 +2707,7 @@ BEGIN
             wc_id,
             'webuser_' || wc_id,
             'customer' || wc_id || '@gmail.com',
-            '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C',
+            '$2b$10$nOhEow9TW63DW0ZDzsUc4u5velQhnmkI.NNu7oCMp1NLsCRS.J92.',
             'Khách Hàng Online #' || wc_id,
             '097' || LPAD((1000000 + wc_id * 17)::text, 7, '0'),
             'Đường Số ' || wc_id || ', Phường ' || (wc_id % 15 + 1),

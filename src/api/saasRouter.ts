@@ -1,9 +1,13 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
+import rateLimit from 'express-rate-limit';
 import { query, isDbConnected, pool } from '../db/index';
-import { tenantMiddleware, TenantRequest } from '../middleware/tenant.js';
+import { tenantMiddleware, requireSuperAdmin, TenantRequest } from '../middleware/tenant.js';
+import { JWT_SECRET } from '../config.js';
 import { postInventoryMovement } from '../services/inventoryService.js';
+import { getProcurementList, saveProcurementList, PROCUREMENT_LIST_TYPES } from '../services/procurementService.js';
 
 import viLocales from '../../public/locales/vi.json';
 import enLocales from '../../public/locales/en.json';
@@ -104,12 +108,33 @@ saasRouter.post('/inventory/movements', tenantMiddleware, async (req: TenantRequ
   catch (error: any) { res.status(400).json({ ok: false, message: error.message }); }
 });
 
-const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
+// Lấy danh sách permission thực tế của user từ sys_role_permissions.
+async function getPermissionsForUser(userId: number, roleCode: string): Promise<string[]> {
+  if (roleCode === 'ADMIN') return ['*'];
+  const res = await query(
+    `SELECT COALESCE(array_agg(DISTINCT srp.permission_code), '{}') AS perms
+       FROM sys_users u
+       LEFT JOIN sys_roles r ON r.id = u.role_id
+       LEFT JOIN sys_role_permissions srp ON srp.role_id = r.id
+      WHERE u.id = $1`,
+    [userId]
+  );
+  return res.rows[0]?.perms || [];
+}
 
 // ==========================================
 // ERP AUTHENTICATION ENDPOINTS
 // ==========================================
-saasRouter.post('/auth/login', async (req: Request, res: Response) => {
+// Giới hạn số lần thử đăng nhập để chống brute-force.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  max: 10, // tối đa 10 lần thử / IP
+  message: { ok: false, message: 'Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau 15 phút.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+saasRouter.post('/auth/login', loginLimiter, async (req: Request, res: Response) => {
   const { username, password } = req.body;
   if (!username) {
     return res.status(400).json({ ok: false, message: 'Vui lòng nhập tên đăng nhập ERP.' });
@@ -137,20 +162,9 @@ saasRouter.post('/auth/login', async (req: Request, res: Response) => {
       // Check bcrypt hash first
       if (storedHash.startsWith('$2a$') || storedHash.startsWith('$2b$')) {
         isMatch = await bcrypt.compare(cleanPass, storedHash);
-      } else {
-        // Fallback for plaintext passwords (legacy/dev only)
+      } else if (process.env.NODE_ENV !== 'production') {
+        // Fallback plaintext chỉ dùng cho dữ liệu legacy trong môi trường dev.
         isMatch = storedHash === cleanPass || storedHash === cleanPass.toLowerCase();
-      }
-
-      // Demo passwords for backward compatibility with test data
-      if (!isMatch) {
-        const demoPasswords = [
-          'password123',
-          'admin123',
-          'web12345',
-          'techviet123',
-        ];
-        isMatch = demoPasswords.includes(cleanPass.toLowerCase());
       }
 
       if (!isMatch) {
@@ -170,11 +184,18 @@ saasRouter.post('/auth/login', async (req: Request, res: Response) => {
         role_code: dbUser.role_code || 'ADMIN',
         role_name_vi: dbUser.role_name_vi || 'Quản trị viên',
         role_name_en: dbUser.role_name_en || 'System Administrator',
-        permissions: dbUser.role_code === 'ADMIN' ? ['*'] : ['quotation:view', 'quotation:create', 'order:view', 'customer:view', 'product:view'],
+        is_super_admin: !!dbUser.is_super_admin,
+        permissions: await getPermissionsForUser(dbUser.id, dbUser.role_code || 'ADMIN'),
         preferred_lang: dbUser.preferred_lang || 'vi',
       };
       const token = jwt.sign(
-        { userId: userObj.id, username: userObj.username, role: userObj.role_code, companyId: userObj.company_id },
+        {
+          userId: userObj.id,
+          username: userObj.username,
+          role: userObj.role_code,
+          companyId: userObj.company_id,
+          isSuperAdmin: !!dbUser.is_super_admin,
+        },
         JWT_SECRET,
         { expiresIn: '7d' }
       );
@@ -223,7 +244,8 @@ saasRouter.get('/auth/me', async (req: Request, res: Response) => {
         role_code: dbUser.role_code || 'ADMIN',
         role_name_vi: dbUser.role_name_vi || 'Quản trị viên',
         role_name_en: dbUser.role_name_en || 'System Administrator',
-        permissions: dbUser.role_code === 'ADMIN' ? ['*'] : ['quotation:view', 'quotation:create', 'order:view', 'customer:view', 'product:view'],
+        is_super_admin: !!dbUser.is_super_admin,
+        permissions: await getPermissionsForUser(dbUser.id, dbUser.role_code || 'ADMIN'),
         preferred_lang: dbUser.preferred_lang || 'vi',
       };
       return res.json({ ok: true, data: userObj });
@@ -935,6 +957,53 @@ saasRouter.get('/purchasing/requests', tenantMiddleware, async (req: TenantReque
 });
 
 // ==========================================
+// PROCUREMENT (PR / RFQ / PO) — DB-backed (thay thế localStorage)
+// ==========================================
+// Mỗi tenant lưu danh sách PR / RFQ / PO trong bảng procurement_lists (JSONB),
+// giúp dữ liệu mua hàng sống sót qua đổi thiết bị/trình duyệt và dùng chung
+// giữa các người dùng trong cùng doanh nghiệp.
+
+function parseProcurementType(type: string): string | null {
+  return (PROCUREMENT_LIST_TYPES as string[]).includes(type) ? type : null;
+}
+
+saasRouter.get('/purchasing/procurement/:type', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  const type = parseProcurementType(req.params.type);
+  if (!type) {
+    return res.status(400).json({ ok: false, message: 'Loại dữ liệu không hợp lệ (prs | rfqs | pos)' });
+  }
+  if (!req.companyId) {
+    return res.status(403).json({ ok: false, message: 'Không xác định được tenant' });
+  }
+  try {
+    const data = await getProcurementList(req.companyId, type as any);
+    res.json({ ok: true, data });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+saasRouter.put('/purchasing/procurement/:type', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  const type = parseProcurementType(req.params.type);
+  if (!type) {
+    return res.status(400).json({ ok: false, message: 'Loại dữ liệu không hợp lệ (prs | rfqs | pos)' });
+  }
+  if (!req.companyId) {
+    return res.status(403).json({ ok: false, message: 'Không xác định được tenant' });
+  }
+  const payload = req.body?.data;
+  if (!Array.isArray(payload)) {
+    return res.status(400).json({ ok: false, message: 'Dữ liệu phải là mảng' });
+  }
+  try {
+    await saveProcurementList(req.companyId, type as any, payload);
+    res.json({ ok: true, message: 'Đã lưu dữ liệu mua hàng' });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+// ==========================================
 // 10. FIXED ASSETS & DEPRECIATION ENDPOINTS
 // ==========================================
 saasRouter.get('/assets', tenantMiddleware, async (req: TenantRequest, res) => {
@@ -990,7 +1059,7 @@ saasRouter.get('/tenants/me', tenantMiddleware, async (req: TenantRequest, res: 
   }
 });
 
-saasRouter.get('/tenants/list', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+saasRouter.get('/tenants/list', tenantMiddleware, requireSuperAdmin, async (req: TenantRequest, res: Response) => {
   try {
     const result = await query(
       `SELECT id, code, name_vi, name_en, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_paused, is_active, created_at FROM companies ORDER BY id DESC`
@@ -1001,7 +1070,7 @@ saasRouter.get('/tenants/list', tenantMiddleware, async (req: TenantRequest, res
   }
 });
 
-saasRouter.get('/tenants/:id', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+saasRouter.get('/tenants/:id', tenantMiddleware, requireSuperAdmin, async (req: TenantRequest, res: Response) => {
   const tenantId = parseInt(req.params.id);
   try {
     const result = await query(
@@ -1040,11 +1109,14 @@ saasRouter.post('/tenants/register', async (req: Request, res: Response) => {
     const roleResult = await client.query("SELECT id FROM sys_roles WHERE code = 'ADMIN' LIMIT 1");
     const roleId = roleResult.rows[0]?.id || 1;
 
+    // BẮT BUỘC hash mật khẩu trước khi lưu (không lưu plaintext).
+    const passwordHash = await bcrypt.hash(owner_password, BCRYPT_ROUNDS);
+
     const userResult = await client.query(
       `INSERT INTO sys_users (company_id, username, email, password_hash, full_name, phone, role_id, status, preferred_lang)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', 'vi')
        RETURNING id`,
-      [companyId, owner_email, owner_email, owner_password, owner_name || owner_email, phone || null, roleId]
+      [companyId, owner_email, owner_email, passwordHash, owner_name || owner_email, phone || null, roleId]
     );
     const userId = userResult.rows[0].id;
 
@@ -1145,7 +1217,8 @@ saasRouter.post('/auth/google/callback', async (req: Request, res: Response) => 
         const code = 'TENANT-' + Date.now().toString(36).toUpperCase();
         const roleResult = await client.query("SELECT id FROM sys_roles WHERE code = 'ADMIN' LIMIT 1");
         const roleId = roleResult.rows[0]?.id || 1;
-        const passwordHash = '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C';
+        // Không đặt mật khẩu dùng chung cho user Google: dùng hash ngẫu nhiên.
+        const passwordHash = await bcrypt.hash(randomBytes(32).toString('hex'), BCRYPT_ROUNDS);
 
         const companyResult = await client.query(
           `INSERT INTO companies (code, name_vi, name_en, tax_code, email, phone, address, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_active, onboarding_completed)
@@ -1207,7 +1280,7 @@ saasRouter.post('/auth/google/callback', async (req: Request, res: Response) => 
   }
 });
 
-saasRouter.patch('/tenants/:id', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+saasRouter.patch('/tenants/:id', tenantMiddleware, requireSuperAdmin, async (req: TenantRequest, res: Response) => {
   const tenantId = parseInt(req.params.id);
   const { name_vi, name_en, plan_type, subscription_status, trial_ends_at, settings, max_users, max_warehouses, is_paused, onboarding_completed } = req.body;
 
@@ -1237,7 +1310,7 @@ saasRouter.patch('/tenants/:id', tenantMiddleware, async (req: TenantRequest, re
   }
 });
 
-saasRouter.post('/tenants/:id/pause', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+saasRouter.post('/tenants/:id/pause', tenantMiddleware, requireSuperAdmin, async (req: TenantRequest, res: Response) => {
   const tenantId = parseInt(req.params.id);
   const { paused } = req.body;
 
@@ -1249,7 +1322,7 @@ saasRouter.post('/tenants/:id/pause', tenantMiddleware, async (req: TenantReques
   }
 });
 
-saasRouter.post('/tenants/:id/upgrade', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+saasRouter.post('/tenants/:id/upgrade', tenantMiddleware, requireSuperAdmin, async (req: TenantRequest, res: Response) => {
   const tenantId = parseInt(req.params.id);
   const { plan_type } = req.body;
 

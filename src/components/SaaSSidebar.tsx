@@ -93,6 +93,7 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
 
   // Role based filtering logic
   const isAllowedPath = (path: string): boolean => {
+    if (path === '/saas/tenants') return !!erpUser?.is_super_admin;
     if (role === 'ADMIN') return true;
     if (path === '/saas/dashboard' || path === '/') return true;
 

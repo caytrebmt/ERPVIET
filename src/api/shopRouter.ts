@@ -1,5 +1,8 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
+import rateLimit from 'express-rate-limit';
 import {
   CartData,
 } from '../services/shopDataStore.js';
@@ -31,12 +34,13 @@ import {
 } from '../services/shopOrderService.js';
 import { shopTenantMiddleware, ShopTenantRequest } from '../middleware/shopTenant.js';
 import { query } from '../db/index.js';
+import { JWT_SECRET } from '../config.js';
 import viLocales from '../../public/locales/vi.json';
 import enLocales from '../../public/locales/en.json';
 
 export const shopRouter = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jwt-secret-webshop-2026';
+const BCRYPT_ROUNDS = 10;
 
 shopRouter.use(shopTenantMiddleware);
 
@@ -413,7 +417,15 @@ shopRouter.post('/cart/apply-promo', async (req: ShopTenantRequest, res: Respons
 
 // ================= 3. CUSTOMER AUTHENTICATION (SEPARATED FROM ERP USER) =================
 
-shopRouter.post('/auth/login', async (req: ShopTenantRequest, res: Response) => {
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { ok: false, message: 'Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau 15 phút.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+shopRouter.post('/auth/login', loginLimiter, async (req: ShopTenantRequest, res: Response) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ ok: false, message: 'Vui lòng nhập email và mật khẩu.' });
@@ -484,12 +496,14 @@ shopRouter.post('/auth/google', async (req: ShopTenantRequest, res: Response) =>
     if (customerResult.rows.length > 0) {
       customer = customerResult.rows[0];
     } else {
-      const passwordHash = '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C';
+      // Không đặt mật khẩu dùng chung: user Google không đăng nhập bằng password,
+      // dùng hash ngẫu nhiên không thể đoán được.
+      const randomHash = await bcrypt.hash(randomBytes(32).toString('hex'), BCRYPT_ROUNDS);
       customer = await query(
         `INSERT INTO web_customers (company_id, username, email, password_hash, full_name, phone, is_active)
          VALUES ($1, $2, $3, $4, $5, $6, TRUE)
          RETURNING id, full_name, email, phone`,
-        [req.companyId || 1, email, email, passwordHash, fullName, phone]
+        [req.companyId || 1, email, email, randomHash, fullName, phone]
       ).then(r => r.rows[0]);
     }
 

@@ -60,7 +60,7 @@ Vào **Site settings** -> **Environment variables** -> Bấm **Add a variable** 
 | `SUPABASE_DATABASE_URL` | `postgresql://postgres.[REF]:[PASS]@...:6543/postgres` | Chuỗi kết nối Supabase Postgres |
 | `VITE_SUPABASE_URL` | `https://[YOUR-REF].supabase.co` | URL REST API Supabase |
 | `VITE_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1Ni...` | Khoá Anon Key Supabase |
-| `JWT_SECRET_KEY` | `erpacc-super-secret-jwt-key-2026` | Khóa mã hóa JWT xác thực ERP |
+| `JWT_SECRET_KEY` | *(sinh ngẫu nhiên, tối thiểu 32 ký tự)* | Khóa mã hóa JWT xác thực ERP — sinh bằng `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
 | `NODE_ENV` | `production` | Chế độ Production |
 | `VITE_API_BASE_URL` | `/api` | Đường dẫn gốc API trên Netlify |
 

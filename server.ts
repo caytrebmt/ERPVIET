@@ -4,7 +4,7 @@ import cors from "cors";
 import compression from "compression";
 import { shopRouter } from "./src/api/shopRouter.js";
 import { saasRouter } from "./src/api/saasRouter.js";
-import { autoMigrateDatabase, ensureProductImageSchema, testDbConnection } from "./src/db/index.js";
+import { autoMigrateDatabase, runMigrations, testDbConnection } from "./src/db/index.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -12,9 +12,19 @@ const PORT = parseInt(process.env.PORT || "3000", 10);
 // Enable HTTP response compression (Gzip/Brotli) for faster network transfers
 app.use(compression());
 
-app.use(cors());
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
+// CORS: cho phép danh sách origin cấu hình trong CORS_ORIGINS (phân tách bằng dấu phẩy).
+// Nếu để trống → mở toàn bộ (phù hợp webshop công khai). Cấu hình domain cụ thể cho SaaS.
+const allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
+app.use(cors({
+  origin: allowedOrigins.length
+    ? (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin))
+    : true,
+  credentials: true,
+}));
+
+// Giới hạn payload để giảm bề mặt DoS (50MB chỉ thực sự cần cho upload ảnh Base64).
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // Serve static assets from public/static with caching headers
 const webshopStaticPath = path.join(process.cwd(), "public", "static");
@@ -31,7 +41,7 @@ app.use("/api/saas", saasRouter);
 
 async function startServer() {
   if (await testDbConnection()) {
-    await ensureProductImageSchema();
+    await runMigrations();
   }
 
   // Run database migrations only when explicitly enabled to avoid overwriting an existing production database.

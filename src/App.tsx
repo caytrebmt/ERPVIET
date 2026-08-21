@@ -100,7 +100,7 @@ export default function App() {
                       <Route
                         path="/saas/tenants"
                         element={
-                          <SaaSProtectedRoute allowedRoles={["ADMIN"]}>
+                          <SaaSProtectedRoute allowedRoles={["ADMIN"]} superAdminOnly>
                             <SaaSLayout title={t('layout_tenant_management', 'Quản lý Doanh nghiệp')}>
                               <SaaSTenantsPage />
                             </SaaSLayout>

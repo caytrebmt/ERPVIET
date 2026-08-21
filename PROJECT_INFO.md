@@ -15,7 +15,7 @@
 
 | Layer | Công nghệ |
 |-------|-----------|
-| Frontend | React 18 + TypeScript + Vite + Tailwind CSS + React Router v6 + i18next (react-i18next) |
+| Frontend | React 19 + TypeScript + Vite + Tailwind CSS + React Router v7 + i18next (react-i18next) |
 | Backend | Node.js + Express (isomorphic — chạy trong cùng một process với Vite dev server) |
 | Database | PostgreSQL (Supabase hoặc self-hosted) |
 | Auth | JWT (Bearer token, 7 ngày) + bcrypt (10 rounds) |

@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# GitHub App hiện chưa có quyền "workflows" nên chưa push được file CI.
+# Bỏ dòng dưới khi quyền được cấp để đưa .github/workflows/ci.yml vào repo.
+.github/
