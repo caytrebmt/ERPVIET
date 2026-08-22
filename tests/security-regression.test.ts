@@ -26,9 +26,30 @@ describe('security regression guards', () => {
       'src/api/saasRouter.ts',
       'src/api/shopRouter.ts',
       'src/services/shopCustomerService.ts',
+      'src/pages/saas/SaaSSettingsPage.tsx',
     ];
     for (const f of files) {
       expect(readSource(f), `${f} vẫn còn secret mặc định`).not.toContain('jwt-secret-webshop-2026');
+    }
+  });
+
+  it('không có secret mặc định nào trong toàn bộ src/', () => {
+    const knownSecrets = ['jwt-secret-webshop-2026', 'erpacc-super-secret-jwt-key-2026'];
+    const walk = (dir: string): string[] => {
+      const out: string[] = [];
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === 'node_modules') continue;
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) out.push(...walk(full));
+        else if (/\.(ts|tsx|js|mjs|cjs|json)$/.test(entry.name)) out.push(full);
+      }
+      return out;
+    };
+    for (const f of walk('src')) {
+      const content = fs.readFileSync(f, 'utf8');
+      for (const secret of knownSecrets) {
+        expect(content, `${f} vẫn còn secret mặc định ${secret}`).not.toContain(secret);
+      }
     }
   });
 

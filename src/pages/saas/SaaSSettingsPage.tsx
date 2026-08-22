@@ -117,7 +117,7 @@ export const SaaSSettingsPage: React.FC = () => {
       ? JSON.parse(saved)
       : {
           apiBaseUrl: '/api',
-          jwtToken: localStorage.getItem('token') || 'jwt-secret-webshop-2026',
+          jwtToken: localStorage.getItem('token') || '',
           webhookUrl: 'https://api.erp-viet.vn/v1/webhooks/orders',
           logLevel: 'INFO',
         };
