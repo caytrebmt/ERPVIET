@@ -21,6 +21,9 @@ import {
   Database,
   HardDrive,
   Loader2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { useLanguage, TranslationItem } from '../contexts/LanguageContext';
 import { useToast } from '../contexts/ToastContext';
@@ -31,10 +34,13 @@ import {
   computeCategoryFacets,
   computeTranslationStats,
   normalizeImportedTranslations,
+  sortTranslationItems,
   TRANSLATIONS_DEFAULT_PAGE_SIZE,
   type TranslationStats,
   type CategoryFacet,
   type TranslationStatusFilter,
+  type TranslationSortField,
+  type SortOrder,
 } from '../services/translationsService';
 
 type DataMode = 'loading' | 'server' | 'local';
@@ -87,6 +93,8 @@ export const SaaSTranslationsTab: React.FC = () => {
   const [committedSearch, setCommittedSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<TranslationStatusFilter>('all');
+  const [sortField, setSortField] = useState<TranslationSortField>('key');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(TRANSLATIONS_DEFAULT_PAGE_SIZE);
 
@@ -94,10 +102,25 @@ export const SaaSTranslationsTab: React.FC = () => {
     setCommittedSearch(debouncedSearch);
   }, [debouncedSearch]);
 
+  // Clicking a column header: same column toggles direction, new column starts asc.
+  const toggleSort = (field: TranslationSortField) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const renderSortIcon = (field: TranslationSortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-30" />;
+    return sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-500" /> : <ArrowDown className="w-3 h-3 text-blue-500" />;
+  };
+
   // Any filter change sends the user back to page 1.
   useEffect(() => {
     setPage(1);
-  }, [committedSearch, selectedCategory, statusFilter, pageSize]);
+  }, [committedSearch, selectedCategory, statusFilter, sortField, sortOrder, pageSize]);
 
   // ── Data source: server (paginated API) with local i18n fallback ─────────
   const [mode, setMode] = useState<DataMode>('loading');
@@ -106,11 +129,16 @@ export const SaaSTranslationsTab: React.FC = () => {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
-  const requestSig = `${page}|${pageSize}|${committedSearch}|${selectedCategory}|${statusFilter}|${reloadToken}`;
+  const requestSig = `${page}|${pageSize}|${committedSearch}|${selectedCategory}|${statusFilter}|${sortField}|${sortOrder}|${reloadToken}`;
 
   const fetchServerPage = useCallback(
     async (targetSig: string): Promise<ServerPageState> => {
-      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        sort: sortField,
+        order: sortOrder,
+      });
       if (committedSearch) params.set('search', committedSearch);
       if (selectedCategory !== 'all') params.set('category', selectedCategory);
       if (statusFilter !== 'all') params.set('status', statusFilter);
@@ -136,7 +164,7 @@ export const SaaSTranslationsTab: React.FC = () => {
         stats: data.stats || { total: 0, viCompleted: 0, enCompleted: 0 },
       };
     },
-    [page, pageSize, committedSearch, selectedCategory, statusFilter],
+    [page, pageSize, committedSearch, selectedCategory, statusFilter, sortField, sortOrder],
   );
 
   useEffect(() => {
@@ -168,7 +196,7 @@ export const SaaSTranslationsTab: React.FC = () => {
   const refreshServerList = () => setReloadToken((n) => n + 1);
   const isServer = mode === 'server';
 
-  // ── Local (fallback) view: filter + paginate the bundled dictionary ───────
+  // ── Local (fallback) view: filter + sort + paginate the bundled dictionary ─
   const localFiltered = useMemo(
     () =>
       filterTranslationsLocally(translationsList, {
@@ -178,9 +206,15 @@ export const SaaSTranslationsTab: React.FC = () => {
       }),
     [translationsList, committedSearch, selectedCategory, statusFilter],
   );
+  // Same sort semantics as the server (Intl.Collator('vi') mirrors the DB's
+  // ICU Vietnamese collation), applied BEFORE pagination like ORDER BY.
+  const localSorted = useMemo(
+    () => sortTranslationItems(localFiltered, sortField, sortOrder),
+    [localFiltered, sortField, sortOrder],
+  );
   const localPaged = useMemo(
-    () => paginateItems(localFiltered, page, pageSize),
-    [localFiltered, page, pageSize],
+    () => paginateItems(localSorted, page, pageSize),
+    [localSorted, page, pageSize],
   );
   const localFacets = useMemo(() => computeCategoryFacets(translationsList), [translationsList]);
   const localStats = useMemo(() => computeTranslationStats(translationsList), [translationsList]);
@@ -626,9 +660,36 @@ export const SaaSTranslationsTab: React.FC = () => {
           <table className="w-full text-left text-xs text-zinc-700 dark:text-zinc-300">
             <thead className="bg-zinc-100/80 dark:bg-zinc-800/80 uppercase text-[10px] tracking-wider font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
               <tr>
-                <th className="py-3 px-4 w-1/4">{language === 'en' ? 'Key Code & Category' : 'Mã từ khóa & Danh mục'}</th>
-                <th className="py-3 px-4 w-1/3">Tiếng Việt 🇻🇳</th>
-                <th className="py-3 px-4 w-1/3">English 🇬🇧</th>
+                <th className="py-3 px-4 w-1/4">
+                  <button
+                    onClick={() => toggleSort('key')}
+                    className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
+                    title={language === 'en' ? 'Sort by key code (server-side)' : 'Sắp xếp theo mã từ khóa (trên server)'}
+                  >
+                    {language === 'en' ? 'Key Code & Category' : 'Mã từ khóa & Danh mục'}
+                    {renderSortIcon('key')}
+                  </button>
+                </th>
+                <th className="py-3 px-4 w-1/3">
+                  <button
+                    onClick={() => toggleSort('vi')}
+                    className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
+                    title={language === 'en' ? 'Sort by Vietnamese (Vietnamese alphabet order)' : 'Sắp xếp theo tiếng Việt (thứ tự bảng chữ cái tiếng Việt)'}
+                  >
+                    Tiếng Việt 🇻🇳
+                    {renderSortIcon('vi')}
+                  </button>
+                </th>
+                <th className="py-3 px-4 w-1/3">
+                  <button
+                    onClick={() => toggleSort('en')}
+                    className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
+                    title={language === 'en' ? 'Sort by English (server-side)' : 'Sắp xếp theo tiếng Anh (trên server)'}
+                  >
+                    English 🇬🇧
+                    {renderSortIcon('en')}
+                  </button>
+                </th>
                 <th className="py-3 px-4 text-right w-24">{language === 'en' ? 'Action' : 'Thao tác'}</th>
               </tr>
             </thead>

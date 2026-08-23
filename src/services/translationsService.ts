@@ -10,11 +10,23 @@ import { matchesVietnameseSearch } from '../utils/vietnamese';
 import type { TranslationItem } from '../contexts/LanguageContext';
 
 export type TranslationStatusFilter = 'all' | 'missing_vi' | 'missing_en';
+export type TranslationSortField = 'key' | 'vi' | 'en';
+export type SortOrder = 'asc' | 'desc';
 
 export const TRANSLATIONS_MIN_PAGE_SIZE = 10;
 export const TRANSLATIONS_MAX_PAGE_SIZE = 200;
 export const TRANSLATIONS_DEFAULT_PAGE_SIZE = 50;
 export const TRANSLATIONS_MAX_SEARCH_LENGTH = 100;
+
+/**
+ * Sort whitelist: request field -> real column. Only these expressions can ever
+ * reach the ORDER BY clause — raw user input is never interpolated into SQL.
+ */
+export const SORTABLE_TRANSLATION_COLUMNS: Record<TranslationSortField, string> = {
+  key: 'key_name',
+  vi: 'vi_text',
+  en: 'en_text',
+};
 
 /**
  * Keys starting with "_" are locale-file metadata (e.g. `_groups`), not UI terms.
@@ -27,6 +39,8 @@ export interface TranslationsListQuery {
   search: string;
   category: string; // 'all' = no filter
   status: TranslationStatusFilter;
+  sort: TranslationSortField;
+  order: SortOrder;
   page: number; // 1-based
   pageSize: number;
 }
@@ -72,13 +86,18 @@ export function parseTranslationsListQuery(raw: unknown): TranslationsListQuery 
   const status: TranslationStatusFilter =
     q.status === 'missing_vi' || q.status === 'missing_en' ? q.status : 'all';
 
+  const sort: TranslationSortField =
+    q.sort === 'vi' || q.sort === 'en' || q.sort === 'key' ? q.sort : 'key';
+
+  const order: SortOrder = q.order === 'desc' ? 'desc' : 'asc';
+
   const page = toInt(q.page, 1);
   const pageSize = Math.min(
     TRANSLATIONS_MAX_PAGE_SIZE,
     Math.max(TRANSLATIONS_MIN_PAGE_SIZE, toInt(q.pageSize, TRANSLATIONS_DEFAULT_PAGE_SIZE)),
   );
 
-  return { search, category, status, page, pageSize };
+  return { search, category, status, sort, order, page, pageSize };
 }
 
 /** Escape LIKE/ILIKE wildcards inside a user search term. */
@@ -116,6 +135,41 @@ export function buildTranslationsSqlFilters(
   return { whereSql: `WHERE ${conditions.join(' AND ')}`, params };
 }
 
+/** Collation names must be simple identifiers before being quoted into SQL. */
+const SAFE_COLLATION_NAME = /^[A-Za-z0-9-]+$/;
+
+/**
+ * ORDER BY for the paginated query. Sorting MUST happen before LIMIT/OFFSET on
+ * the server — sorting the current page client-side would only shuffle the rows
+ * already fetched, not order the whole dictionary.
+ *
+ * `viCollation` is an optional ICU collation name (e.g. "vi-x-icu") resolved
+ * from pg_collation by the router; when present, Vietnamese text sorts in true
+ * Vietnamese alphabet order (ă/â/đ/ê/ơ/ư as separate letters, correct tone marks)
+ * instead of the DB's default locale.
+ *
+ * Non-key sorts always add `key_name ASC` as a tiebreaker so paging stays stable
+ * when many rows share the same translation.
+ */
+export function buildTranslationsOrderBy(
+  query: Pick<TranslationsListQuery, 'sort' | 'order'>,
+  viCollation?: string | null,
+): string {
+  const dir = query.order === 'desc' ? 'DESC' : 'ASC';
+
+  if (query.sort === 'key' || !SORTABLE_TRANSLATION_COLUMNS[query.sort]) {
+    return `ORDER BY key_name ${dir}`;
+  }
+
+  const column = SORTABLE_TRANSLATION_COLUMNS[query.sort];
+  const collate =
+    query.sort === 'vi' && viCollation && SAFE_COLLATION_NAME.test(viCollation)
+      ? ` COLLATE "${viCollation}"`
+      : '';
+
+  return `ORDER BY ${column}${collate} ${dir}, key_name ASC`;
+}
+
 /** Client-side mirror of buildTranslationsSqlFilters for the offline/local fallback. */
 export function filterTranslationsLocally(
   items: TranslationItem[],
@@ -151,6 +205,34 @@ export function paginateItems<T>(items: T[], page: number, pageSize: number): Pa
   const from = total === 0 ? 0 : start + 1;
   const to = start + pageItems.length;
   return { items: pageItems, page: safePage, pageSize, total, totalPages, from, to };
+}
+
+/** Client-side mirror of buildTranslationsOrderBy for the offline/local fallback.
+ * Mirrors the server semantics: primary column with requested direction, then
+ * key_name ASC as a stable tiebreaker. Vietnamese text uses Intl.Collator('vi')
+ * so local mode matches the server's ICU "vi" collation ordering. */
+const VI_COLLATOR = new Intl.Collator('vi');
+const EN_COLLATOR = new Intl.Collator('en');
+
+export function sortTranslationItems<T extends { key: string; vi: string; en: string }>(
+  items: T[],
+  sort: TranslationSortField,
+  order: SortOrder,
+): T[] {
+  const field = sort === 'vi' || sort === 'en' ? sort : 'key';
+  const collator = field === 'vi' ? VI_COLLATOR : field === 'en' ? EN_COLLATOR : null;
+
+  return [...items].sort((a, b) => {
+    if (field === 'key') {
+      // Keys are snake_case identifiers — deterministic code-point ordering.
+      if (a.key === b.key) return 0;
+      const cmp = a.key < b.key ? -1 : 1;
+      return order === 'desc' ? -cmp : cmp;
+    }
+    const cmp = collator!.compare(String(a[field] ?? ''), String(b[field] ?? ''));
+    if (cmp !== 0) return order === 'desc' ? -cmp : cmp;
+    return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
+  });
 }
 
 /** Category -> row count, used for the filter pills. */

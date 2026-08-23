@@ -4,8 +4,10 @@ import path from 'path';
 import {
   parseTranslationsListQuery,
   buildTranslationsSqlFilters,
+  buildTranslationsOrderBy,
   escapeLikePattern,
   filterTranslationsLocally,
+  sortTranslationItems,
   paginateItems,
   computeCategoryFacets,
   computeTranslationStats,
@@ -23,9 +25,9 @@ const item = (key: string, vi: string, en: string, category = 'common'): Transla
 });
 
 describe('parseTranslationsListQuery', () => {
-  it('mặc định: page 1, pageSize 50, không filter', () => {
+  it('mặc định: page 1, pageSize 50, không filter, sort theo key asc', () => {
     const q = parseTranslationsListQuery({});
-    expect(q).toEqual({ search: '', category: 'all', status: 'all', page: 1, pageSize: 50 });
+    expect(q).toEqual({ search: '', category: 'all', status: 'all', sort: 'key', order: 'asc', page: 1, pageSize: 50 });
   });
 
   it('chặn pageSize trong khoảng [10, 200] và page >= 1', () => {
@@ -43,6 +45,15 @@ describe('parseTranslationsListQuery', () => {
     expect(parseTranslationsListQuery({ status: 'missing_en' }).status).toBe('missing_en');
     expect(parseTranslationsListQuery({ status: 'DROP TABLE' }).status).toBe('all');
     expect(parseTranslationsListQuery({ category: '  Finance ' }).category).toBe('finance');
+  });
+
+  it('sort/order chỉ chấp nhận whitelist, giá trị lạ quay về mặc định', () => {
+    expect(parseTranslationsListQuery({ sort: 'vi', order: 'desc' })).toMatchObject({ sort: 'vi', order: 'desc' });
+    expect(parseTranslationsListQuery({ sort: 'en' }).sort).toBe('en');
+    expect(parseTranslationsListQuery({ sort: 'key_name; DROP TABLE x' }).sort).toBe('key');
+    expect(parseTranslationsListQuery({ sort: 'vi_text' }).sort).toBe('key');
+    expect(parseTranslationsListQuery({ order: 'RANDOM()' }).order).toBe('asc');
+    expect(parseTranslationsListQuery({ order: '' }).order).toBe('asc');
   });
 });
 
@@ -75,7 +86,7 @@ describe('buildTranslationsSqlFilters', () => {
     );
     expect(params).toEqual(['%vat%', 'finance']);
     expect(whereSql).toContain('ILIKE $1');
-    expect(whereSql).toContain("= $2");
+    expect(whereSql).toContain('= $2');
   });
 
   it('điều kiện thiếu dịch cho status missing_vi / missing_en', () => {
@@ -83,6 +94,75 @@ describe('buildTranslationsSqlFilters', () => {
     const en = buildTranslationsSqlFilters(parseTranslationsListQuery({ status: 'missing_en' })).whereSql;
     expect(vi).toContain("COALESCE(TRIM(vi_text), '') = ''");
     expect(en).toContain("COALESCE(TRIM(en_text), '') = ''");
+  });
+});
+
+describe('buildTranslationsOrderBy', () => {
+  it('sort theo key: chỉ ORDER BY key_name với hướng yêu cầu', () => {
+    expect(buildTranslationsOrderBy({ sort: 'key', order: 'asc' })).toBe('ORDER BY key_name ASC');
+    expect(buildTranslationsOrderBy({ sort: 'key', order: 'desc' })).toBe('ORDER BY key_name DESC');
+  });
+
+  it('sort theo vi/en: có tiebreaker key_name ASC để phân trang ổn định', () => {
+    expect(buildTranslationsOrderBy({ sort: 'vi', order: 'desc' })).toBe('ORDER BY vi_text DESC, key_name ASC');
+    expect(buildTranslationsOrderBy({ sort: 'en', order: 'asc' })).toBe('ORDER BY en_text ASC, key_name ASC');
+  });
+
+  it('áp COLLATE tiếng Việt cho cột vi khi có collation hợp lệ', () => {
+    const sql = buildTranslationsOrderBy({ sort: 'vi', order: 'asc' }, 'vi-x-icu');
+    expect(sql).toBe('ORDER BY vi_text COLLATE "vi-x-icu" ASC, key_name ASC');
+  });
+
+  it('từ chối tên collation lạ (chống injection qua identifier)', () => {
+    expect(buildTranslationsOrderBy({ sort: 'vi', order: 'asc' }, 'vi"; DROP TABLE x; --')).toBe(
+      'ORDER BY vi_text ASC, key_name ASC',
+    );
+    expect(buildTranslationsOrderBy({ sort: 'vi', order: 'asc' }, 'vi-x-icu; DELETE')).toBe(
+      'ORDER BY vi_text ASC, key_name ASC',
+    );
+  });
+
+  it('không áp collation vi cho cột en hay key', () => {
+    expect(buildTranslationsOrderBy({ sort: 'en', order: 'asc' }, 'vi-x-icu')).toBe('ORDER BY en_text ASC, key_name ASC');
+    expect(buildTranslationsOrderBy({ sort: 'key', order: 'asc' }, 'vi-x-icu')).toBe('ORDER BY key_name ASC');
+  });
+});
+
+describe('sortTranslationItems (fallback offline, mirror của ORDER BY server)', () => {
+  it('sort theo key asc/desc', () => {
+    const items = [item('c_key', 'C', 'C'), item('a_key', 'A', 'A'), item('b_key', 'B', 'B')];
+    expect(sortTranslationItems(items, 'key', 'asc').map((i) => i.key)).toEqual(['a_key', 'b_key', 'c_key']);
+    expect(sortTranslationItems(items, 'key', 'desc').map((i) => i.key)).toEqual(['c_key', 'b_key', 'a_key']);
+  });
+
+  it('sort tiếng Việt theo bảng chữ cái Việt (ê là chữ riêng), không phải so mã ký tự', () => {
+    const items = [item('k1', 'êt', 'x'), item('k2', 'ez', 'x')];
+    // ICU vi: 'e' < 'ê' (chữ riêng) → 'ez' đứng trước 'êt';
+    // so code-point thuần (ê=U+00EA) cũng cho 'ez' < 'êt', nhưng 'et' vs 'êt'
+    // hoặc 'duyệt' vs 'đơn hàng' phía dưới mới là chỗ ICU khác hẳn mã ký tự.
+    expect(sortTranslationItems(items, 'vi', 'asc').map((i) => i.vi)).toEqual(['ez', 'êt']);
+  });
+
+  it('đ/đ là chữ riêng sau d trong tiếng Việt', () => {
+    const items = [item('k1', 'đơn hàng', 'x'), item('k2', 'duyệt', 'x')];
+    expect(sortTranslationItems(items, 'vi', 'asc').map((i) => i.vi)).toEqual(['duyệt', 'đơn hàng']);
+  });
+
+  it('giá trị trống đứng đầu khi asc, cuối khi desc; bằng nhau thì sort theo key', () => {
+    const items = [item('b', 'Bả', 'x'), item('a', '', 'x'), item('c', 'Ả', 'x')];
+    expect(sortTranslationItems(items, 'vi', 'asc').map((i) => i.key)).toEqual(['a', 'c', 'b']);
+    expect(sortTranslationItems(items, 'vi', 'desc').map((i) => i.key)).toEqual(['b', 'c', 'a']);
+  });
+
+  it('tiebreaker theo key asc kể cả khi sort desc', () => {
+    const items = [item('k2', 'giống nhau', 'x'), item('k1', 'giống nhau', 'x')];
+    expect(sortTranslationItems(items, 'en', 'desc').map((i) => i.key)).toEqual(['k1', 'k2']);
+  });
+
+  it('không làm thay đổi mảng gốc', () => {
+    const items = [item('b', 'B', 'B'), item('a', 'A', 'A')];
+    sortTranslationItems(items, 'key', 'desc');
+    expect(items.map((i) => i.key)).toEqual(['b', 'a']);
   });
 });
 
@@ -205,11 +285,20 @@ describe('dictionary list — không render toàn bộ từ điển một lần'
     expect(src).not.toMatch(/translationsList\.map\(/);
   });
 
+  it('SaaSTranslationsTab có header cột sort được, sort truyền lên server', () => {
+    const src = readSource('src/components/SaaSTranslationsTab.tsx');
+    expect(src).toContain('toggleSort');
+    expect(src).toContain("sort: sortField");
+    expect(src).toContain('sortTranslationItems'); // local fallback dùng cùng luật sort
+    expect(src).toMatch(/sortTranslationItems\(localFiltered/);
+  });
+
   it('router có endpoint phân trang GET /translations (phân trang thật trong SQL)', () => {
     const src = readSource('src/api/saasRouter.ts');
     expect(src).toMatch(/saasRouter\.get\('\/translations'/);
     expect(src).toContain('parseTranslationsListQuery');
     expect(src).toContain('buildTranslationsSqlFilters');
+    expect(src).toContain('buildTranslationsOrderBy'); // ORDER BY chạy trước LIMIT
     expect(src).toContain('SELECT COUNT(*)::int as total FROM sys_translations');
     expect(src).toContain('LIMIT $');
   });

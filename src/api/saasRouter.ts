@@ -11,6 +11,7 @@ import { getProcurementList, saveProcurementList, PROCUREMENT_LIST_TYPES } from 
 import {
   parseTranslationsListQuery,
   buildTranslationsSqlFilters,
+  buildTranslationsOrderBy,
   SQL_META_KEY_FILTER,
 } from '../services/translationsService';
 
@@ -448,13 +449,39 @@ saasRouter.get('/languages', async (req, res) => {
 });
 
 // Paginated + filtered dictionary list. The admin UI must not pull the whole
-// sys_translations table: clients send ?search=&category=&status=&page=&pageSize=
-// and receive only one page plus global category facets and completion stats.
-// Falls back on the client to the bundled i18n dictionary when unavailable.
+// sys_translations table: clients send ?search=&category=&status=&sort=&order=
+// &page=&pageSize= and receive only one page plus global category facets and
+// completion stats. Falls back on the client to the bundled i18n dictionary
+// when unavailable.
+//
+// Column sorting is server-side on purpose: ORDER BY runs BEFORE LIMIT/OFFSET,
+// so the whole dictionary is ordered, not just the current page.
+let cachedViCollation: string | null | undefined;
+/** Resolve a Vietnamese ICU collation (e.g. "vi-x-icu") once per process so
+ *  sorting vi_text follows the real Vietnamese alphabet. Returns null on
+ *  databases without ICU collations — sorting then uses the DB default locale. */
+const resolveViCollation = async (): Promise<string | null> => {
+  if (cachedViCollation !== undefined) return cachedViCollation;
+  try {
+    const res = await query(
+      `SELECT collname FROM pg_collation
+       WHERE collname IN ('vi-x-icu', 'vi-VN-x-icu')
+          OR (collprovider = 'i' AND collcollate IN ('vi-VN', 'vi'))
+       LIMIT 1`,
+    );
+    const name = res.rows?.[0]?.collname;
+    cachedViCollation = typeof name === 'string' && /^[A-Za-z0-9-]+$/.test(name) ? name : null;
+  } catch {
+    cachedViCollation = null;
+  }
+  return cachedViCollation;
+};
+
 saasRouter.get('/translations', async (req: Request, res: Response) => {
   const listQuery = parseTranslationsListQuery(req.query);
   try {
     const { whereSql, params } = buildTranslationsSqlFilters(listQuery);
+    const orderBy = buildTranslationsOrderBy(listQuery, await resolveViCollation());
     const limitIdx = params.length + 1;
     const offsetIdx = params.length + 2;
     const offset = (listQuery.page - 1) * listQuery.pageSize;
@@ -466,7 +493,7 @@ saasRouter.get('/translations', async (req: Request, res: Response) => {
                 vi_text as vi,
                 en_text as en
          FROM sys_translations ${whereSql}
-         ORDER BY category ASC, key_name ASC
+         ${orderBy}
          LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
         [...params, listQuery.pageSize, offset],
       ),
