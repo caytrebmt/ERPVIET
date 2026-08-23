@@ -8,6 +8,12 @@ import { tenantMiddleware, requireSuperAdmin, TenantRequest } from '../middlewar
 import { JWT_SECRET } from '../config.js';
 import { postInventoryMovement } from '../services/inventoryService.js';
 import { getProcurementList, saveProcurementList, PROCUREMENT_LIST_TYPES } from '../services/procurementService.js';
+import {
+  parseTranslationsListQuery,
+  buildTranslationsSqlFilters,
+  buildTranslationsOrderBy,
+  SQL_META_KEY_FILTER,
+} from '../services/translationsService';
 
 import viLocales from '../../public/locales/vi.json';
 import enLocales from '../../public/locales/en.json';
@@ -106,6 +112,114 @@ saasRouter.post('/inventory/movements', tenantMiddleware, async (req: TenantRequ
     res.json({ ok: true, data: await postInventoryMovement(body) });
   }
   catch (error: any) { res.status(400).json({ ok: false, message: error.message }); }
+});
+
+// Dashboard KPI summary — one round trip for the 4 headline cards. Previously
+// the UI hardcoded mock values ("0 đ", "+18.4%", "10 danh mục", "8 khách hàng")
+// and never fetched real numbers. All figures are computed from the actual
+// books: sales_orders (revenue), stock_balances x products (inventory value),
+// and sales_orders/purchase_orders net of receipts_payments vouchers
+// (THU/CHI) for customer/supplier debt. Month boundaries are passed as
+// parameters (computed in JS) so no DB-specific date functions are needed.
+saasRouter.get('/dashboard/summary', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+  try {
+    const companyId = req.isSuperAdmin ? null : req.companyId;
+
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+    const [revenueRes, inventoryRes, customerOwedRes, supplierOwedRes, customerPaidRes, supplierPaidRes] = await Promise.all([
+      query(
+        `SELECT
+           COALESCE(SUM(CASE WHEN o.order_date >= $2::date AND o.order_date < $3::date THEN o.total_amount ELSE 0 END), 0) AS this_month,
+           COALESCE(SUM(CASE WHEN o.order_date >= $4::date AND o.order_date < $2::date THEN o.total_amount ELSE 0 END), 0) AS last_month
+         FROM sales_orders o
+         WHERE o.status <> 'HUY' AND ($1::int IS NULL OR o.company_id = $1)`,
+        [companyId, iso(thisMonthStart), iso(nextMonthStart), iso(lastMonthStart)],
+      ),
+      query(
+        `SELECT COALESCE(SUM(sb.quantity * p.cost_price), 0) AS total_value,
+                COUNT(DISTINCT p.category_id) AS categories_with_stock
+         FROM stock_balances sb
+         JOIN products p ON p.id = sb.product_id
+         WHERE sb.quantity > 0 AND ($1::int IS NULL OR sb.company_id = $1)`,
+        [companyId],
+      ),
+      // Order totals per customer (non-cancelled) and per supplier...
+      query(
+        `SELECT o.customer_id AS partner_id, SUM(o.total_amount) AS owed
+         FROM sales_orders o
+         WHERE o.status <> 'HUY' AND o.customer_id IS NOT NULL
+           AND ($1::int IS NULL OR o.company_id = $1)
+         GROUP BY o.customer_id`,
+        [companyId],
+      ),
+      query(
+        `SELECT po.supplier_id AS partner_id, SUM(po.total_amount) AS owed
+         FROM purchase_orders po
+         WHERE po.status <> 'HUY' AND po.supplier_id IS NOT NULL
+           AND ($1::int IS NULL OR po.company_id = $1)
+         GROUP BY po.supplier_id`,
+        [companyId],
+      ),
+      // ...net of THU/CHI cash vouchers; balances are combined in JS to stay
+      // portable across engines (no LEFT JOIN over aggregate subqueries).
+      query(
+        `SELECT partner_id, SUM(amount) AS paid
+         FROM receipts_payments
+         WHERE voucher_type = 'THU' AND partner_type = 'KHACH_HANG'
+         GROUP BY partner_id`,
+      ),
+      query(
+        `SELECT partner_id, SUM(amount) AS paid
+         FROM receipts_payments
+         WHERE voucher_type = 'CHI' AND partner_type = 'NHA_CUNG_CAP'
+         GROUP BY partner_id`,
+      ),
+    ]);
+
+    const debtBy = (owedRows: any[], paidRows: any[]): { total: number; partners: number } => {
+      const paidByPartner = new Map<number, number>();
+      (paidRows || []).forEach((r) => paidByPartner.set(Number(r.partner_id), Number(r.paid) || 0));
+      let total = 0;
+      let partners = 0;
+      (owedRows || []).forEach((r) => {
+        const owed = Number(r.owed) || 0;
+        const balance = owed - (paidByPartner.get(Number(r.partner_id)) || 0);
+        if (balance > 0) {
+          total += balance;
+          partners += 1;
+        }
+      });
+      return { total, partners };
+    };
+
+    const receivables = debtBy(customerOwedRes.rows, customerPaidRes.rows);
+    const payables = debtBy(supplierOwedRes.rows, supplierPaidRes.rows);
+
+    const thisMonth = Number(revenueRes.rows[0]?.this_month) || 0;
+    const lastMonth = Number(revenueRes.rows[0]?.last_month) || 0;
+    const growthPct = lastMonth > 0 ? Math.round(((thisMonth - lastMonth) / lastMonth) * 1000) / 10 : null;
+
+    res.json({
+      ok: true,
+      data: {
+        revenue: { thisMonth, lastMonth, growthPct },
+        inventory: {
+          totalValue: Number(inventoryRes.rows[0]?.total_value) || 0,
+          categoriesWithStock: Number(inventoryRes.rows[0]?.categories_with_stock) || 0,
+        },
+        receivables: { total: receivables.total, debtors: receivables.partners },
+        payables: { total: payables.total, suppliers: payables.partners },
+        generatedAt: new Date().toISOString(),
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, message: error.message });
+  }
 });
 
 // Lấy danh sách permission thực tế của user từ sys_role_permissions.
@@ -442,6 +556,99 @@ saasRouter.get('/languages', async (req, res) => {
   }
 });
 
+// Paginated + filtered dictionary list. The admin UI must not pull the whole
+// sys_translations table: clients send ?search=&category=&status=&sort=&order=
+// &page=&pageSize= and receive only one page plus global category facets and
+// completion stats. Falls back on the client to the bundled i18n dictionary
+// when unavailable.
+//
+// Column sorting is server-side on purpose: ORDER BY runs BEFORE LIMIT/OFFSET,
+// so the whole dictionary is ordered, not just the current page.
+let cachedViCollation: string | null | undefined;
+/** Resolve a Vietnamese ICU collation (e.g. "vi-x-icu") once per process so
+ *  sorting vi_text follows the real Vietnamese alphabet. Returns null on
+ *  databases without ICU collations — sorting then uses the DB default locale. */
+const resolveViCollation = async (): Promise<string | null> => {
+  if (cachedViCollation !== undefined) return cachedViCollation;
+  try {
+    const res = await query(
+      `SELECT collname FROM pg_collation
+       WHERE collname IN ('vi-x-icu', 'vi-VN-x-icu')
+          OR (collprovider = 'i' AND collcollate IN ('vi-VN', 'vi'))
+       LIMIT 1`,
+    );
+    const name = res.rows?.[0]?.collname;
+    cachedViCollation = typeof name === 'string' && /^[A-Za-z0-9-]+$/.test(name) ? name : null;
+  } catch {
+    cachedViCollation = null;
+  }
+  return cachedViCollation;
+};
+
+saasRouter.get('/translations', async (req: Request, res: Response) => {
+  const listQuery = parseTranslationsListQuery(req.query);
+  try {
+    const { whereSql, params } = buildTranslationsSqlFilters(listQuery);
+    const orderBy = buildTranslationsOrderBy(listQuery, await resolveViCollation());
+    const limitIdx = params.length + 1;
+    const offsetIdx = params.length + 2;
+    const offset = (listQuery.page - 1) * listQuery.pageSize;
+
+    const [rowsRes, countRes, facetsRes, statsRes] = await Promise.all([
+      query(
+        `SELECT key_name as key,
+                COALESCE(NULLIF(TRIM(category), ''), 'common') as category,
+                vi_text as vi,
+                en_text as en
+         FROM sys_translations ${whereSql}
+         ${orderBy}
+         LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+        [...params, listQuery.pageSize, offset],
+      ),
+      query(
+        `SELECT COUNT(*)::int as total FROM sys_translations ${whereSql}`,
+        params,
+      ),
+      query(
+        `SELECT COALESCE(NULLIF(TRIM(category), ''), 'common') as id, COUNT(*)::int as count
+         FROM sys_translations WHERE ${SQL_META_KEY_FILTER}
+         GROUP BY COALESCE(NULLIF(TRIM(category), ''), 'common')
+         ORDER BY count DESC, id ASC`,
+      ),
+      query(
+        `SELECT COUNT(*)::int as total,
+                SUM(CASE WHEN COALESCE(TRIM(vi_text), '') <> '' THEN 1 ELSE 0 END)::int as "viCompleted",
+                SUM(CASE WHEN COALESCE(TRIM(en_text), '') <> '' THEN 1 ELSE 0 END)::int as "enCompleted"
+         FROM sys_translations WHERE ${SQL_META_KEY_FILTER}`,
+      ),
+    ]);
+
+    const rows = rowsRes.rows || [];
+    const total = Number(countRes.rows?.[0]?.total) || 0;
+    const stats = statsRes.rows?.[0] || { total: 0, viCompleted: 0, enCompleted: 0 };
+
+    res.json({
+      ok: true,
+      data: {
+        items: rows,
+        page: listQuery.page,
+        pageSize: listQuery.pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / listQuery.pageSize)),
+        categories: facetsRes.rows || [],
+        stats: {
+          total: Number(stats.total) || 0,
+          viCompleted: Number(stats.viCompleted) || 0,
+          enCompleted: Number(stats.enCompleted) || 0,
+        },
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, message: error.message });
+  }
+});
+
+// Full dump — kept for export/backup flows; the UI list uses GET /translations.
 saasRouter.get('/translations/all', async (req: Request, res: Response) => {
   try {
     const result = await query(
@@ -835,68 +1042,16 @@ saasRouter.get('/orders', tenantMiddleware, async (req: TenantRequest, res) => {
   }
 });
 
-// ==========================================
 // 7. SYSTEM TRANSLATION MANAGEMENT
 // ==========================================
-saasRouter.get('/translations/all', async (req, res) => {
-  try {
-    const result = await query(
-      `SELECT t1.translation_key as key, 
-              COALESCE(t1.category, 'common') as category,
-              t1.translation_value as vi,
-              COALESCE(t2.translation_value, '') as en
-       FROM sys_translations t1
-       LEFT JOIN sys_translations t2 ON t1.translation_key = t2.translation_key AND t2.lang_code = 'en'
-       WHERE t1.lang_code = 'vi'
-       ORDER BY t1.translation_key ASC`
-    );
-    res.json({ ok: true, data: result.rows });
-  } catch (error: any) {
-    res.status(500).json({ ok: false, error: error.message });
-  }
-});
-
-saasRouter.post('/translations', async (req, res) => {
-  const { key, category = 'common', vi, en } = req.body;
-  if (!key) {
-    return res.status(400).json({ ok: false, message: 'Missing translation key code' });
-  }
-
-  try {
-    if (vi !== undefined) {
-      await query(
-        `INSERT INTO sys_translations (lang_code, category, translation_key, translation_value)
-         VALUES ('vi', $1, $2, $3)
-         ON CONFLICT (lang_code, translation_key) 
-         DO UPDATE SET category = EXCLUDED.category, translation_value = EXCLUDED.translation_value`,
-        [category, key, vi]
-      );
-    }
-    if (en !== undefined) {
-      await query(
-        `INSERT INTO sys_translations (lang_code, category, translation_key, translation_value)
-         VALUES ('en', $1, $2, $3)
-         ON CONFLICT (lang_code, translation_key) 
-         DO UPDATE SET category = EXCLUDED.category, translation_value = EXCLUDED.translation_value`,
-        [category, key, en]
-      );
-    }
-  } catch (error: any) {
-    console.error('[Translation DB Save Error]', error);
-  }
-
-  res.json({ ok: true, message: 'Saved translation key successfully' });
-});
-
-saasRouter.delete('/translations/:key', async (req, res) => {
-  const { key } = req.params;
-  try {
-    await query(`DELETE FROM sys_translations WHERE translation_key = $1`, [key]);
-  } catch (error: any) {
-    console.error('[Translation DB Delete Error]', error);
-  }
-  res.json({ ok: true, message: 'Deleted translation key successfully' });
-});
+// NOTE: translation CRUD routes (GET /translations paginated, GET
+// /translations/all, POST /translations, DELETE /translations/:key) are
+// registered earlier in this file against the real sys_translations schema
+// (key_name / category / vi_text / en_text per schema.sql). A second,
+// unreachable copy used to live here — built for a different schema
+// (lang_code / translation_key / translation_value) — and was removed:
+// Express only ever invokes the first matching route, so re-registering
+// duplicate paths is dead code that invites schema drift.
 
 // ==========================================
 // 8. CRM & SALES PIPELINE ENDPOINTS

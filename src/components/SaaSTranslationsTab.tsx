@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   Globe,
   Search,
@@ -8,104 +8,263 @@ import {
   RefreshCw,
   Download,
   Upload,
-  CheckCircle2,
   AlertCircle,
-  FileJson,
   Edit3,
   Languages,
   Filter,
   Layers,
-  Sparkles,
   RotateCcw,
-  Eye,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Database,
+  HardDrive,
+  Loader2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { useLanguage, TranslationItem } from '../contexts/LanguageContext';
 import { useToast } from '../contexts/ToastContext';
-import { matchesVietnameseSearch } from '../utils/vietnamese';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import {
+  filterTranslationsLocally,
+  paginateItems,
+  computeCategoryFacets,
+  computeTranslationStats,
+  normalizeImportedTranslations,
+  sortTranslationItems,
+  TRANSLATIONS_DEFAULT_PAGE_SIZE,
+  type TranslationStats,
+  type CategoryFacet,
+  type TranslationStatusFilter,
+  type TranslationSortField,
+  type SortOrder,
+} from '../services/translationsService';
+
+type DataMode = 'loading' | 'server' | 'local';
+
+interface ServerPageState {
+  sig: string;
+  items: TranslationItem[];
+  total: number;
+  totalPages: number;
+  categories: CategoryFacet[];
+  stats: TranslationStats;
+}
+
+const PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
+const IMPORT_CHUNK_SIZE = 25;
+
+// Known category ids (DB `sys_translations.category`) with bilingual labels.
+const KNOWN_CATEGORY_LABELS: Record<string, { vi: string; en: string }> = {
+  common: { vi: 'Chung & Nút bấm', en: 'Common & Buttons' },
+  menu: { vi: 'Menu & Điều hướng', en: 'Sidebar & Menus' },
+  navigation: { vi: 'Menu & Điều hướng', en: 'Sidebar & Menus' },
+  dashboard: { vi: 'Tổng quan & Thống kê', en: 'Dashboard & Metrics' },
+  products: { vi: 'Sản phẩm & Hàng hóa', en: 'Products & Items' },
+  categories: { vi: 'Danh mục WebShop', en: 'Store Categories' },
+  footer: { vi: 'Chân trang WebShop', en: 'WebShop Footer' },
+  inventory: { vi: 'Kho & Xuất nhập', en: 'Warehouse & Stock' },
+  finance: { vi: 'Tài chính & Hóa đơn', en: 'Finance & Invoices' },
+  accounting: { vi: 'Sổ Kế toán TT200', en: 'Accounting TT200' },
+  saas: { vi: 'Cấu hình System SaaS', en: 'SaaS System Config' },
+};
 
 export const SaaSTranslationsTab: React.FC = () => {
   const {
     language,
     toggleLanguage,
-     translationsList,
+    translationsList,
     updateTranslation,
     createTranslation,
     deleteTranslation,
     resetToDefaults,
-    refreshTranslations,
     loadLocaleTranslations,
-    saveAllToJSON,
     publishToJSON,
-    t,
   } = useLanguage();
 
   const { addToast } = useToast();
 
-  const [searchTerm, setSearchTerm] = useState('');
+  // ── Filters & paging state ────────────────────────────────────────────────
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebouncedValue(searchInput, 350);
+  const [committedSearch, setCommittedSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [editingRowKey, setEditingRowKey] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<TranslationStatusFilter>('all');
+  const [sortField, setSortField] = useState<TranslationSortField>('key');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(TRANSLATIONS_DEFAULT_PAGE_SIZE);
 
-  // Edit State for in-table editing
+  useEffect(() => {
+    setCommittedSearch(debouncedSearch);
+  }, [debouncedSearch]);
+
+  // Clicking a column header: same column toggles direction, new column starts asc.
+  const toggleSort = (field: TranslationSortField) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const renderSortIcon = (field: TranslationSortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-30" />;
+    return sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-500" /> : <ArrowDown className="w-3 h-3 text-blue-500" />;
+  };
+
+  // Any filter change sends the user back to page 1.
+  useEffect(() => {
+    setPage(1);
+  }, [committedSearch, selectedCategory, statusFilter, sortField, sortOrder, pageSize]);
+
+  // ── Data source: server (paginated API) with local i18n fallback ─────────
+  const [mode, setMode] = useState<DataMode>('loading');
+  const [serverPage, setServerPage] = useState<ServerPageState | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const requestSig = `${page}|${pageSize}|${committedSearch}|${selectedCategory}|${statusFilter}|${sortField}|${sortOrder}|${reloadToken}`;
+
+  const fetchServerPage = useCallback(
+    async (targetSig: string): Promise<ServerPageState> => {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        sort: sortField,
+        order: sortOrder,
+      });
+      if (committedSearch) params.set('search', committedSearch);
+      if (selectedCategory !== 'all') params.set('category', selectedCategory);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+
+      const res = await fetch(`/api/saas/translations?${params.toString()}`);
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.message || `HTTP ${res.status}`);
+      }
+
+      const data = json.data || {};
+      return {
+        sig: targetSig,
+        items: (data.items || []).map((row: any) => ({
+          key: String(row.key),
+          category: String(row.category || 'common'),
+          vi: String(row.vi ?? ''),
+          en: String(row.en ?? ''),
+        })),
+        total: Number(data.total) || 0,
+        totalPages: Number(data.totalPages) || 1,
+        categories: data.categories || [],
+        stats: data.stats || { total: 0, viCompleted: 0, enCompleted: 0 },
+      };
+    },
+    [page, pageSize, committedSearch, selectedCategory, statusFilter, sortField, sortOrder],
+  );
+
+  useEffect(() => {
+    if (mode === 'local') return;
+    if (serverPage?.sig === requestSig) return; // already showing this exact page
+
+    let cancelled = false;
+    setIsFetching(true);
+    (async () => {
+      try {
+        const next = await fetchServerPage(requestSig);
+        if (cancelled) return;
+        setServerPage(next);
+        setMode(next.total > 0 ? 'server' : 'local'); // empty DB → bundled dictionary
+        setFetchError(null);
+      } catch (e: any) {
+        if (cancelled) return;
+        if (mode === 'loading') setMode('local'); // offline / no DB → local mode
+        else setFetchError(e?.message || 'Request failed');
+      } finally {
+        if (!cancelled) setIsFetching(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, requestSig, serverPage?.sig, fetchServerPage]);
+
+  const refreshServerList = () => setReloadToken((n) => n + 1);
+  const isServer = mode === 'server';
+
+  // ── Local (fallback) view: filter + sort + paginate the bundled dictionary ─
+  const localFiltered = useMemo(
+    () =>
+      filterTranslationsLocally(translationsList, {
+        search: committedSearch,
+        category: selectedCategory,
+        status: statusFilter,
+      }),
+    [translationsList, committedSearch, selectedCategory, statusFilter],
+  );
+  // Same sort semantics as the server (Intl.Collator('vi') mirrors the DB's
+  // ICU Vietnamese collation), applied BEFORE pagination like ORDER BY.
+  const localSorted = useMemo(
+    () => sortTranslationItems(localFiltered, sortField, sortOrder),
+    [localFiltered, sortField, sortOrder],
+  );
+  const localPaged = useMemo(
+    () => paginateItems(localSorted, page, pageSize),
+    [localSorted, page, pageSize],
+  );
+  const localFacets = useMemo(() => computeCategoryFacets(translationsList), [translationsList]);
+  const localStats = useMemo(() => computeTranslationStats(translationsList), [translationsList]);
+
+  // Keep the page number inside the local-mode bounds after deletions/imports.
+  useEffect(() => {
+    if (mode === 'local' && page > localPaged.totalPages) setPage(localPaged.totalPages);
+  }, [mode, page, localPaged.totalPages]);
+
+  // Server mode: deleting the last row of a page must not strand on an empty page.
+  useEffect(() => {
+    if (isServer && serverPage && serverPage.items.length === 0 && serverPage.total > 0 && page > serverPage.totalPages) {
+      setPage(serverPage.totalPages);
+    }
+  }, [isServer, serverPage, page]);
+
+  // ── Unified view model ────────────────────────────────────────────────────
+  const rows: TranslationItem[] = isServer ? serverPage?.items ?? [] : localPaged.items;
+  const totalItems = isServer ? serverPage?.total ?? 0 : localPaged.total;
+  const totalPages = isServer ? serverPage?.totalPages ?? 1 : localPaged.totalPages;
+  const fromRow = isServer
+    ? totalItems === 0
+      ? 0
+      : (page - 1) * pageSize + 1
+    : localPaged.from;
+  const toRow = isServer ? Math.min(page * pageSize, totalItems) : localPaged.to;
+  const stats: TranslationStats = isServer
+    ? serverPage?.stats ?? { total: 0, viCompleted: 0, enCompleted: 0 }
+    : localStats;
+  const facets: CategoryFacet[] = isServer ? serverPage?.categories ?? [] : localFacets;
+
+  const dynamicCategories = useMemo(() => {
+    const catIds = new Set<string>(['common', ...facets.map((f) => f.id)]);
+    Object.keys(KNOWN_CATEGORY_LABELS).forEach((k) => catIds.add(k));
+    const countsById = new Map(facets.map((f) => [f.id, f.count]));
+    return [
+      { id: 'all', label: language === 'en' ? 'All Categories' : 'Tất cả danh mục', count: stats.total },
+      ...Array.from(catIds).map((catId) => {
+        const labelObj = KNOWN_CATEGORY_LABELS[catId];
+        const labelText = labelObj ? (language === 'en' ? labelObj.en : labelObj.vi) : catId;
+        return { id: catId, label: labelText, count: countsById.get(catId) || 0 };
+      }),
+    ];
+  }, [facets, language, stats.total]);
+
+  // ── Row editing ───────────────────────────────────────────────────────────
+  const [editingRowKey, setEditingRowKey] = useState<string | null>(null);
   const [editVi, setEditVi] = useState('');
   const [editEn, setEditEn] = useState('');
   const [editCategory, setEditCategory] = useState('common');
-
-  // Modal State for Add New Key
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newKey, setNewKey] = useState('');
-  const [newCategory, setNewCategory] = useState('common');
-  const [newVi, setNewVi] = useState('');
-  const [newEn, setNewEn] = useState('');
-
-  // Dynamic Categories list computed from translationsList
-  const dynamicCategories = useMemo(() => {
-    const knownLabels: Record<string, { vi: string; en: string }> = {
-      common: { vi: 'Chung & Nút bấm', en: 'Common & Buttons' },
-      menu: { vi: 'Menu & Điều hướng', en: 'Sidebar & Menus' },
-      dashboard: { vi: 'Tổng quan & Thống kê', en: 'Dashboard & Metrics' },
-      products: { vi: 'Sản phẩm & Hàng hóa', en: 'Products & Items' },
-      categories: { vi: 'Danh mục WebShop', en: 'Store Categories' },
-      footer: { vi: 'Chân trang WebShop', en: 'WebShop Footer' },
-      inventory: { vi: 'Kho & Xuất nhập', en: 'Warehouse & Stock' },
-      finance: { vi: 'Tài chính & Hóa đơn', en: 'Finance & Invoices' },
-      accounting: { vi: 'Sổ Kế toán TT200', en: 'Accounting TT200' },
-      saas: { vi: 'Cấu hình System SaaS', en: 'SaaS System Config' },
-    };
-
-    const uniqueCats = Array.from(new Set(translationsList.map((i) => i.category || 'common')));
-    
-    // Ensure all known categories exist in list even if 0 items initially
-    Object.keys(knownLabels).forEach((k) => {
-      if (!uniqueCats.includes(k)) uniqueCats.push(k);
-    });
-
-    return [
-      { id: 'all', label: language === 'en' ? 'All Categories' : 'Tất cả danh mục', count: translationsList.length },
-      ...uniqueCats.map((catId) => {
-        const count = translationsList.filter((i) => (i.category || 'common') === catId).length;
-        const labelObj = knownLabels[catId];
-        const labelText = labelObj ? (language === 'en' ? labelObj.en : labelObj.vi) : catId;
-        return { id: catId, label: labelText, count };
-      }),
-    ];
-  }, [translationsList, language]);
-
-  // Filtered list
-  const filteredTranslations = useMemo(() => {
-    return translationsList.filter((item) => {
-      const matchCategory = selectedCategory === 'all' || item.category === selectedCategory;
-      const matchSearch =
-        matchesVietnameseSearch(item.key, searchTerm) ||
-        matchesVietnameseSearch(item.vi, searchTerm) ||
-        matchesVietnameseSearch(item.en, searchTerm);
-      return matchCategory && matchSearch;
-    });
-  }, [translationsList, selectedCategory, searchTerm]);
-
-  // Statistics
-  const totalKeys = translationsList.length;
-  const viCompleted = translationsList.filter((i) => i.vi.trim().length > 0).length;
-  const enCompleted = translationsList.filter((i) => i.en.trim().length > 0).length;
 
   const handleStartEdit = (item: TranslationItem) => {
     setEditingRowKey(item.key);
@@ -118,14 +277,23 @@ export const SaaSTranslationsTab: React.FC = () => {
     await updateTranslation(key, editVi, editEn, editCategory);
     setEditingRowKey(null);
     addToast(language === 'en' ? `Translation '${key}' updated!` : `Đã cập nhật dịch thuật cho từ khóa '${key}'!`, 'success');
+    if (isServer) refreshServerList();
   };
 
   const handleDelete = async (key: string) => {
     if (window.confirm(language === 'en' ? `Are you sure to delete key '${key}'?` : `Bạn có chắc muốn xóa từ khóa dịch '${key}'?`)) {
       await deleteTranslation(key);
       addToast(language === 'en' ? 'Translation deleted' : 'Đã xóa từ khóa dịch', 'info');
+      if (isServer) refreshServerList();
     }
   };
+
+  // ── Add-key modal ─────────────────────────────────────────────────────────
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newKey, setNewKey] = useState('');
+  const [newCategory, setNewCategory] = useState('common');
+  const [newVi, setNewVi] = useState('');
+  const [newEn, setNewEn] = useState('');
 
   const handleAddNewKey = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,50 +313,99 @@ export const SaaSTranslationsTab: React.FC = () => {
     setNewKey('');
     setNewVi('');
     setNewEn('');
+    if (isServer) refreshServerList();
   };
 
-  const handleExportJSON = () => {
-  const flat: Record<string, string> = {};
-  translationsList.forEach((item) => {
-    flat[item.key] = language === 'en' ? (item.en || item.vi) : (item.vi || item.en);
-  });
-  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(flat, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute('href', dataStr);
-  downloadAnchor.setAttribute('download', `erpacc_translations_${language}_${Date.now()}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-  addToast(language === 'en' ? 'Exported translation dictionary to JSON' : 'Đã xuất file từ điển dịch thuật JSON thành công', 'success');
-};
+  // ── Export / Import / Reset / Publish ─────────────────────────────────────
+  const handleExportJSON = async () => {
+    // Server mode only holds one page in memory — pull the full dictionary
+    // from the API on demand; fall back to the bundled list if offline.
+    let source: TranslationItem[] = translationsList;
+    if (isServer) {
+      try {
+        const res = await fetch('/api/saas/translations/all');
+        const json = await res.json();
+        if (res.ok && json.ok && Array.isArray(json.data) && json.data.length > 0) {
+          source = json.data;
+        }
+      } catch {
+        // keep bundled list
+      }
+    }
+    const flat: Record<string, string> = {};
+    source.forEach((item) => {
+      if (item.key && !item.key.startsWith('_')) {
+        flat[item.key] = language === 'en' ? (item.en || item.vi) : (item.vi || item.en);
+      }
+    });
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(flat, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', `erpacc_translations_${language}_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    addToast(language === 'en' ? 'Exported translation dictionary to JSON' : 'Đã xuất file từ điển dịch thuật JSON thành công', 'success');
+  };
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
+      let parsed: unknown;
       try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (Array.isArray(parsed)) {
-          parsed.forEach((item: any) => {
-            if (item.key && (item.vi || item.en)) {
-              updateTranslation(item.key, item.vi || '', item.en || '', item.category || 'common');
-            }
-          });
-          addToast(language === 'en' ? 'Imported translation JSON file successfully!' : 'Đã nhập dữ liệu dịch thuật từ file JSON thành công!', 'success');
-        }
-      } catch (err) {
+        parsed = JSON.parse(event.target?.result as string);
+      } catch {
         addToast(language === 'en' ? 'Invalid JSON file format' : 'File JSON không đúng định dạng', 'error');
+        return;
+      }
+
+      const { items, skipped } = normalizeImportedTranslations(parsed);
+      if (items.length === 0) {
+        addToast(
+          language === 'en'
+            ? `No valid translation entries found${skipped ? ` (${skipped} skipped)` : ''}`
+            : `Không tìm thấy bản dịch hợp lệ${skipped ? ` (bỏ qua ${skipped} dòng)` : ''}`,
+          'error',
+        );
+        return;
+      }
+
+      setIsImporting(true);
+      try {
+        // Chunked upserts — far faster than one-by-one awaits for large files.
+        for (let i = 0; i < items.length; i += IMPORT_CHUNK_SIZE) {
+          const chunk = items.slice(i, i + IMPORT_CHUNK_SIZE);
+          await Promise.all(
+            chunk.map((it) => updateTranslation(it.key, it.vi || '', it.en || '', it.category || 'common')),
+          );
+        }
+        addToast(
+          language === 'en'
+            ? `Imported ${items.length} translations${skipped ? `, skipped ${skipped}` : ''}!`
+            : `Đã nhập ${items.length} bản dịch${skipped ? `, bỏ qua ${skipped} dòng` : ''} thành công!`,
+          'success',
+        );
+        if (isServer) refreshServerList();
+      } finally {
+        setIsImporting(false);
       }
     };
     reader.readAsText(file);
+    // Allow re-selecting the same file for a second import.
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleResetDefaults = () => {
     if (window.confirm(language === 'en' ? 'Reset all translations to original system defaults?' : 'Khôi phục toàn bộ từ điển dịch về mặc định của hệ thống?')) {
       resetToDefaults();
       addToast(language === 'en' ? 'Reset to default dictionary' : 'Đã khôi phục từ điển mặc định', 'info');
+      if (isServer) refreshServerList();
     }
   };
 
@@ -199,12 +416,20 @@ export const SaaSTranslationsTab: React.FC = () => {
         language === 'en'
           ? `Published ${result.data?.published || 0} translations from DB to JSON files!`
           : `Đã xuất bản ${result.data?.published || 0} bản dịch từ DB ra JSON!`,
-        'success'
+        'success',
       );
     } else {
       addToast(language === 'en' ? `Failed to publish: ${result.message}` : `Lỗi xuất bản: ${result.message}`, 'error');
     }
   };
+
+  const handleSyncJson = async () => {
+    await loadLocaleTranslations();
+    addToast(language === 'en' ? 'Synced from JSON locale files' : 'Đã đồng bộ từ file JSON locale', 'info');
+    if (isServer) refreshServerList();
+  };
+
+  const formatNumber = (n: number) => n.toLocaleString(language === 'en' ? 'en-US' : 'vi-VN');
 
   return (
     <div className="space-y-6">
@@ -249,15 +474,15 @@ export const SaaSTranslationsTab: React.FC = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/10">
           <div className="bg-white/5 rounded-xl p-3 border border-white/10 backdrop-blur-sm">
             <span className="text-xs text-slate-400 block">{language === 'en' ? 'Total Keys' : 'Tổng số từ khóa'}</span>
-            <span className="text-xl font-bold text-white">{totalKeys}</span>
+            <span className="text-xl font-bold text-white">{formatNumber(stats.total)}</span>
           </div>
           <div className="bg-white/5 rounded-xl p-3 border border-white/10 backdrop-blur-sm">
             <span className="text-xs text-slate-400 block">{language === 'en' ? 'Vietnamese 🇻🇳' : 'Hoàn thành Tiếng Việt 🇻🇳'}</span>
-            <span className="text-xl font-bold text-emerald-400">{viCompleted} / {totalKeys}</span>
+            <span className="text-xl font-bold text-emerald-400">{formatNumber(stats.viCompleted)} / {formatNumber(stats.total)}</span>
           </div>
           <div className="bg-white/5 rounded-xl p-3 border border-white/10 backdrop-blur-sm">
             <span className="text-xs text-slate-400 block">{language === 'en' ? 'English 🇬🇧' : 'Hoàn thành Tiếng Anh 🇬🇧'}</span>
-            <span className="text-xl font-bold text-blue-400">{enCompleted} / {totalKeys}</span>
+            <span className="text-xl font-bold text-blue-400">{formatNumber(stats.enCompleted)} / {formatNumber(stats.total)}</span>
           </div>
           <div className="bg-white/5 rounded-xl p-3 border border-white/10 backdrop-blur-sm">
             <span className="text-xs text-slate-400 block">{language === 'en' ? 'Active Languages' : 'Ngôn ngữ đang bật'}</span>
@@ -266,28 +491,47 @@ export const SaaSTranslationsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Control Bar: Search, Category & Tools */}
+      {/* Control Bar: Search, Filters & Tools */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Search Box */}
-          <div className="relative flex-1">
+          {/* Search Box (debounced, applied on Enter too) */}
+          <form
+            className="relative flex-1 min-w-0"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setCommittedSearch(searchInput.trim());
+              setPage(1);
+            }}
+          >
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={language === 'en' ? 'Search translation keys or values...' : 'Tìm kiếm theo mã từ khóa, từ dịch tiếng Việt, tiếng Anh...'}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={language === 'en' ? 'Search key code, Vietnamese or English text... (Enter)' : 'Tìm theo mã từ khóa, bản dịch Việt/Anh... (Enter)'}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
+          </form>
+
+          {/* Completion Status Filter */}
+          <div className="relative">
+            <Filter className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as TranslationStatusFilter)}
+              className="pl-9 pr-8 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer appearance-none"
+              title={language === 'en' ? 'Filter by completion status' : 'Lọc theo trạng thái hoàn thành bản dịch'}
+            >
+              <option value="all">{language === 'en' ? 'All statuses' : 'Mọi trạng thái'}</option>
+              <option value="missing_vi">{language === 'en' ? '⛔ Missing Vietnamese' : '⛔ Thiếu tiếng Việt'}</option>
+              <option value="missing_en">{language === 'en' ? '⛔ Missing English' : '⛔ Thiếu tiếng Anh'}</option>
+            </select>
           </div>
 
           {/* Action Tools */}
           <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => {
-                loadLocaleTranslations();
-                addToast(language === 'en' ? 'Synced from JSON locale files' : 'Đồng bộ từ file JSON locale', 'info');
-              }}
+              onClick={handleSyncJson}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition cursor-pointer border border-emerald-200 dark:border-emerald-800"
               title="Sync translations from JSON locale files"
             >
@@ -298,22 +542,22 @@ export const SaaSTranslationsTab: React.FC = () => {
             <button
               onClick={handleExportJSON}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer"
-              title="Xuất file JSON dịch thuật"
+              title={language === 'en' ? 'Export dictionary JSON' : 'Xuất file JSON dịch thuật'}
             >
               <Download className="w-3.5 h-3.5 text-blue-500" />
               <span>JSON Export</span>
             </button>
 
-            <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer">
-              <Upload className="w-3.5 h-3.5 text-emerald-500" />
-              <span>JSON Import</span>
-              <input type="file" accept=".json" onChange={handleImportJSON} className="hidden" />
+            <label className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer ${isImporting ? 'opacity-60 pointer-events-none' : ''}`}>
+              {isImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" /> : <Upload className="w-3.5 h-3.5 text-emerald-500" />}
+              <span>{isImporting ? (language === 'en' ? 'Importing...' : 'Đang nhập...') : 'JSON Import'}</span>
+              <input ref={fileInputRef} type="file" accept=".json" onChange={handleImportJSON} className="hidden" />
             </label>
 
             <button
               onClick={handleResetDefaults}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 transition cursor-pointer border border-amber-200 dark:border-amber-800"
-              title="Khôi phục từ điển mặc định"
+              title={language === 'en' ? 'Reset dictionary to defaults' : 'Khôi phục từ điển mặc định'}
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>{language === 'en' ? 'Reset Defaults' : 'Khôi phục mặc định'}</span>
@@ -347,56 +591,137 @@ export const SaaSTranslationsTab: React.FC = () => {
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                 selectedCategory === cat.id ? 'bg-white/20 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
               }`}>
-                {cat.count}
+                {formatNumber(cat.count)}
               </span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Translations Main Table */}
+      {/* Translations Main Table (paginated — only one page is rendered) */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/30">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2 bg-zinc-50/50 dark:bg-zinc-800/30">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-blue-500" />
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
               {language === 'en' ? 'Dictionary Term List' : 'Danh sách Từ khóa Dịch thuật Giao diện'}
             </h3>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-              {filteredTranslations.length} {language === 'en' ? 'items' : 'từ khóa'}
+              {formatNumber(totalItems)} {language === 'en' ? 'items' : 'từ khóa'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px]">
+            {isFetching && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />}
+            <span
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-full font-semibold ${
+                isServer
+                  ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700'
+              }`}
+              title={
+                isServer
+                  ? language === 'en'
+                    ? 'Paging straight from sys_translations (Supabase)'
+                    : 'Phân trang trực tiếp từ bảng sys_translations (Supabase)'
+                  : language === 'en'
+                    ? 'API unavailable — showing the bundled i18n dictionary'
+                  : 'Không kết nối được API — hiển thị từ điển i18n đóng gói'
+              }
+            >
+              {isServer ? <Database className="w-3 h-3" /> : <HardDrive className="w-3 h-3" />}
+              {mode === 'loading'
+                ? language === 'en'
+                  ? 'Loading...'
+                  : 'Đang tải...'
+                : isServer
+                  ? language === 'en'
+                    ? 'Source: Database (live)'
+                    : 'Nguồn: Database (thời gian thực)'
+                  : language === 'en'
+                    ? 'Source: Local i18n bundle'
+                    : 'Nguồn: Cục bộ (i18n bundle)'}
             </span>
           </div>
         </div>
+
+        {fetchError && (
+          <div className="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-[11px] text-amber-700 dark:text-amber-400 flex items-center gap-2">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>
+              {language === 'en'
+                ? `Could not refresh from server (${fetchError}) — showing the last loaded page.`
+                : `Không làm mới được từ máy chủ (${fetchError}) — đang hiển thị trang vừa tải.`}
+            </span>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-zinc-700 dark:text-zinc-300">
             <thead className="bg-zinc-100/80 dark:bg-zinc-800/80 uppercase text-[10px] tracking-wider font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
               <tr>
-                <th className="py-3 px-4 w-1/4">Key Code & Category</th>
-                <th className="py-3 px-4 w-1/3">Tiếng Việt 🇻🇳</th>
-                <th className="py-3 px-4 w-1/3">English 🇬🇧</th>
-                <th className="py-3 px-4 text-right w-24">Action</th>
+                <th className="py-3 px-4 w-1/4">
+                  <button
+                    onClick={() => toggleSort('key')}
+                    className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
+                    title={language === 'en' ? 'Sort by key code (server-side)' : 'Sắp xếp theo mã từ khóa (trên server)'}
+                  >
+                    {language === 'en' ? 'Key Code & Category' : 'Mã từ khóa & Danh mục'}
+                    {renderSortIcon('key')}
+                  </button>
+                </th>
+                <th className="py-3 px-4 w-1/3">
+                  <button
+                    onClick={() => toggleSort('vi')}
+                    className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
+                    title={language === 'en' ? 'Sort by Vietnamese (Vietnamese alphabet order)' : 'Sắp xếp theo tiếng Việt (thứ tự bảng chữ cái tiếng Việt)'}
+                  >
+                    Tiếng Việt 🇻🇳
+                    {renderSortIcon('vi')}
+                  </button>
+                </th>
+                <th className="py-3 px-4 w-1/3">
+                  <button
+                    onClick={() => toggleSort('en')}
+                    className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
+                    title={language === 'en' ? 'Sort by English (server-side)' : 'Sắp xếp theo tiếng Anh (trên server)'}
+                  >
+                    English 🇬🇧
+                    {renderSortIcon('en')}
+                  </button>
+                </th>
+                <th className="py-3 px-4 text-right w-24">{language === 'en' ? 'Action' : 'Thao tác'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {filteredTranslations.length === 0 ? (
+              {mode === 'loading' ? (
+                // First load skeleton
+                Array.from({ length: 8 }).map((_, idx) => (
+                  <tr key={`skeleton-${idx}`} className="animate-pulse">
+                    <td className="py-3 px-4"><div className="h-4 w-28 rounded bg-zinc-200 dark:bg-zinc-700" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-3/4 rounded bg-zinc-200 dark:bg-zinc-700" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-2/3 rounded bg-zinc-200 dark:bg-zinc-700" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-10 ml-auto rounded bg-zinc-200 dark:bg-zinc-700" /></td>
+                  </tr>
+                ))
+              ) : rows.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-zinc-500 dark:text-zinc-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <AlertCircle className="w-8 h-8 text-zinc-400" />
-                      <span>{language === 'en' ? 'No translation key matched search' : 'Không tìm thấy từ khóa dịch thỏa mãn điều kiện'}</span>
+                      <span>{language === 'en' ? 'No translation key matched the filters' : 'Không tìm thấy từ khóa dịch thỏa mãn điều kiện lọc'}</span>
                     </div>
                   </td>
                 </tr>
               ) : (
-                filteredTranslations.map((item) => {
+                rows.map((item) => {
                   const isEditing = editingRowKey === item.key;
                   return (
-                    <tr key={item.key} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
+                    <tr key={item.key} className={`hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors ${isEditing ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
                       {/* Key Code & Category */}
                       <td className="py-3 px-4 font-mono font-medium text-zinc-900 dark:text-zinc-100">
                         <div className="space-y-1">
-                          <span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[11px] text-blue-600 dark:text-blue-400 font-semibold border border-zinc-200 dark:border-zinc-700">
+                          <span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[11px] text-blue-600 dark:text-blue-400 font-semibold border border-zinc-200 dark:border-zinc-700 break-all">
                             {item.key}
                           </span>
                           <div className="flex items-center gap-1 text-[10px] text-zinc-400">
@@ -430,7 +755,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                             className="w-full p-2 rounded-lg border border-blue-400 dark:border-blue-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         ) : (
-                          <span className="font-medium text-zinc-800 dark:text-zinc-200">{item.vi || <span className="text-zinc-400 italic">(Chưa dịch)</span>}</span>
+                          <span className="font-medium text-zinc-800 dark:text-zinc-200 break-words">{item.vi || <span className="text-zinc-400 italic">(Chưa dịch)</span>}</span>
                         )}
                       </td>
 
@@ -444,7 +769,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                             className="w-full p-2 rounded-lg border border-blue-400 dark:border-blue-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         ) : (
-                          <span className="font-medium text-zinc-800 dark:text-zinc-200">{item.en || <span className="text-zinc-400 italic">(Untranslated)</span>}</span>
+                          <span className="font-medium text-zinc-800 dark:text-zinc-200 break-words">{item.en || <span className="text-zinc-400 italic">(Untranslated)</span>}</span>
                         )}
                       </td>
 
@@ -455,14 +780,14 @@ export const SaaSTranslationsTab: React.FC = () => {
                             <button
                               onClick={() => handleSaveEdit(item.key)}
                               className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition cursor-pointer"
-                              title="Lưu"
+                              title={language === 'en' ? 'Save' : 'Lưu'}
                             >
                               <Save className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setEditingRowKey(null)}
                               className="p-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-300 transition cursor-pointer"
-                              title="Hủy"
+                              title={language === 'en' ? 'Cancel' : 'Hủy'}
                             >
                               <RotateCcw className="w-4 h-4" />
                             </button>
@@ -472,14 +797,14 @@ export const SaaSTranslationsTab: React.FC = () => {
                             <button
                               onClick={() => handleStartEdit(item)}
                               className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition cursor-pointer"
-                              title="Sửa bản dịch"
+                              title={language === 'en' ? 'Edit translation' : 'Sửa bản dịch'}
                             >
                               <Edit3 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(item.key)}
                               className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition cursor-pointer"
-                              title="Xóa từ khóa"
+                              title={language === 'en' ? 'Delete key' : 'Xóa từ khóa'}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -492,6 +817,72 @@ export const SaaSTranslationsTab: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Footer */}
+        <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            {language === 'en' ? 'Showing' : 'Hiển thị'}{' '}
+            <span className="font-semibold text-zinc-700 dark:text-zinc-200">
+              {formatNumber(fromRow)}–{formatNumber(toRow)}
+            </span>{' '}
+            {language === 'en' ? 'of' : '/'} <span className="font-semibold text-zinc-700 dark:text-zinc-200">{formatNumber(totalItems)}</span>{' '}
+            {language === 'en' ? 'items' : 'từ khóa'}
+          </span>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+              <label htmlFor="translations-page-size">{language === 'en' ? 'Rows/page' : 'Số dòng/trang'}</label>
+              <select
+                id="translations-page-size"
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="px-2 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+              >
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(1)}
+                disabled={page <= 1 || isFetching}
+                className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                title={language === 'en' ? 'First page' : 'Trang đầu'}
+              >
+                <ChevronsLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || isFetching}
+                className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                title={language === 'en' ? 'Previous page' : 'Trang trước'}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-600 text-white">
+                {formatNumber(page)} / {formatNumber(totalPages)}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages || isFetching}
+                className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                title={language === 'en' ? 'Next page' : 'Trang sau'}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setPage(totalPages)}
+                disabled={page >= totalPages || isFetching}
+                className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                title={language === 'en' ? 'Last page' : 'Trang cuối'}
+              >
+                <ChevronsRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -514,11 +905,11 @@ export const SaaSTranslationsTab: React.FC = () => {
               <span className="text-2xl">🇻🇳</span>
               <div>
                 <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Tiếng Việt (Vietnamese)</h4>
-                <p className="text-xs text-zinc-500">Mã: <code className="font-mono text-blue-600">vi</code> | Ngôn ngữ gốc hệ thống</p>
+                <p className="text-xs text-zinc-500">Mã: <code className="font-mono text-blue-600">vi</code> | {language === 'en' ? 'System source language' : 'Ngôn ngữ gốc hệ thống'}</p>
               </div>
             </div>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
-              Mặc định (Active)
+              {language === 'en' ? 'Default (Active)' : 'Mặc định (Active)'}
             </span>
           </div>
 
@@ -528,11 +919,11 @@ export const SaaSTranslationsTab: React.FC = () => {
               <span className="text-2xl">🇬🇧</span>
               <div>
                 <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">English (Tiếng Anh)</h4>
-                <p className="text-xs text-zinc-500">Mã: <code className="font-mono text-blue-600">en</code> | Commercial International</p>
+                <p className="text-xs text-zinc-500">Mã: <code className="font-mono text-blue-600">en</code> | {language === 'en' ? 'Commercial International' : 'Thương mại quốc tế'}</p>
               </div>
             </div>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-              Kích hoạt (Active)
+              {language === 'en' ? 'Enabled (Active)' : 'Kích hoạt (Active)'}
             </span>
           </div>
         </div>
@@ -560,7 +951,7 @@ export const SaaSTranslationsTab: React.FC = () => {
             <form onSubmit={handleAddNewKey} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Mã từ khóa (Key Code Identifier) *
+                  {language === 'en' ? 'Key Code Identifier' : 'Mã từ khóa (Key Code Identifier)'} *
                 </label>
                 <input
                   type="text"
@@ -574,23 +965,26 @@ export const SaaSTranslationsTab: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Danh mục phân loại (Category)
+                  {language === 'en' ? 'Category' : 'Danh mục phân loại (Category)'}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <select
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
+                    value={KNOWN_CATEGORY_LABELS[newCategory] ? newCategory : ''}
+                    onChange={(e) => setNewCategory(e.target.value || 'common')}
                     className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
-                    {dynamicCategories.filter(c => c.id !== 'all').map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.id} ({c.label})
-                      </option>
-                    ))}
+                    {!KNOWN_CATEGORY_LABELS[newCategory] && <option value="">{newCategory}</option>}
+                    {dynamicCategories
+                      .filter((c) => c.id !== 'all' && (KNOWN_CATEGORY_LABELS[c.id] || facets.some((f) => f.id === c.id)))
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.id} ({c.label})
+                        </option>
+                      ))}
                   </select>
                   <input
                     type="text"
-                    placeholder="Hoặc nhập danh mục mới..."
+                    placeholder={language === 'en' ? 'Or type a new category...' : 'Hoặc nhập danh mục mới...'}
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value.toLowerCase().trim())}
                     className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
@@ -600,7 +994,7 @@ export const SaaSTranslationsTab: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Bản dịch Tiếng Việt 🇻🇳
+                  {language === 'en' ? 'Vietnamese Translation 🇻🇳' : 'Bản dịch Tiếng Việt 🇻🇳'}
                 </label>
                 <textarea
                   rows={2}
@@ -614,7 +1008,7 @@ export const SaaSTranslationsTab: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  English Translation 🇬🇧
+                  {language === 'en' ? 'English Translation 🇬🇧' : 'Bản dịch Tiếng Anh 🇬🇧'}
                 </label>
                 <textarea
                   rows={2}
@@ -647,3 +1041,5 @@ export const SaaSTranslationsTab: React.FC = () => {
     </div>
   );
 };
+
+export default SaaSTranslationsTab;

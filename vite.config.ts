@@ -56,6 +56,8 @@ export default defineConfig(() => {
       port: 3000,
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      // Cho phép truy cập qua domain preview của sandbox (e.g. *.e2b.app).
+      allowedHosts: ['.e2b.app'],
     },
   };
 });

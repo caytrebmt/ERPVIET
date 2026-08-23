@@ -27,23 +27,47 @@ interface StockAlertItem {
   salePrice: number;
 }
 
+interface DashboardSummary {
+  revenue: { thisMonth: number; lastMonth: number; growthPct: number | null };
+  inventory: { totalValue: number; categoriesWithStock: number };
+  receivables: { total: number; debtors: number };
+  payables: { total: number; suppliers: number };
+}
+
+/** Growth % between two months; null = no basis to compare (last month = 0). */
+export const computeGrowthPct = (thisMonth: number, lastMonth: number): number | null => {
+  if (!(lastMonth > 0)) return null;
+  return Math.round(((thisMonth - lastMonth) / lastMonth) * 1000) / 10;
+};
+
 export const SaaSDashboardPage: React.FC = () => {
   const { language, t } = useLanguage();
   const isEn = language === 'en';
 
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    monthlyRevenue: 0,
-    inventoryValue: 0,
-    receivables: 0,
-    payables: 0,
-    totalOrders: 0,
-  });
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   const [alerts, setAlerts] = useState<StockAlertItem[]>([]);
 
   useEffect(() => {
     async function fetchData() {
+      try {
+        // KPI cards come from the real books (sales_orders, stock_balances,
+        // receipts_payments) — never hardcoded mock numbers.
+        const res = await client.get('/api/saas/dashboard/summary');
+        if (res.data?.ok && res.data.data) {
+          setSummary(res.data.data as DashboardSummary);
+        } else {
+          setSummaryError(res.data?.message || 'No data');
+        }
+      } catch (err: any) {
+        console.warn('Dashboard summary unavailable:', err?.message);
+        setSummaryError(err?.message || 'Request failed');
+      } finally {
+        setLoading(false);
+      }
+
       try {
         const res = await client.get('/shop/catalog');
         if (res.data?.ok && Array.isArray(res.data.data?.products)) {
@@ -67,12 +91,20 @@ export const SaaSDashboardPage: React.FC = () => {
         }
       } catch (err) {
         console.warn('API error, using default SaaS stats:', err);
-      } finally {
-        setLoading(false);
       }
     }
     fetchData();
   }, []);
+
+  const fmt = (n: number) => n.toLocaleString(isEn ? 'en-US' : 'vi-VN');
+  const fmtVnd = (n: number) => `${fmt(n)} đ`;
+
+  // Card values: real numbers when loaded, "—" on error, 0 while loading skeleton.
+  const revenue = summary?.revenue;
+  const growthPct = revenue ? (revenue.growthPct ?? computeGrowthPct(revenue.thisMonth, revenue.lastMonth)) : null;
+  const revenueUp = (growthPct ?? 0) >= 0;
+
+  const kpiValue = (loaded: number | undefined) => (summaryError ? '—' : loaded === undefined ? '' : fmtVnd(loaded));
 
   const alertColumns: ColumnDef<StockAlertItem>[] = [
     {
@@ -175,12 +207,31 @@ export const SaaSDashboardPage: React.FC = () => {
           </div>
           <div className="mt-3">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-              {stats.monthlyRevenue.toLocaleString(isEn ? 'en-US' : 'vi-VN')} đ
+              {loading ? <span className="inline-block h-6 w-32 rounded bg-zinc-200 dark:bg-zinc-700 animate-pulse" /> : kpiValue(revenue?.thisMonth)}
             </h3>
-            <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600 font-medium">
-              <ArrowUpRight className="h-3.5 w-3.5" />
-              <span>{isEn ? '+18.4% vs last month' : '+18.4% so với tháng trước'}</span>
-            </div>
+            {loading ? (
+              <div className="h-3.5 w-40 mt-2 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+            ) : summaryError ? (
+              <p className="text-xs text-red-500 mt-1">{isEn ? 'Could not load data' : 'Không tải được dữ liệu'}</p>
+            ) : growthPct !== null ? (
+              <div
+                className={`flex items-center gap-1 mt-1 text-xs font-medium ${
+                  revenueUp ? 'text-emerald-600' : 'text-red-600 dark:text-red-400'
+                }`}
+                title={isEn ? `Last month: ${fmtVnd(revenue?.lastMonth ?? 0)}` : `Tháng trước: ${fmtVnd(revenue?.lastMonth ?? 0)}`}
+              >
+                {revenueUp ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+                <span>
+                  {revenueUp ? '+' : ''}{fmt(growthPct)}% {isEn ? 'vs last month' : 'so với tháng trước'}
+                </span>
+              </div>
+            ) : (revenue?.thisMonth ?? 0) > 0 ? (
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">
+                {isEn ? 'First revenue this month' : 'Doanh thu mới phát sinh trong tháng'}
+              </p>
+            ) : (
+              <p className="text-xs text-zinc-500 mt-1">{isEn ? 'No revenue recorded this month' : 'Chưa có doanh thu trong tháng này'}</p>
+            )}
           </div>
         </div>
 
@@ -196,10 +247,16 @@ export const SaaSDashboardPage: React.FC = () => {
           </div>
           <div className="mt-3">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-              {stats.inventoryValue.toLocaleString(isEn ? 'en-US' : 'vi-VN')} đ
+              {loading ? <span className="inline-block h-6 w-32 rounded bg-zinc-200 dark:bg-zinc-700 animate-pulse" /> : kpiValue(summary?.inventory.totalValue)}
             </h3>
             <p className="text-xs text-zinc-500 mt-1">
-              {isEn ? '10 product categories in warehouse' : '10 danh mục hàng hóa đang lưu kho'}
+              {summaryError
+                ? isEn ? 'Could not load data' : 'Không tải được dữ liệu'
+                : loading
+                  ? ''
+                  : (summary?.inventory.categoriesWithStock ?? 0) > 0
+                    ? `${fmt(summary?.inventory.categoriesWithStock ?? 0)} ${isEn ? 'product categories in warehouse' : 'danh mục hàng hóa đang lưu kho'}`
+                    : isEn ? 'No stock in warehouse' : 'Chưa có hàng tồn kho'}
             </p>
           </div>
         </div>
@@ -216,10 +273,18 @@ export const SaaSDashboardPage: React.FC = () => {
           </div>
           <div className="mt-3">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-              {stats.receivables.toLocaleString(isEn ? 'en-US' : 'vi-VN')} đ
+              {loading ? <span className="inline-block h-6 w-32 rounded bg-zinc-200 dark:bg-zinc-700 animate-pulse" /> : kpiValue(summary?.receivables.total)}
             </h3>
             <div className="flex items-center gap-1 mt-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
-              <span>{isEn ? '8 customers with outstanding balance' : '8 khách hàng có nợ đọng'}</span>
+              <span>
+                {summaryError
+                  ? isEn ? 'Could not load data' : 'Không tải được dữ liệu'
+                  : loading
+                    ? ''
+                    : (summary?.receivables.debtors ?? 0) > 0
+                      ? `${fmt(summary?.receivables.debtors ?? 0)} ${isEn ? 'customers with outstanding balance' : 'khách hàng có nợ đọng'}`
+                      : isEn ? 'No outstanding customer debt' : 'Không có khách hàng nợ đọng'}
+              </span>
             </div>
           </div>
         </div>
@@ -236,10 +301,16 @@ export const SaaSDashboardPage: React.FC = () => {
           </div>
           <div className="mt-3">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-              {stats.payables.toLocaleString(isEn ? 'en-US' : 'vi-VN')} đ
+              {loading ? <span className="inline-block h-6 w-32 rounded bg-zinc-200 dark:bg-zinc-700 animate-pulse" /> : kpiValue(summary?.payables.total)}
             </h3>
             <p className="text-xs text-zinc-500 mt-1">
-              {isEn ? 'Payment due within 30 days' : 'Hạn thanh toán trong 30 ngày'}
+              {summaryError
+                ? isEn ? 'Could not load data' : 'Không tải được dữ liệu'
+                : loading
+                  ? ''
+                  : (summary?.payables.suppliers ?? 0) > 0
+                    ? `${fmt(summary?.payables.suppliers ?? 0)} ${isEn ? 'suppliers awaiting payment' : 'nhà cung cấp chưa thanh toán hết'}`
+                    : isEn ? 'No outstanding supplier debt' : 'Không còn nợ nhà cung cấp'}
             </p>
           </div>
         </div>
