@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import i18n from "../i18n";
+import i18n, { resetI18nToBundled, type AppLanguage } from "../i18n";
 
-export type Language = 'vi' | 'en';
+export type Language = AppLanguage;
 
 export interface TranslationItem {
   key: string;
@@ -29,12 +29,12 @@ interface LanguageContextType {
 
 const fetchLocaleFile = async (lang: Language): Promise<Record<string, string>> => {
   try {
-    const apiRes = await fetch(`/api/saas/locales/${lang}`, { cache: "no-store" });
+    const apiRes = await fetch(`/api/saas/locales/${lang}`);
     if (apiRes.ok) return (await apiRes.json()) as Record<string, string>;
   } catch { }
 
   try {
-    const res = await fetch(`/locales/${lang}.json`, { cache: "no-store" });
+    const res = await fetch(`/locales/${lang}.json`);
     if (!res.ok) return {};
     return (await res.json()) as Record<string, string>;
   } catch {
@@ -60,10 +60,8 @@ const buildTranslationItems = (enData: Record<string, any>, viData: Record<strin
 };
 
 const loadFromI18nResources = (): TranslationItem[] => {
-  const res = (i18n as any).resources;
-  const enData = (res?.en?.translation as Record<string, string>) || {};
-  const viData = (res?.vi?.translation as Record<string, string>) || {};
-  if (Object.keys(enData).length === 0 && Object.keys(viData).length === 0) return [];
+  const enData = (i18n.getResourceBundle('en', 'translation') as Record<string, string>) || {};
+  const viData = (i18n.getResourceBundle('vi', 'translation') as Record<string, string>) || {};
   return buildTranslationItems(enData, viData);
 };
 
@@ -71,31 +69,36 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('app_language') as Language;
-    return saved === 'en' ? 'en' : 'vi';
+    try {
+      const saved = localStorage.getItem('app_language') as Language;
+      return saved === 'en' ? 'en' : 'vi';
+    } catch {
+      return 'vi';
+    }
   });
 
-  const [translationsList, setTranslationsList] = useState<TranslationItem[]>(() => {
-    const saved = localStorage.getItem('saas_translation_dictionary');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {
-        console.error('Error parsing stored translations', e);
-      }
-    }
-    return loadFromI18nResources();
-  });
+  // Built from in-memory i18n resources (already bundled). Do NOT parse a
+  // 200KB localStorage dictionary on every webshop / login visit.
+  const [translationsList, setTranslationsList] = useState<TranslationItem[]>(() => loadFromI18nResources());
+  const [, setRevision] = useState(0);
 
   const loadLocaleTranslations = useCallback(async () => {
     const [enData, viData] = await Promise.all([
       fetchLocaleFile('en'),
       fetchLocaleFile('vi'),
     ]);
-    const items = buildTranslationItems(enData, viData);
+    if (Object.keys(enData).length > 0) {
+      i18n.addResourceBundle('en', 'translation', enData, true, true);
+    }
+    if (Object.keys(viData).length > 0) {
+      i18n.addResourceBundle('vi', 'translation', viData, true, true);
+    }
+    const items = buildTranslationItems(
+      Object.keys(enData).length > 0 ? enData : ((i18n.getResourceBundle('en', 'translation') as Record<string, string>) || {}),
+      Object.keys(viData).length > 0 ? viData : ((i18n.getResourceBundle('vi', 'translation') as Record<string, string>) || {}),
+    );
     setTranslationsList(items);
-    localStorage.setItem('saas_translation_dictionary', JSON.stringify(items));
+    void i18n.changeLanguage(i18n.language);
   }, []);
 
   const refreshTranslations = useCallback(async () => {
@@ -104,9 +107,18 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (res.ok) {
         const data = await res.json();
         if (data.ok && Array.isArray(data.data) && data.data.length > 0) {
+          const viOverlay: Record<string, string> = {};
+          const enOverlay: Record<string, string> = {};
+          data.data.forEach((item: TranslationItem) => {
+            if (item.key && !String(item.key).startsWith('_')) {
+              if (item.vi) viOverlay[item.key] = item.vi;
+              if (item.en) enOverlay[item.key] = item.en;
+            }
+          });
+          if (Object.keys(viOverlay).length) i18n.addResourceBundle('vi', 'translation', viOverlay, true, true);
+          if (Object.keys(enOverlay).length) i18n.addResourceBundle('en', 'translation', enOverlay, true, true);
           setTranslationsList(data.data);
-          localStorage.setItem('saas_translation_dictionary', JSON.stringify(data.data));
-          localStorage.setItem('saas_translation_dictionary_updated_at', String(Date.now()));
+          void i18n.changeLanguage(i18n.language);
           return;
         }
       }
@@ -117,31 +129,29 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [loadLocaleTranslations]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('saas_translation_dictionary');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return;
-        }
-      } catch (e) {
-        console.error('Error parsing stored translations', e);
+    const bump = (lng?: string) => {
+      if (lng === 'en' || lng === 'vi') {
+        setLanguageState(lng);
       }
+      setRevision((n) => n + 1);
+      setTranslationsList(loadFromI18nResources());
+    };
+    i18n.on('languageChanged', bump);
+    i18n.on('loaded', bump);
+    return () => {
+      i18n.off('languageChanged', bump);
+      i18n.off('loaded', bump);
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_language', language);
+    } catch { }
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = language;
     }
-    loadLocaleTranslations();
-  }, [loadLocaleTranslations]);
-
-  useEffect(() => {
-    localStorage.setItem('app_language', language);
   }, [language]);
-
-  useEffect(() => {
-    if (!window.location.pathname.startsWith('/saas')) return;
-
-    const refreshedAt = Number(localStorage.getItem('saas_translation_dictionary_updated_at') || 0);
-    if (Date.now() - refreshedAt < 60 * 60 * 1000) return;
-    refreshTranslations();
-  }, [refreshTranslations]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
@@ -152,14 +162,18 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const toggleLanguage = () => {
     const next: Language = language === 'vi' ? 'en' : 'vi';
-    setLanguageState(next);
-    try {
-      i18n.changeLanguage(next).catch(() => {});
-    } catch {}
+    setLanguage(next);
   };
 
-  const t = (key: string, defaultText?: string): string => {
-    return i18n.t(key, { defaultValue: defaultText });
+  const t = useCallback((key: string, defaultText?: string): string => {
+    const value = i18n.t(key, { defaultValue: defaultText ?? '' });
+    if (!value) return defaultText || key;
+    return value;
+  }, [language]);
+
+  const persistI18nPair = (key: string, vi: string, en: string) => {
+    i18n.addResourceBundle('vi', 'translation', { [key]: vi }, true, true);
+    i18n.addResourceBundle('en', 'translation', { [key]: en }, true, true);
   };
 
   const updateTranslation = async (key: string, vi: string, en: string, category: string = 'common') => {
@@ -174,7 +188,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     setTranslationsList(updated);
-    localStorage.setItem('saas_translation_dictionary', JSON.stringify(updated));
+    persistI18nPair(key, vi, en);
 
     try {
       await fetch('/api/saas/translations', {
@@ -190,7 +204,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const deleteTranslation = async (key: string) => {
     const updated = translationsList.filter((item) => item.key !== key);
     setTranslationsList(updated);
-    localStorage.setItem('saas_translation_dictionary', JSON.stringify(updated));
 
     try {
       await fetch(`/api/saas/translations/${encodeURIComponent(key)}`, {
@@ -215,7 +228,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     setTranslationsList(updated);
-    localStorage.setItem('saas_translation_dictionary', JSON.stringify(updated));
+    persistI18nPair(key, vi, en);
 
     try {
       await fetch('/api/saas/translations', {
@@ -261,8 +274,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const resetToDefaults = () => {
-    localStorage.removeItem('saas_translation_dictionary');
-    loadLocaleTranslations();
+    resetI18nToBundled();
+    setTranslationsList(loadFromI18nResources());
   };
 
   return (

@@ -5,6 +5,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { useTranslation } from "react-i18next";
 import { storage } from "../../utils/storage";
+import { loadGoogleGsi } from "../../utils/loadGoogleGsi";
 
 export const SaaSRegisterPage: React.FC = () => {
   const { showToast } = useToast();
@@ -61,6 +62,12 @@ export const SaaSRegisterPage: React.FC = () => {
     setGoogleSubmitting(true);
     try {
       let googleProfile: any = null;
+
+      try {
+        await loadGoogleGsi();
+      } catch {
+        // Fall through to the demo/mock path below if GSI is unavailable.
+      }
 
       if (typeof window !== 'undefined' && (window as any).google?.accounts?.oauth2) {
         const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({

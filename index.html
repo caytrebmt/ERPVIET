@@ -1,17 +1,39 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" class="i18n-pending">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ERPVIET</title>
     <meta name="description" content="Hệ thống Quản lý Bán hàng & ERP" />
-    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Hide the React tree until i18n has applied bundled strings (removed in main.tsx). */
+      html.i18n-pending #root { visibility: hidden; }
+    </style>
+    <script>
+      (function () {
+        try {
+          var lang = localStorage.getItem('app_language');
+          document.documentElement.lang = lang === 'en' ? 'en' : 'vi';
+          var theme = localStorage.getItem('theme');
+          if (theme !== 'light') {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+        // Safety: never leave the tree hidden if the bundle fails to boot.
+        setTimeout(function () {
+          document.documentElement.classList.remove('i18n-pending');
+        }, 2500);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </body>
 </html>
-

@@ -32,6 +32,13 @@ export const SaaSAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
         return;
       }
 
+      // On the public webshop, restore the cached ERP user without hitting /auth/me.
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/saas")) {
+        if (cachedUser) setErpUser(cachedUser);
+        setErpLoading(false);
+        return;
+      }
+
       if (cachedUser) {
         setErpUser(cachedUser);
       }

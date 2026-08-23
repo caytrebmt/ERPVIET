@@ -33,6 +33,14 @@ app.use("/static", express.static(webshopStaticPath, {
   etag: true,
 }));
 
+// Locale JSON files (fallback if a client still fetches them). Long cache —
+// the app now bundles translations, so this is no longer on the critical path.
+const localesPath = path.join(process.cwd(), "public", "locales");
+app.use("/locales", express.static(localesPath, {
+  maxAge: "1d",
+  etag: true,
+}));
+
 // Direct Express shop & saas routers
 app.use("/api/shop", shopRouter);
 app.use("/api/saas", saasRouter);
