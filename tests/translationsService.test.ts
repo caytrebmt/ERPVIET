@@ -316,3 +316,42 @@ describe('dictionary list — không render toàn bộ từ điển một lần'
     expect(src).not.toMatch(/const existingIndex = translationsList\.findIndex/);
   });
 });
+
+describe('dashboard KPI — số liệu thật, không còn mock cứng', () => {
+  const readSource = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
+
+  it('SaaSDashboardPage fetch KPI từ /api/saas/dashboard/summary', () => {
+    const src = readSource('src/pages/saas/SaaSDashboardPage.tsx');
+    expect(src).toContain("client.get('/api/saas/dashboard/summary')");
+  });
+
+  it('không còn giá trị mock cứng trên thẻ KPI', () => {
+    const src = readSource('src/pages/saas/SaaSDashboardPage.tsx');
+    expect(src).not.toContain('+18.4%');
+    expect(src).not.toContain('10 danh mục hàng hóa đang lưu kho');
+    expect(src).not.toContain('8 khách hàng có nợ đọng');
+    expect(src).not.toContain('10 product categories in warehouse');
+    expect(src).not.toContain('8 customers with outstanding balance');
+    // stats state chết (không bao giờ set) cũng phải biến mất
+    expect(src).not.toMatch(/setStats\(/);
+  });
+
+  it('router có endpoint tổng hợp KPI từ sổ thật (orders, tồn kho, thu/chi)', () => {
+    const src = readSource('src/api/saasRouter.ts');
+    expect(src).toMatch(/saasRouter\.get\('\/dashboard\/summary'/);
+    expect(src).toContain('FROM sales_orders');
+    expect(src).toContain('FROM stock_balances');
+    expect(src).toContain("voucher_type = 'THU'");
+    expect(src).toContain("voucher_type = 'CHI'");
+  });
+
+  it('computeGrowthPct: null khi tháng trước = 0, đúng % khi có số so sánh', async () => {
+    const mod = await import('../src/pages/saas/SaaSDashboardPage');
+    const computeGrowthPct = (mod as any).computeGrowthPct as (a: number, b: number) => number | null;
+    expect(computeGrowthPct(50_000_000, 0)).toBeNull();
+    expect(computeGrowthPct(0, 0)).toBeNull();
+    expect(computeGrowthPct(50_000_000, 20_000_000)).toBe(150);
+    expect(computeGrowthPct(10_000_000, 20_000_000)).toBe(-50);
+    expect(computeGrowthPct(20_550_000, 20_000_000)).toBe(2.8); // làm tròn 1 chữ số lẻ
+  });
+});
