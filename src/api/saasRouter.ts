@@ -8,6 +8,11 @@ import { tenantMiddleware, requireSuperAdmin, TenantRequest } from '../middlewar
 import { JWT_SECRET } from '../config.js';
 import { postInventoryMovement } from '../services/inventoryService.js';
 import { getProcurementList, saveProcurementList, PROCUREMENT_LIST_TYPES } from '../services/procurementService.js';
+import {
+  parseTranslationsListQuery,
+  buildTranslationsSqlFilters,
+  SQL_META_KEY_FILTER,
+} from '../services/translationsService';
 
 import viLocales from '../../public/locales/vi.json';
 import enLocales from '../../public/locales/en.json';
@@ -442,6 +447,73 @@ saasRouter.get('/languages', async (req, res) => {
   }
 });
 
+// Paginated + filtered dictionary list. The admin UI must not pull the whole
+// sys_translations table: clients send ?search=&category=&status=&page=&pageSize=
+// and receive only one page plus global category facets and completion stats.
+// Falls back on the client to the bundled i18n dictionary when unavailable.
+saasRouter.get('/translations', async (req: Request, res: Response) => {
+  const listQuery = parseTranslationsListQuery(req.query);
+  try {
+    const { whereSql, params } = buildTranslationsSqlFilters(listQuery);
+    const limitIdx = params.length + 1;
+    const offsetIdx = params.length + 2;
+    const offset = (listQuery.page - 1) * listQuery.pageSize;
+
+    const [rowsRes, countRes, facetsRes, statsRes] = await Promise.all([
+      query(
+        `SELECT key_name as key,
+                COALESCE(NULLIF(TRIM(category), ''), 'common') as category,
+                vi_text as vi,
+                en_text as en
+         FROM sys_translations ${whereSql}
+         ORDER BY category ASC, key_name ASC
+         LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+        [...params, listQuery.pageSize, offset],
+      ),
+      query(
+        `SELECT COUNT(*)::int as total FROM sys_translations ${whereSql}`,
+        params,
+      ),
+      query(
+        `SELECT COALESCE(NULLIF(TRIM(category), ''), 'common') as id, COUNT(*)::int as count
+         FROM sys_translations WHERE ${SQL_META_KEY_FILTER}
+         GROUP BY COALESCE(NULLIF(TRIM(category), ''), 'common')
+         ORDER BY count DESC, id ASC`,
+      ),
+      query(
+        `SELECT COUNT(*)::int as total,
+                SUM(CASE WHEN COALESCE(TRIM(vi_text), '') <> '' THEN 1 ELSE 0 END)::int as "viCompleted",
+                SUM(CASE WHEN COALESCE(TRIM(en_text), '') <> '' THEN 1 ELSE 0 END)::int as "enCompleted"
+         FROM sys_translations WHERE ${SQL_META_KEY_FILTER}`,
+      ),
+    ]);
+
+    const rows = rowsRes.rows || [];
+    const total = Number(countRes.rows?.[0]?.total) || 0;
+    const stats = statsRes.rows?.[0] || { total: 0, viCompleted: 0, enCompleted: 0 };
+
+    res.json({
+      ok: true,
+      data: {
+        items: rows,
+        page: listQuery.page,
+        pageSize: listQuery.pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / listQuery.pageSize)),
+        categories: facetsRes.rows || [],
+        stats: {
+          total: Number(stats.total) || 0,
+          viCompleted: Number(stats.viCompleted) || 0,
+          enCompleted: Number(stats.enCompleted) || 0,
+        },
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, message: error.message });
+  }
+});
+
+// Full dump — kept for export/backup flows; the UI list uses GET /translations.
 saasRouter.get('/translations/all', async (req: Request, res: Response) => {
   try {
     const result = await query(
@@ -835,68 +907,16 @@ saasRouter.get('/orders', tenantMiddleware, async (req: TenantRequest, res) => {
   }
 });
 
-// ==========================================
 // 7. SYSTEM TRANSLATION MANAGEMENT
 // ==========================================
-saasRouter.get('/translations/all', async (req, res) => {
-  try {
-    const result = await query(
-      `SELECT t1.translation_key as key, 
-              COALESCE(t1.category, 'common') as category,
-              t1.translation_value as vi,
-              COALESCE(t2.translation_value, '') as en
-       FROM sys_translations t1
-       LEFT JOIN sys_translations t2 ON t1.translation_key = t2.translation_key AND t2.lang_code = 'en'
-       WHERE t1.lang_code = 'vi'
-       ORDER BY t1.translation_key ASC`
-    );
-    res.json({ ok: true, data: result.rows });
-  } catch (error: any) {
-    res.status(500).json({ ok: false, error: error.message });
-  }
-});
-
-saasRouter.post('/translations', async (req, res) => {
-  const { key, category = 'common', vi, en } = req.body;
-  if (!key) {
-    return res.status(400).json({ ok: false, message: 'Missing translation key code' });
-  }
-
-  try {
-    if (vi !== undefined) {
-      await query(
-        `INSERT INTO sys_translations (lang_code, category, translation_key, translation_value)
-         VALUES ('vi', $1, $2, $3)
-         ON CONFLICT (lang_code, translation_key) 
-         DO UPDATE SET category = EXCLUDED.category, translation_value = EXCLUDED.translation_value`,
-        [category, key, vi]
-      );
-    }
-    if (en !== undefined) {
-      await query(
-        `INSERT INTO sys_translations (lang_code, category, translation_key, translation_value)
-         VALUES ('en', $1, $2, $3)
-         ON CONFLICT (lang_code, translation_key) 
-         DO UPDATE SET category = EXCLUDED.category, translation_value = EXCLUDED.translation_value`,
-        [category, key, en]
-      );
-    }
-  } catch (error: any) {
-    console.error('[Translation DB Save Error]', error);
-  }
-
-  res.json({ ok: true, message: 'Saved translation key successfully' });
-});
-
-saasRouter.delete('/translations/:key', async (req, res) => {
-  const { key } = req.params;
-  try {
-    await query(`DELETE FROM sys_translations WHERE translation_key = $1`, [key]);
-  } catch (error: any) {
-    console.error('[Translation DB Delete Error]', error);
-  }
-  res.json({ ok: true, message: 'Deleted translation key successfully' });
-});
+// NOTE: translation CRUD routes (GET /translations paginated, GET
+// /translations/all, POST /translations, DELETE /translations/:key) are
+// registered earlier in this file against the real sys_translations schema
+// (key_name / category / vi_text / en_text per schema.sql). A second,
+// unreachable copy used to live here — built for a different schema
+// (lang_code / translation_key / translation_value) — and was removed:
+// Express only ever invokes the first matching route, so re-registering
+// duplicate paths is dead code that invites schema drift.
 
 // ==========================================
 // 8. CRM & SALES PIPELINE ENDPOINTS

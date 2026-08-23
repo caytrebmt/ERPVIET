@@ -176,18 +176,28 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     i18n.addResourceBundle('en', 'translation', { [key]: en }, true, true);
   };
 
+  // Functional setState: concurrent calls (e.g. JSON import batches) must not
+  // read a stale translationsList snapshot or earlier writes get overwritten.
+  const upsertTranslationInState = (key: string, vi: string, en: string, category: string, markCustom: boolean) => {
+    setTranslationsList((prev) => {
+      const existingIndex = prev.findIndex((item) => item.key === key);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          vi,
+          en,
+          category,
+          ...(markCustom ? { isCustom: true } : {}),
+        };
+        return updated;
+      }
+      return [{ key, category, vi, en, isCustom: true }, ...prev];
+    });
+  };
+
   const updateTranslation = async (key: string, vi: string, en: string, category: string = 'common') => {
-    const existingIndex = translationsList.findIndex((item) => item.key === key);
-    let updated: TranslationItem[];
-
-    if (existingIndex >= 0) {
-      updated = [...translationsList];
-      updated[existingIndex] = { ...updated[existingIndex], vi, en, category };
-    } else {
-      updated = [{ key, category, vi, en, isCustom: true }, ...translationsList];
-    }
-
-    setTranslationsList(updated);
+    upsertTranslationInState(key, vi, en, category, false);
     persistI18nPair(key, vi, en);
 
     try {
@@ -202,8 +212,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const deleteTranslation = async (key: string) => {
-    const updated = translationsList.filter((item) => item.key !== key);
-    setTranslationsList(updated);
+    setTranslationsList((prev) => prev.filter((item) => item.key !== key));
 
     try {
       await fetch(`/api/saas/translations/${encodeURIComponent(key)}`, {
@@ -217,17 +226,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const createTranslation = async (key: string, vi: string, en: string, category: string = 'common') => {
     if (!key.trim()) return;
 
-    const existingIndex = translationsList.findIndex((item) => item.key === key);
-    let updated: TranslationItem[];
-
-    if (existingIndex >= 0) {
-      updated = [...translationsList];
-      updated[existingIndex] = { ...updated[existingIndex], vi, en, category, isCustom: true };
-    } else {
-      updated = [{ key, category, vi, en, isCustom: true }, ...translationsList];
-    }
-
-    setTranslationsList(updated);
+    upsertTranslationInState(key, vi, en, category, true);
     persistI18nPair(key, vi, en);
 
     try {
