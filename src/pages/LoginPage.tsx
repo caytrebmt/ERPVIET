@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { storage } from "../utils/storage";
 import { useTranslation } from "react-i18next";
+import { loadGoogleGsi } from "../utils/loadGoogleGsi";
 
 const LoginPage: React.FC = () => {
   const { t } = useTranslation();
@@ -151,6 +152,12 @@ const LoginPage: React.FC = () => {
              onClick={async () => {
                try {
                  const clientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
+                 try {
+                   await loadGoogleGsi();
+                 } catch {
+                   showToast(t("page_login_google_init_failed"), "error");
+                   return;
+                 }
                  if (!clientId || typeof window === 'undefined' || !(window as any).google?.accounts?.oauth2) {
                     showToast(t("page_login_google_init_failed"), "error");
                    return;

@@ -26,6 +26,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Load profile on startup if token exists
   useEffect(() => {
     async function loadProfile() {
+      // SaaS screens never render the storefront session — skip the extra request.
+      if (typeof window !== "undefined" && window.location.pathname.startsWith("/saas")) {
+        setLoading(false);
+        return;
+      }
+
       const token = storage.getAccessToken();
       if (!token) {
         setLoading(false);

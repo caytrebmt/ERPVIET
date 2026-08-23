@@ -397,6 +397,7 @@ saasRouter.get('/locales/:lang', async (req: Request, res: Response) => {
     }
 
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
     res.send(content);
   } catch (error: any) {
     res.status(500).json({ ok: false, error: error.message });
@@ -425,6 +426,7 @@ saasRouter.get('/locales/:lang/db', async (req: Request, res: Response) => {
     });
 
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'private, max-age=60');
     res.send(JSON.stringify(flat));
   } catch (error: any) {
     res.status(500).json({ ok: false, error: error.message });
