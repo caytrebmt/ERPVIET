@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Calculator, BookOpen, Settings2, Activity, Scale, CheckCircle2, AlertTriangle, Plus, Search } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
+import client from '../../api/client';
 
 interface JournalEntry {
   id: number;
@@ -37,44 +38,42 @@ interface TrialBalanceItem {
 export const SaaSAccountingPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'journal' | 'chart' | 'mapping' | 'trial' | 'health'>('journal');
 
-  // Journal Entries Data
-  const [entries] = useState<JournalEntry[]>([]);
-
-  // Chart of Accounts Data (Mẫu Hệ thống TK Kế toán TT200)
-  const [accounts] = useState<AccountItem[]>([
-    { code: '111', name: 'Tiền mặt tại quỹ', type: 'Tài sản', balanceType: 'Nợ', currentBalance: 245000000 },
-    { code: '112', name: 'Tiền gửi Ngân hàng Vietcombank', type: 'Tài sản', balanceType: 'Nợ', currentBalance: 1250000000 },
-    { code: '131', name: 'Phải thu của khách hàng', type: 'Tài sản', balanceType: 'Lưỡng tính', currentBalance: 480000000 },
-    { code: '1331', name: 'Thuế GTGT được khấu trừ', type: 'Tài sản', balanceType: 'Nợ', currentBalance: 29600000 },
-    { code: '156', name: 'Hàng hóa tồn kho', type: 'Tài sản', balanceType: 'Nợ', currentBalance: 3450000000 },
-    { code: '331', name: 'Phải trả cho người bán', type: 'Nợ phải trả', balanceType: 'Lưỡng tính', currentBalance: 180000000 },
-    { code: '3331', name: 'Thuế GTGT phải nộp', type: 'Nợ phải trả', balanceType: 'Có', currentBalance: 19660000 },
-    { code: '411', name: 'Vốn đầu tư của chủ sở hữu', type: 'Vốn CSH', balanceType: 'Có', currentBalance: 3600000000 },
-    { code: '511', name: 'Doanh thu bán hàng & dịch vụ', type: 'Doanh thu', balanceType: 'Có', currentBalance: 1285000000 },
-    { code: '632', name: 'Giá vốn hàng bán', type: 'Chi phí', balanceType: 'Nợ', currentBalance: 940000000 },
-  ]);
-
-  // Account Mapping State
+  // All accounting rows are loaded from the tenant ledger.
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [accounts, setAccounts] = useState<AccountItem[]>([]);
+  const [trialBalances, setTrialBalances] = useState<TrialBalanceItem[]>([]);
+  const [health, setHealth] = useState({ debitTotal: 0, creditTotal: 0, balanced: true });
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [accountMappings, setAccountMappings] = useState({
-    acc_cash: '111 - Tiền mặt tại quỹ',
-    acc_bank: '112 - Tiền gửi ngân hàng',
-    acc_ar: '131 - Phải thu của khách hàng',
-    acc_ap: '331 - Phải trả cho người bán',
-    acc_inventory: '156 - Hàng hóa tồn kho',
-    acc_vat_in: '1331 - Thuế GTGT được khấu trừ',
-    acc_vat_out: '3331 - Thuế GTGT phải nộp',
-    acc_revenue: '511 - Doanh thu bán hàng',
-    acc_cogs: '632 - Giá vốn hàng bán',
+    acc_cash: '', acc_bank: '', acc_ar: '', acc_ap: '', acc_inventory: '',
+    acc_vat_in: '', acc_vat_out: '', acc_revenue: '', acc_cogs: '',
   });
 
-  // Trial Balance Data
-  const [trialBalances] = useState<TrialBalanceItem[]>([
-    { code: '111', name: 'Tiền mặt', openingDebit: 200000000, openingCredit: 0, periodDebit: 95000000, periodCredit: 50000000, closingDebit: 245000000, closingCredit: 0 },
-    { code: '112', name: 'Tiền gửi Ngân hàng', openingDebit: 1000000000, openingCredit: 0, periodDebit: 450000000, periodCredit: 200000000, closingDebit: 1250000000, closingCredit: 0 },
-    { code: '131', name: 'Phải thu khách hàng', openingDebit: 300000000, openingCredit: 0, periodDebit: 360000000, periodCredit: 180000000, closingDebit: 480000000, closingCredit: 0 },
-    { code: '156', name: 'Hàng hóa', openingDebit: 3000000000, openingCredit: 0, periodDebit: 1390000000, periodCredit: 940000000, closingDebit: 3450000000, closingCredit: 0 },
-    { code: '331', name: 'Phải trả người bán', openingDebit: 0, openingCredit: 150000000, periodDebit: 320000000, periodCredit: 350000000, closingDebit: 0, closingCredit: 180000000 },
-  ]);
+  useEffect(() => {
+    let cancelled = false;
+    client.get('/api/saas/accounting/summary')
+      .then((response) => {
+        if (cancelled) return;
+        if (!response.data?.ok) throw new Error(response.data?.message || 'Không tải được sổ kế toán.');
+        const data = response.data.data || {};
+        setAccounts((data.accounts || []).map((row: any) => ({
+          code: row.code, name: row.name, type: row.type, balanceType: row.balanceType,
+          currentBalance: Number(row.currentBalance) || 0,
+        })));
+        setEntries((data.entries || []).map((row: any) => ({
+          id: Number(row.id), entryNo: row.entry_no, date: row.date,
+          description: row.description || '', debitAccount: row.debit_account || '',
+          creditAccount: row.credit_account || '', amount: Number(row.amount) || 0, vatAmount: 0,
+        })));
+        setTrialBalances(data.trialBalances || []);
+        setHealth(data.health || { debitTotal: 0, creditTotal: 0, balanced: true });
+        setLoadError(null);
+      })
+      .catch((error: any) => { if (!cancelled) setLoadError(error?.response?.data?.message || error.message || 'Không tải được sổ kế toán từ cơ sở dữ liệu.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   const journalColumns: ColumnDef<JournalEntry>[] = [
     {
@@ -149,6 +148,9 @@ export const SaaSAccountingPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {loading && <p className="text-xs text-zinc-500">Đang tải sổ kế toán từ PostgreSQL...</p>}
+      {loadError && <p className="text-xs text-red-600">{loadError}</p>}
+
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -319,27 +321,27 @@ export const SaaSAccountingPage: React.FC = () => {
                 <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-bold">
                   <CheckCircle2 className="h-4 w-4" /> ĐỐI SOÁT TỒN KHO & TK 156
                 </div>
-                <p className="text-zinc-700 dark:text-zinc-300">Tồn kho thực tế: <strong>3,450,000,000 đ</strong></p>
-                <p className="text-zinc-700 dark:text-zinc-300">Sổ cái TK 156: <strong>3,450,000,000 đ</strong></p>
-                <span className="inline-block px-2 py-0.5 rounded-xs bg-emerald-200 text-emerald-800 font-bold">KHỚP 100%</span>
+                <p className="text-zinc-700 dark:text-zinc-300">Tồn kho thực tế: <strong>{accounts.find((account) => account.code === '156')?.currentBalance.toLocaleString('vi-VN') || '0'} đ</strong></p>
+                <p className="text-zinc-700 dark:text-zinc-300">Sổ cái TK 156: <strong>{accounts.find((account) => account.code === '156')?.currentBalance.toLocaleString('vi-VN') || '0'} đ</strong></p>
+                <span className={`inline-block px-2 py-0.5 rounded-xs font-bold ${health.balanced ? 'bg-emerald-200 text-emerald-800' : 'bg-red-200 text-red-800'}`}>{health.balanced ? 'CÂN ĐỐI' : 'CHƯA CÂN ĐỐI'}</span>
               </div>
 
               <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 space-y-2">
                 <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-bold">
                   <CheckCircle2 className="h-4 w-4" /> CÔNG NỢ KHÁCH HÀNG & TK 131
                 </div>
-                <p className="text-zinc-700 dark:text-zinc-300">Sổ nợ Khách hàng: <strong>480,000,000 đ</strong></p>
-                <p className="text-zinc-700 dark:text-zinc-300">Sổ cái TK 131: <strong>480,000,000 đ</strong></p>
-                <span className="inline-block px-2 py-0.5 rounded-xs bg-emerald-200 text-emerald-800 font-bold">KHỚP 100%</span>
+                <p className="text-zinc-700 dark:text-zinc-300">Sổ nợ Khách hàng: <strong>{accounts.find((account) => account.code === '131')?.currentBalance.toLocaleString('vi-VN') || '0'} đ</strong></p>
+                <p className="text-zinc-700 dark:text-zinc-300">Sổ cái TK 131: <strong>{accounts.find((account) => account.code === '131')?.currentBalance.toLocaleString('vi-VN') || '0'} đ</strong></p>
+                <span className={`inline-block px-2 py-0.5 rounded-xs font-bold ${health.balanced ? 'bg-emerald-200 text-emerald-800' : 'bg-red-200 text-red-800'}`}>{health.balanced ? 'CÂN ĐỐI' : 'CHƯA CÂN ĐỐI'}</span>
               </div>
 
               <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 space-y-2">
                 <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-bold">
                   <CheckCircle2 className="h-4 w-4" /> CÂN ĐỐI BÚT TOÁN NỢ / CÓ
                 </div>
-                <p className="text-zinc-700 dark:text-zinc-300">Tổng Nợ: <strong>1,895,000,000 đ</strong></p>
-                <p className="text-zinc-700 dark:text-zinc-300">Tổng Có: <strong>1,895,000,000 đ</strong></p>
-                <span className="inline-block px-2 py-0.5 rounded-xs bg-emerald-200 text-emerald-800 font-bold">CÂN ĐỐI</span>
+                <p className="text-zinc-700 dark:text-zinc-300">Tổng Nợ: <strong>{health.debitTotal.toLocaleString('vi-VN')} đ</strong></p>
+                <p className="text-zinc-700 dark:text-zinc-300">Tổng Có: <strong>{health.creditTotal.toLocaleString('vi-VN')} đ</strong></p>
+                <span className={`inline-block px-2 py-0.5 rounded-xs font-bold ${health.balanced ? 'bg-emerald-200 text-emerald-800' : 'bg-red-200 text-red-800'}`}>{health.balanced ? 'CÂN ĐỐI' : 'CHƯA CÂN ĐỐI'}</span>
               </div>
             </div>
           </div>

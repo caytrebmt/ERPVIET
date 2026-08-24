@@ -69,7 +69,7 @@ export const SaaSDashboardPage: React.FC = () => {
       }
 
       try {
-        const res = await client.get('/shop/catalog');
+        const res = await client.get('/api/shop/catalog');
         if (res.data?.ok && Array.isArray(res.data.data?.products)) {
           const prods = res.data.data.products;
           const lowStock = prods
@@ -78,14 +78,14 @@ export const SaaSDashboardPage: React.FC = () => {
               id: p.id,
               sku: p.sku,
               name: p.name,
-              nameEn: p.nameEn || p.name,
-              category: p.categoryId === 2 ? 'Laptop' : 'Văn phòng phẩm',
-              categoryEn: p.categoryId === 2 ? 'Laptop' : 'Stationery',
-              stock: p.stock,
-              minStock: p.minStock || 5,
-              unit: p.unit || 'Cái',
-              unitEn: p.unit === 'Tệp' ? 'Pack' : 'Pcs',
-              salePrice: p.salePrice,
+              nameEn: p.name_en || p.nameEn || p.name,
+              category: p.category_vi || '',
+              categoryEn: p.category_en || '',
+              stock: Number(p.stock) || 0,
+              minStock: Number(p.minStock) || 0,
+              unit: p.unit_vi || p.unit || '',
+              unitEn: p.unit_en || '',
+              salePrice: Number(p.salePrice) || 0,
             }));
           if (lowStock.length > 0) setAlerts(lowStock);
         }

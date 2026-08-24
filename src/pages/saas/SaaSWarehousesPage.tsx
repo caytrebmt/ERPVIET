@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Warehouse, Plus, Building2, MapPin, Boxes, CheckCircle2, Edit2, Trash2, X } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
 import { useToast } from '../../contexts/ToastContext';
+import client from '../../api/client';
 
 interface WarehouseItem {
   id: number;
@@ -21,6 +22,7 @@ interface OpeningStockItem {
   sku: string;
   productName: string;
   warehouseName: string;
+  warehouseId: number;
   openingQuantity: number;
   openingValue: number;
   unit: string;
@@ -33,6 +35,35 @@ export const SaaSWarehousesPage: React.FC = () => {
   const [warehouses, setWarehouses] = useState<WarehouseItem[]>([]);
 
   const [openingStocks, setOpeningStocks] = useState<OpeningStockItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadWarehouseData = async () => {
+    setLoading(true);
+    try {
+      const [warehouseResponse, stockResponse] = await Promise.all([
+        client.get('/api/saas/warehouses'),
+        client.get('/api/saas/warehouses/opening-stock'),
+      ]);
+      if (!warehouseResponse.data?.ok) throw new Error(warehouseResponse.data?.message || 'Không tải được kho.');
+      setWarehouses((warehouseResponse.data.data || []).map((row: any) => ({
+        id: Number(row.id), code: row.code, name: row.name_vi || row.name_en || '',
+        location: row.address || '', manager: row.manager_name || '', phone: row.phone || '',
+        capacity: row.capacity || '', stockCount: Number(row.stock_count) || 0,
+        status: row.is_active === false ? 'Bảo trì' : 'Hoạt động',
+      })));
+      if (stockResponse.data?.ok) setOpeningStocks((stockResponse.data.data || []).map((row: any) => ({
+        id: Number(row.id), sku: row.sku, productName: row.product_name || '', warehouseId: Number(row.warehouse_id),
+        warehouseName: row.warehouse_name || '', openingQuantity: Number(row.opening_quantity) || 0,
+        openingValue: Number(row.opening_value) || 0, unit: row.unit || '',
+      })));
+      setLoadError(null);
+    } catch (error: any) {
+      setLoadError(error?.response?.data?.message || error.message || 'Không tải được kho từ cơ sở dữ liệu.');
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadWarehouseData(); }, []);
 
   // Modals state
   const [showWhModal, setShowWhModal] = useState(false);
@@ -51,7 +82,8 @@ export const SaaSWarehousesPage: React.FC = () => {
   const [stockFormData, setStockFormData] = useState({
     sku: '',
     productName: '',
-    warehouseName: 'Kho Chính - Hà Nội',
+    warehouseName: '',
+    warehouseId: '',
     openingQuantity: 0,
     openingValue: 0,
     unit: 'Cái',
@@ -77,50 +109,32 @@ export const SaaSWarehousesPage: React.FC = () => {
     setShowWhModal(true);
   };
 
-  const handleSaveWarehouse = (e: React.FormEvent) => {
+  const handleSaveWarehouse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!whFormData.name || !whFormData.code) return;
-
-    if (editingWh) {
-      setWarehouses(
-        warehouses.map((w) =>
-          w.id === editingWh.id
-            ? {
-                ...w,
-                code: whFormData.code.toUpperCase(),
-                name: whFormData.name,
-                location: whFormData.location,
-                manager: whFormData.manager,
-                phone: whFormData.phone,
-                capacity: whFormData.capacity,
-              }
-            : w
-        )
-      );
-      addToast('Cập nhật địa điểm kho bãi thành công!', 'success');
-    } else {
-      const newWh: WarehouseItem = {
-        id: Date.now(),
-        code: whFormData.code.toUpperCase(),
-        name: whFormData.name,
-        location: whFormData.location || 'Hà Nội, Việt Nam',
-        manager: whFormData.manager || 'Quản Kho',
-        phone: whFormData.phone || '0900000000',
-        capacity: whFormData.capacity,
-        stockCount: 0,
-        status: 'Hoạt động',
-      };
-      setWarehouses([...warehouses, newWh]);
-      addToast('Thêm địa điểm kho bãi mới thành công!', 'success');
+    try {
+      const payload = { code: whFormData.code, name: whFormData.name, address: whFormData.location, manager_name: whFormData.manager, phone: whFormData.phone, capacity: whFormData.capacity };
+      if (editingWh) {
+        await client.put(`/api/saas/warehouses/${editingWh.id}`, payload);
+        addToast('Cập nhật địa điểm kho bãi thành công!', 'success');
+      } else {
+        await client.post('/api/saas/warehouses', payload);
+        addToast('Thêm địa điểm kho bãi mới thành công!', 'success');
+      }
+      await loadWarehouseData();
+      setShowWhModal(false);
+    } catch (error: any) {
+      addToast(error?.response?.data?.message || error.message || 'Không thể lưu kho.', 'error');
     }
-    setShowWhModal(false);
   };
 
-  const handleDeleteWh = (id: number, name: string) => {
-    if (window.confirm(`Bạn có chắc muốn xóa kho "${name}"?`)) {
-      setWarehouses(warehouses.filter((w) => w.id !== id));
+  const handleDeleteWh = async (id: number, name: string) => {
+    if (!window.confirm(`Bạn có chắc muốn xóa kho "${name}"?`)) return;
+    try {
+      await client.delete(`/api/saas/warehouses/${id}`);
+      setWarehouses((current) => current.filter((warehouse) => warehouse.id !== id));
       addToast(`Đã xóa kho "${name}"`, 'warning');
-    }
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể xóa kho.', 'error'); }
   };
 
   // Opening Stock CRUD
@@ -129,7 +143,8 @@ export const SaaSWarehousesPage: React.FC = () => {
     setStockFormData({
       sku: '',
       productName: '',
-      warehouseName: 'Kho Chính - Hà Nội',
+      warehouseName: warehouses[0]?.name || '',
+      warehouseId: String(warehouses[0]?.id || ''),
       openingQuantity: 0,
       openingValue: 0,
       unit: 'Cái',
@@ -143,6 +158,7 @@ export const SaaSWarehousesPage: React.FC = () => {
       sku: item.sku,
       productName: item.productName,
       warehouseName: item.warehouseName,
+      warehouseId: String(item.warehouseId),
       openingQuantity: item.openingQuantity,
       openingValue: item.openingValue,
       unit: item.unit,
@@ -150,48 +166,29 @@ export const SaaSWarehousesPage: React.FC = () => {
     setShowStockModal(true);
   };
 
-  const handleSaveOpeningStock = (e: React.FormEvent) => {
+  const handleSaveOpeningStock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!stockFormData.productName || !stockFormData.sku) return;
-
-    if (editingStock) {
-      setOpeningStocks(
-        openingStocks.map((s) =>
-          s.id === editingStock.id
-            ? {
-                ...s,
-                sku: stockFormData.sku.toUpperCase(),
-                productName: stockFormData.productName,
-                warehouseName: stockFormData.warehouseName,
-                openingQuantity: Number(stockFormData.openingQuantity),
-                openingValue: Number(stockFormData.openingValue),
-                unit: stockFormData.unit,
-              }
-            : s
-        )
-      );
-      addToast('Cập nhật số dư tồn kho đầu kỳ thành công!', 'success');
-    } else {
-      const newStock: OpeningStockItem = {
-        id: Date.now(),
-        sku: stockFormData.sku.toUpperCase(),
-        productName: stockFormData.productName,
-        warehouseName: stockFormData.warehouseName,
-        openingQuantity: Number(stockFormData.openingQuantity),
-        openingValue: Number(stockFormData.openingValue),
-        unit: stockFormData.unit,
-      };
-      setOpeningStocks([...openingStocks, newStock]);
-      addToast('Khai báo tồn kho đầu kỳ thành công!', 'success');
-    }
-    setShowStockModal(false);
+    if (!stockFormData.productName || !stockFormData.sku || !stockFormData.warehouseId) return;
+    try {
+      await client.post('/api/saas/warehouses/opening-stock', {
+        sku: stockFormData.sku,
+        warehouse_id: Number(stockFormData.warehouseId),
+        opening_quantity: Number(stockFormData.openingQuantity),
+        opening_value: Number(stockFormData.openingValue),
+      });
+      await loadWarehouseData();
+      setShowStockModal(false);
+      addToast('Đã lưu tồn kho đầu kỳ vào cơ sở dữ liệu!', 'success');
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể lưu tồn đầu kỳ.', 'error'); }
   };
 
-  const handleDeleteStock = (id: number, productName: string) => {
-    if (window.confirm(`Xóa khai báo số dư đầu kỳ của "${productName}"?`)) {
-      setOpeningStocks(openingStocks.filter((s) => s.id !== id));
+  const handleDeleteStock = async (id: number, productName: string) => {
+    if (!window.confirm(`Xóa khai báo số dư đầu kỳ của "${productName}"?`)) return;
+    try {
+      await client.delete(`/api/saas/warehouses/opening-stock/${id}`);
+      setOpeningStocks((current) => current.filter((stock) => stock.id !== id));
       addToast(`Đã xóa dư lượng đầu kỳ "${productName}"`, 'warning');
-    }
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể xóa tồn đầu kỳ.', 'error'); }
   };
 
   const warehouseColumns: ColumnDef<WarehouseItem>[] = [
@@ -361,6 +358,9 @@ export const SaaSWarehousesPage: React.FC = () => {
           </button>
         )}
       </div>
+
+      {loading && <p className="text-xs text-zinc-500">Đang tải kho và tồn đầu kỳ từ PostgreSQL...</p>}
+      {loadError && <p className="text-xs text-red-600">{loadError}</p>}
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2">
@@ -551,12 +551,16 @@ export const SaaSWarehousesPage: React.FC = () => {
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Kho Nhập Số Dư</label>
                 <select
-                  value={stockFormData.warehouseName}
-                  onChange={(e) => setStockFormData({ ...stockFormData, warehouseName: e.target.value })}
+                  value={stockFormData.warehouseId}
+                  onChange={(e) => {
+                    const warehouse = warehouses.find((item) => String(item.id) === e.target.value);
+                    setStockFormData({ ...stockFormData, warehouseId: e.target.value, warehouseName: warehouse?.name || '' });
+                  }}
                   className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 >
+                  <option value="">Chọn kho</option>
                   {warehouses.map((w) => (
-                    <option key={w.id} value={w.name}>
+                    <option key={w.id} value={w.id}>
                       {w.name}
                     </option>
                   ))}

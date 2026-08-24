@@ -35,8 +35,6 @@ interface CustomerItem {
   password?: string;
 }
 
-const INITIAL_CUSTOMERS: CustomerItem[] = [];
-
 export const SaaSCustomersPage: React.FC = () => {
   const { addToast } = useToast();
   const { language } = useLanguage();
@@ -49,32 +47,26 @@ export const SaaSCustomersPage: React.FC = () => {
       .get('/api/shop/admin/customers')
       .then((res) => {
         const items = res.data?.data?.items || [];
-        if (items.length > 0) {
+        {
           const mapped: CustomerItem[] = items.map((it: any, idx: number) => ({
             id: it.id,
             code: `KH${String(it.id || idx + 1).padStart(3, '0')}`,
             name: it.name || it.email?.split('@')[0] || 'Khách hàng',
-            phone: it.phone || '0901234567',
+            phone: it.phone || '',
             email: it.email,
-            taxCode: '-',
+            taxCode: it.tax_code || '-',
             type: (idx % 3 === 0 ? 'Khách sỉ' : idx % 3 === 1 ? 'Đại lý' : 'Khách lẻ') as any,
-            creditLimit: 50000000,
-            currentDebt: 0,
-            password: it.passwordHash && it.passwordHash.startsWith('$2') ? '' : (it.passwordHash || 'web12345'),
+            creditLimit: Number(it.credit_limit) || 0,
+            currentDebt: Number(it.current_debt) || 0,
+            password: '',
           }));
           setCustomers(mapped);
-          localStorage.setItem('saas_webshop_customers', JSON.stringify(mapped));
         }
       })
       .catch((err) => {
         console.warn('Failed to load customers from backend:', err);
       });
   }, []);
-
-  const persistCustomers = (updated: CustomerItem[]) => {
-    setCustomers(updated);
-    localStorage.setItem('saas_webshop_customers', JSON.stringify(updated));
-  };
 
   // Eye view password visibility states
   const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
@@ -99,7 +91,7 @@ export const SaaSCustomersPage: React.FC = () => {
     taxCode: '',
     type: 'Khách sỉ' as 'Khách sỉ' | 'Khách lẻ' | 'Đại lý',
     creditLimit: 50000000,
-    password: 'web12345',
+    password: '',
   });
 
   // Password Actions
@@ -117,7 +109,7 @@ export const SaaSCustomersPage: React.FC = () => {
 
   const handleOpenResetPasswordModal = (customer: CustomerItem) => {
     setResetTargetCustomer(customer);
-    setNewResetPassword(customer.password || 'Web@2026');
+    setNewResetPassword('');
     setShowResetPasswordEye(true);
     setIsResetModalOpen(true);
   };
@@ -138,19 +130,13 @@ export const SaaSCustomersPage: React.FC = () => {
       return;
     }
 
-    const updated = customers.map((c) =>
-      c.id === resetTargetCustomer.id ? { ...c, password: newResetPassword.trim() } : c
-    );
-
-    persistCustomers(updated);
-
     try {
       await client.put(`/api/shop/admin/customers/${resetTargetCustomer.id}/password`, {
-        password: newResetPassword.trim(),
-        email: resetTargetCustomer.email,
+        password: newResetPassword.trim(), email: resetTargetCustomer.email,
       });
-    } catch {
-      // Ignore background sync errors
+    } catch (error: any) {
+      addToast(error?.response?.data?.message || 'Không thể cấp lại mật khẩu.', 'error');
+      return;
     }
 
     addToast(
@@ -170,7 +156,7 @@ export const SaaSCustomersPage: React.FC = () => {
       taxCode: '',
       type: 'Khách sỉ',
       creditLimit: 50000000,
-      password: 'web12345',
+      password: '',
     });
     setShowModalPassword(false);
     setShowModal(true);
@@ -193,70 +179,40 @@ export const SaaSCustomersPage: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name) return;
-
-    if (editingCustomer) {
-      const updated = customers.map((c) =>
-        c.id === editingCustomer.id
-          ? {
-              ...c,
-              name: formData.name,
-              phone: formData.phone,
-              email: formData.email,
-              taxCode: formData.taxCode || '-',
-              type: formData.type,
-              creditLimit: Number(formData.creditLimit),
-              password: formData.password || c.password || 'web12345',
-            }
-          : c
-      );
-      persistCustomers(updated);
-      try {
-        await client.post('/api/shop/admin/customers', {
-          id: editingCustomer.id,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password || editingCustomer.password || 'web12345',
-        });
-      } catch {
-        // Ignore background sync errors
-      }
-      addToast('Cập nhật hồ sơ khách hàng WebShop thành công!', 'success');
-    } else {
-      const newCust: CustomerItem = {
-        id: Date.now(),
-        code: `KH00${customers.length + 1}`,
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        taxCode: formData.taxCode || '-',
-        type: formData.type,
-        creditLimit: Number(formData.creditLimit),
-        currentDebt: 0,
-        password: formData.password || 'web12345',
-      };
-      persistCustomers([newCust, ...customers]);
-      try {
-        await client.post('/api/shop/admin/customers', {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password || 'web12345',
-        });
-      } catch {
-        // Ignore background sync errors
-      }
-      addToast('Thêm hồ sơ khách hàng WebShop mới thành công!', 'success');
+    if (!formData.name || !formData.email) {
+      addToast('Tên và email khách hàng là bắt buộc.', 'error');
+      return;
     }
-    setShowModal(false);
+    try {
+      await client.post('/api/shop/admin/customers', {
+        ...(editingCustomer ? { id: editingCustomer.id } : {}),
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password || undefined,
+      });
+      const response = await client.get('/api/shop/admin/customers');
+      const items = response.data?.data?.items || [];
+      setCustomers(items.map((it: any, idx: number) => ({
+        id: it.id, code: `KH${String(it.id || idx + 1).padStart(3, '0')}`,
+        name: it.name || it.email?.split('@')[0] || 'Khách hàng', phone: it.phone || '', email: it.email || '',
+        taxCode: it.tax_code || '-', type: 'Khách lẻ', creditLimit: Number(it.credit_limit) || 0,
+        currentDebt: Number(it.current_debt) || 0, password: '',
+      })));
+      setShowModal(false);
+      addToast(editingCustomer ? 'Cập nhật hồ sơ khách hàng WebShop thành công!' : 'Thêm hồ sơ khách hàng WebShop mới thành công!', 'success');
+    } catch (error: any) {
+      addToast(error?.response?.data?.message || error.message || 'Không thể lưu khách hàng.', 'error');
+    }
   };
 
-  const handleDelete = (id: number, name: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa khách hàng "${name}"?`)) {
-      persistCustomers(customers.filter((c) => c.id !== id));
-      addToast(`Đã xóa khách hàng "${name}"`, 'warning');
-    }
+  const handleDelete = async (id: number, name: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa khách hàng "${name}"?`)) return;
+    try {
+      await client.delete(`/api/shop/admin/customers/${id}`);
+      setCustomers((current) => current.filter((customer) => customer.id !== id));
+      addToast(`Đã vô hiệu hóa khách hàng "${name}"`, 'warning');
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể xóa khách hàng.', 'error'); }
   };
 
   const columns: ColumnDef<CustomerItem>[] = [

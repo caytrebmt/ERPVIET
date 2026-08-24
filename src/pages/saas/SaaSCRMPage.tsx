@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Users,
   Target,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../contexts/ToastContext';
+import client from '../../api/client';
 
 interface Lead {
   id: number;
@@ -30,14 +31,13 @@ interface Lead {
   created_at: string;
 }
 
-const MOCK_LEADS: Lead[] = [];
-
 export const SaaSCRMPage: React.FC = () => {
   const { language, t } = useLanguage();
   const { showToast } = useToast();
   const isEn = language === 'en';
 
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -52,6 +52,26 @@ export const SaaSCRMPage: React.FC = () => {
     estimated_value: 0,
   });
 
+  const loadLeads = async () => {
+    setLoading(true);
+    try {
+      const response = await client.get('/api/saas/crm/leads');
+      if (!response.data?.ok) throw new Error(response.data?.message || 'Không tải được CRM.');
+      const statusMap: Record<string, Lead['status']> = { MOI: 'NEW', LIEN_HE: 'CONTACTED', TIEM_NANG: 'QUALIFIED', CHUYEN_DOI: 'WON', HUY: 'LOST' };
+      const sourceMap: Record<string, string> = { WEBSITE: 'Website', EVENT: 'Event', REFERRAL: 'Referral', CALL: 'Call' };
+      setLeads((response.data.data || []).map((row: any) => ({
+        id: Number(row.id), lead_code: row.code, contact_name: row.contact_name || '', company_name: row.company_name || '',
+        email: row.email || '', phone: row.phone || '', status: statusMap[row.status] || 'NEW',
+        source: sourceMap[row.source] || row.source || '', estimated_value: Number(row.estimated_revenue) || 0,
+        created_at: row.created_at ? new Date(row.created_at).toISOString().slice(0, 10) : '',
+      })));
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || error.message || 'Không tải được CRM từ cơ sở dữ liệu.', 'error');
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadLeads(); }, []);
+
   const filteredLeads = leads.filter((item) => {
     const matchesSearch =
       item.contact_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -61,35 +81,21 @@ export const SaaSCRMPage: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleCreateLead = (e: React.FormEvent) => {
+  const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLead.contact_name || !newLead.phone) {
-      showToast(
-        isEn ? 'Please fill contact name and phone number' : 'Vui lòng điền tên người liên hệ và SĐT',
-        'error'
-      );
+      showToast(isEn ? 'Please fill contact name and phone number' : 'Vui lòng điền tên người liên hệ và SĐT', 'error');
       return;
     }
-
-    const created: Lead = {
-      id: Date.now(),
-      lead_code: `LEAD-2026-00${leads.length + 1}`,
-      ...newLead,
-      created_at: new Date().toISOString().split('T')[0],
-    };
-
-    setLeads([created, ...leads]);
-    setShowAddModal(false);
-    setNewLead({
-      contact_name: '',
-      company_name: '',
-      email: '',
-      phone: '',
-      status: 'NEW',
-      source: 'Website',
-      estimated_value: 0,
-    });
-    showToast(isEn ? 'Created CRM Lead successfully' : 'Tạo Lead CRM thành công!', 'success');
+    try {
+      await client.post('/api/saas/crm/leads', { ...newLead, estimated_revenue: Number(newLead.estimated_value) });
+      await loadLeads();
+      setShowAddModal(false);
+      setNewLead({ contact_name: '', company_name: '', email: '', phone: '', status: 'NEW', source: 'Website', estimated_value: 0 });
+      showToast(isEn ? 'Created CRM Lead successfully' : 'Tạo Lead CRM thành công!', 'success');
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || 'Không thể lưu Lead vào cơ sở dữ liệu.', 'error');
+    }
   };
 
   const getStatusBadge = (status: Lead['status']) => {
@@ -209,6 +215,8 @@ export const SaaSCRMPage: React.FC = () => {
           <span>{isEn ? 'Add CRM Lead' : 'Thêm Lead Mới'}</span>
         </button>
       </div>
+
+      {loading && <p className="text-xs text-zinc-500">Đang tải Lead từ PostgreSQL...</p>}
 
       {/* Leads Table */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-2xs">

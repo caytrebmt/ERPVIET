@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Settings,
   Building2,
@@ -31,130 +31,105 @@ import {
   Languages,
   FileJson,
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SaaSTranslationsTab } from '../../components/SaaSTranslationsTab';
 import { SaaSTranslationsJsonTab } from '../../components/SaaSTranslationsJsonTab';
 import { SaaSUsersRbacTab } from '../../components/SaaSUsersRbacTab';
+import client from '../../api/client';
 
 export const SaaSSettingsPage: React.FC = () => {
-  const { user } = useAuth();
   const { addToast } = useToast();
   const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'users_rbac' | 'translations' | 'translations_json' | 'company' | 'menu' | 'inventory' | 'api' | 'notifications' | 'backup'>('users_rbac');
 
-  // Tab 1: Company Profile & PDF Print Settings
-  const [companyInfo, setCompanyInfo] = useState(() => {
-    const saved = localStorage.getItem('saas_company_info');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          name: 'CÔNG TY CỔ PHẦN ERP-VIET ENTERPRISE',
-          taxCode: '0109988776-001',
-          address: 'Tòa nhà Keangnam Landmark 72, Đường Phạm Hùng, Cầu Giấy, Hà Nội',
-          phone: '024.3998.8888 / 0988.123.456',
-          email: 'contact@erp-viet.vn',
-          website: 'https://erp-viet.vn',
-          bankName: 'Ngân hàng MBBank (MB)',
-          bankAccount: '999988886666',
-          bankOwner: 'CONG TY CP ERP VIET ENTERPRISE',
-          pdfPaperSize: 'A4',
-          pdfHeaderTitle: 'CÔNG TY CỔ PHẦN ERP-VIET ENTERPRISE',
-          pdfFooterNote: 'Cảm ơn Quý khách hàng đã tin tưởng hợp tác cùng ERP-VIET',
-          logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150',
-        };
+  // Tab 1: Company Profile & PDF Print Settings. Values are loaded from the
+  // current tenant; no browser-local copy is used as the source of truth.
+  const [companyInfo, setCompanyInfo] = useState<any>({
+    name: '', taxCode: '', address: '', phone: '', email: '', website: '',
+    bankName: '', bankAccount: '', bankOwner: '', pdfPaperSize: 'A4',
+    pdfHeaderTitle: '', pdfFooterNote: '', logoUrl: '', settings: {},
   });
+  const [companyLoading, setCompanyLoading] = useState(true);
 
-  // Tab 2: Menu System & Roles
-  const [menuItems, setMenuItems] = useState(() => {
-    const saved = localStorage.getItem('saas_menu_items');
-    return saved
-      ? JSON.parse(saved)
-      : [
-          { id: 1, name: 'Dashboard Tổng Quan', path: '/saas/dashboard', group: 'Tổng Quan', enabled: true, role: 'Tất cả' },
-          { id: 2, name: 'Danh Mục Hàng Hóa', path: '/saas/products', group: 'Bán Hàng & Kho', enabled: true, role: 'Tất cả' },
-          { id: 3, name: 'Nhập Kho (Stock In)', path: '/saas/stock-in', group: 'Quản Lý Kho', enabled: true, role: 'Thủ kho, Admin' },
-          { id: 4, name: 'Xuất Kho (Stock Out)', path: '/saas/stock-out', group: 'Quản Lý Kho', enabled: true, role: 'Thủ kho, Bán hàng' },
-          { id: 5, name: 'Kiểm Kê Kho & Lệch Kho', path: '/saas/stocktaking', group: 'Quản Lý Kho', enabled: true, role: 'Thủ kho, Admin' },
-          { id: 6, name: 'Báo Giá Commercial', path: '/saas/quotations', group: 'Thương Mại', enabled: true, role: 'Bán hàng, Admin' },
-          { id: 7, name: 'Sổ Công Nợ & Thu Chi', path: '/saas/debt', group: 'Tài Chính', enabled: true, role: 'Kế toán, Admin' },
-          { id: 8, name: 'Kê Khai Thuế GTGT (VAT)', path: '/saas/vat', group: 'Tài Chính', enabled: true, role: 'Kế toán, Admin' },
-          { id: 9, name: 'Hệ Thống Kế Toán (TT200)', path: '/saas/accounting', group: 'Tài Chính', enabled: true, role: 'Kế toán, Admin' },
-        ];
-  });
+
+  // Tab 2: Menu System & Roles. The system menu is read from sys_menus.
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+
 
   const [newMenuName, setNewMenuName] = useState('');
   const [newMenuPath, setNewMenuPath] = useState('');
   const [newMenuGroup, setNewMenuGroup] = useState('Khác');
 
-  // Tab 3: Inventory & Operational Policy
-  const [policySettings, setPolicySettings] = useState(() => {
-    const saved = localStorage.getItem('saas_policy_settings');
-    const defaults = {
-      costingMethod: 'Bình quân gia quyền ròng',
-      defaultVatRate: 10,
-      allowNegativeStock: false,
-      minStockThreshold: 10,
-      defaultCreditLimit: 50000000,
-      autoGenOrderCode: true,
-      requireVatInvoiceForStockIn: true,
-      orderCodePrefix: 'ORD-',
-      stockOutPrefix: 'PX-',
-      stockInPrefix: 'PN-',
-      quotationPrefix: 'BG-',
-      invoicePrefix: 'HD-',
-      dateFormatPattern: 'YYMMDD',
-      numberPaddingLength: 3,
-    };
-    return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+  // Tab 3: Inventory & Operational Policy. Defaults are only placeholders
+  // until the tenant settings response fills the form.
+  const [policySettings, setPolicySettings] = useState<any>({
+    costingMethod: '', defaultVatRate: 0, allowNegativeStock: false, minStockThreshold: 0,
+    defaultCreditLimit: 0, autoGenOrderCode: false, requireVatInvoiceForStockIn: false,
+    orderCodePrefix: '', stockOutPrefix: '', stockInPrefix: '', quotationPrefix: '', invoicePrefix: '',
+    dateFormatPattern: '', numberPaddingLength: 0,
   });
 
-  // Tab 4: Backend API Configuration
-  const [apiConfig, setApiConfig] = useState(() => {
-    const saved = localStorage.getItem('saas_api_config');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          apiBaseUrl: '/api',
-          jwtToken: localStorage.getItem('token') || '',
-          webhookUrl: 'https://api.erp-viet.vn/v1/webhooks/orders',
-          logLevel: 'INFO',
-        };
-  });
+
+  // Tab 4: Backend API Configuration. Never persist bearer tokens in settings.
+  const [apiConfig, setApiConfig] = useState<any>({ apiBaseUrl: '/api', jwtToken: '', webhookUrl: '', logLevel: 'INFO' });
+
   const [pingStatus, setPingStatus] = useState<string | null>(null);
   const [isPinging, setIsPinging] = useState(false);
 
-  // Tab 5: Automatic Notifications & Alert Triggers
-  const [notifyConfig, setNotifyConfig] = useState(() => {
-    const saved = localStorage.getItem('saas_notify_config');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          alertLowStock: true,
-          alertOverdueDebt: true,
-          alertStocktakeDiscrepancy: true,
-          emailDigestDaily: true,
-          debtWarningDays: 30,
-        };
-  });
+  // Tab 5: Automatic Notifications & Alert Triggers.
+  const [notifyConfig, setNotifyConfig] = useState<any>({ alertLowStock: false, alertOverdueDebt: false, alertStocktakeDiscrepancy: false, emailDigestDaily: false, debtWarningDays: 0 });
+
+
+  useEffect(() => {
+    client.get('/api/saas/tenants/me')
+      .then((response) => {
+        if (!response.data?.ok || !response.data.data) throw new Error(response.data?.message || 'Không tải được thông tin doanh nghiệp.');
+        const data = response.data.data;
+        const settings = data.settings || {};
+        setCompanyInfo({
+          ...data,
+          name: data.name_vi || '', taxCode: data.tax_code || '', address: data.address || '',
+          phone: data.phone || '', email: data.email || '', website: data.website || '',
+          bankName: settings.bankName || '', bankAccount: settings.bankAccount || '', bankOwner: settings.bankOwner || '',
+          pdfPaperSize: settings.pdfPaperSize || 'A4', pdfHeaderTitle: settings.pdfHeaderTitle || data.name_vi || '',
+          pdfFooterNote: settings.pdfFooterNote || '', logoUrl: data.logo_url || '', settings,
+        });
+        if (settings.policy) setPolicySettings((current: any) => ({ ...current, ...settings.policy }));
+        if (settings.notifications) setNotifyConfig((current: any) => ({ ...current, ...settings.notifications }));
+        if (settings.api) setApiConfig((current: any) => ({ ...current, ...settings.api, jwtToken: '' }));
+      })
+      .catch((error: any) => addToast(error?.response?.data?.message || error.message || 'Không tải được thông tin doanh nghiệp.', 'error'))
+      .finally(() => setCompanyLoading(false));
+  }, []);
+
+  useEffect(() => {
+    client.get('/api/saas/menus')
+      .then((response) => {
+        if (!response.data?.ok) return;
+        setMenuItems((response.data.data || []).map((item: any) => ({
+          id: Number(item.id), name: item.title || '', path: item.path || '', group: 'Hệ thống', enabled: true, role: 'Tất cả',
+        })));
+      })
+      .catch(() => undefined);
+  }, []);
 
   // Action Handlers
-  const handleSaveCompany = (e: React.FormEvent) => {
+  const handleSaveCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('saas_company_info', JSON.stringify(companyInfo));
-    addToast(
-      language === 'en'
-        ? 'Company profile & PDF template saved successfully!'
-        : 'Đã lưu thông tin doanh nghiệp & mẫu in PDF thành công!',
-      'success'
-    );
+    try {
+      await client.patch('/api/saas/tenants/me', {
+        name_vi: companyInfo.name, tax_code: companyInfo.taxCode, address: companyInfo.address,
+        phone: companyInfo.phone, email: companyInfo.email, website: companyInfo.website,
+        settings: { ...(companyInfo.settings || {}), bankName: companyInfo.bankName, bankAccount: companyInfo.bankAccount, bankOwner: companyInfo.bankOwner, pdfPaperSize: companyInfo.pdfPaperSize, pdfHeaderTitle: companyInfo.pdfHeaderTitle, pdfFooterNote: companyInfo.pdfFooterNote, logoUrl: companyInfo.logoUrl },
+      });
+      addToast(language === 'en' ? 'Company profile saved successfully!' : 'Đã lưu thông tin doanh nghiệp vào PostgreSQL!', 'success');
+    } catch (error: any) { addToast(error?.response?.data?.message || error.message || 'Không thể lưu thông tin doanh nghiệp.', 'error'); }
   };
 
   const handleToggleMenu = (id: number) => {
     const updated = menuItems.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m));
     setMenuItems(updated);
-    localStorage.setItem('saas_menu_items', JSON.stringify(updated));
      addToast(t('settings_menu_updated'), 'info');
   };
 
@@ -177,7 +152,6 @@ export const SaaSSettingsPage: React.FC = () => {
     };
     const updated = [...menuItems, newItem];
     setMenuItems(updated);
-    localStorage.setItem('saas_menu_items', JSON.stringify(updated));
     setNewMenuName('');
     setNewMenuPath('');
     addToast(
@@ -189,50 +163,46 @@ export const SaaSSettingsPage: React.FC = () => {
   const handleDeleteMenu = (id: number) => {
     const updated = menuItems.filter((m) => m.id !== id);
     setMenuItems(updated);
-    localStorage.setItem('saas_menu_items', JSON.stringify(updated));
      addToast(t('settings_menu_deleted'), 'warning');
   };
 
-  const handleSavePolicy = (e: React.FormEvent) => {
+  const handleSavePolicy = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('saas_policy_settings', JSON.stringify(policySettings));
-    addToast(
-       t('settings_warehouse_updated'),
-      'success'
-    );
+    try {
+      await client.patch('/api/saas/tenants/me', { settings: { ...(companyInfo.settings || {}), policy: policySettings } });
+      setCompanyInfo((current: any) => ({ ...current, settings: { ...(current.settings || {}), policy: policySettings } }));
+      addToast(t('settings_warehouse_updated'), 'success');
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể lưu quy trình kho.', 'error'); }
   };
 
-  const handleSaveApiConfig = (e: React.FormEvent) => {
+  const handleSaveApiConfig = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('saas_api_config', JSON.stringify(apiConfig));
-    localStorage.setItem('token', apiConfig.jwtToken);
-    localStorage.setItem('access_token', apiConfig.jwtToken);
-    addToast(
-       t('settings_api_updated'),
-      'success'
-    );
+    try {
+      await client.patch('/api/saas/tenants/me', { settings: { ...(companyInfo.settings || {}), api: { apiBaseUrl: apiConfig.apiBaseUrl, webhookUrl: apiConfig.webhookUrl, logLevel: apiConfig.logLevel } } });
+      setCompanyInfo((current: any) => ({ ...current, settings: { ...(current.settings || {}), api: { apiBaseUrl: apiConfig.apiBaseUrl, webhookUrl: apiConfig.webhookUrl, logLevel: apiConfig.logLevel } } }));
+      addToast(t('settings_api_updated'), 'success');
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể lưu cấu hình API.', 'error'); }
   };
 
-  const handlePingApi = () => {
+  const handlePingApi = async () => {
     setIsPinging(true);
     setPingStatus(null);
-    setTimeout(() => {
-      setIsPinging(false);
-      setPingStatus(
-        language === 'en'
-          ? 'Connection successful! Server latency: 24ms - Status 200 OK'
-          : 'Kết nối thành công! Server latency: 24ms - Status 200 OK'
-      );
-    }, 800);
+    const startedAt = performance.now();
+    try {
+      await client.get('/api/saas/tenants/me');
+      setPingStatus(language === 'en' ? `Connection successful. Server latency: ${Math.round(performance.now() - startedAt)}ms` : `Kết nối thành công. Độ trễ máy chủ: ${Math.round(performance.now() - startedAt)}ms`);
+    } catch (error: any) {
+      setPingStatus(error?.response?.data?.message || (language === 'en' ? 'Connection failed.' : 'Kết nối thất bại.'));
+    } finally { setIsPinging(false); }
   };
 
-  const handleSaveNotify = (e: React.FormEvent) => {
+  const handleSaveNotify = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('saas_notify_config', JSON.stringify(notifyConfig));
-    addToast(
-       t('settings_notifications_saved'),
-      'success'
-    );
+    try {
+      await client.patch('/api/saas/tenants/me', { settings: { ...(companyInfo.settings || {}), notifications: notifyConfig } });
+      setCompanyInfo((current: any) => ({ ...current, settings: { ...(current.settings || {}), notifications: notifyConfig } }));
+      addToast(t('settings_notifications_saved'), 'success');
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể lưu cấu hình thông báo.', 'error'); }
   };
 
   const handleExportBackup = () => {
@@ -264,11 +234,6 @@ export const SaaSSettingsPage: React.FC = () => {
         ? 'Are you sure you want to restore default initial configuration?'
         : 'Bạn có chắc chắn muốn khôi phục lại cấu hình mặc định ban đầu không?';
     if (window.confirm(confirmMsg)) {
-      localStorage.removeItem('saas_company_info');
-      localStorage.removeItem('saas_menu_items');
-      localStorage.removeItem('saas_policy_settings');
-      localStorage.removeItem('saas_api_config');
-      localStorage.removeItem('saas_notify_config');
       window.location.reload();
     }
   };
@@ -490,7 +455,8 @@ export const SaaSSettingsPage: React.FC = () => {
 
           {/* TAB 1: COMPANY PROFILE & PRINT TEMPLATES */}
           {activeTab === 'company' && (
-            <form onSubmit={handleSaveCompany} className="space-y-6">
+              <form onSubmit={handleSaveCompany} className="space-y-6">
+            {companyLoading && <p className="text-xs text-zinc-500">Đang tải thông tin doanh nghiệp từ PostgreSQL...</p>}
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <Building2 className="h-5 w-5 text-amber-500" /> Thông Tin Pháp Lý Doanh Nghiệp (In trên hóa đơn & báo giá)

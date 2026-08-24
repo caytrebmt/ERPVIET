@@ -84,6 +84,7 @@ export const SaaSStockInPage: React.FC = () => {
 
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+  const [warehouses, setWarehouses] = useState<Array<{ id: number; name: string }>>([]);
 
   const [availablePOs, setAvailablePOs] = useState<PurchaseOrder[]>([]);
   const [linkedPONumber, setLinkedPONumber] = useState<string>('');
@@ -100,8 +101,8 @@ export const SaaSStockInPage: React.FC = () => {
   const [voucherForm, setVoucherForm] = useState({
     code: '',
     date: new Date().toISOString().slice(0, 10),
-    supplierId: 's1',
-    warehouse: 'Kho Chính - Hà Nội',
+    supplierId: '',
+    warehouse: '',
     invoiceNo: '',
     invoiceSeries: 'C26MH',
     note: '',
@@ -110,25 +111,28 @@ export const SaaSStockInPage: React.FC = () => {
     status: 'Đã hoàn thành' as 'Nháp' | 'Đã hoàn thành',
   });
 
-  const [lineItems, setLineItems] = useState<StockInLineItem[]>([
-    {
-      id: 'item-1',
-      productId: 'p1',
-      productName: 'Giấy A4 Double A 70gsm (Ream 500 tờ)',
-      sku: 'VT001',
-      unit: 'Ream',
-      quantity: 100,
-      unitPrice: 52000,
-      vatRate: 8,
-    },
-  ]);
+  const [lineItems, setLineItems] = useState<StockInLineItem[]>([]);
+
+  const loadStockIns = async () => {
+    const response = await client.get('/api/saas/inventory/movements?limit=500');
+    if (!response.data?.ok) throw new Error(response.data?.message || 'Không tải được phiếu nhập kho.');
+    setStockIns((response.data.data || []).filter((row: any) => row.movement_type === 'NHAP_KHO').map((row: any) => ({
+      id: Number(row.id), code: row.code, date: row.movement_date ? String(row.movement_date).slice(0, 10) : '',
+      supplierId: '', supplierName: '', supplierPhone: '', supplierAddress: '', warehouse: row.warehouse_vi || row.warehouse_en || '',
+      invoiceNo: row.reference_doc || '', invoiceSeries: '', note: row.notes || '', vatMode: 'grouped', vatRateGrouped: 0,
+      items: [{ id: String(row.id), productId: String(row.product_id || ''), productName: row.name_vi || '', sku: row.sku || '', unit: '', quantity: Number(row.quantity) || 0, unitPrice: Number(row.unit_cost) || 0, vatRate: 0 }],
+      subtotal: Number(row.subtotal_cost) || 0, vatAmount: 0, totalAmount: Number(row.subtotal_cost) || 0,
+      status: 'Đã hoàn thành', createdBy: '', po_number: '',
+    })));
+  };
 
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
-        const [prodRes, suppRes] = await Promise.all([
+        const [prodRes, suppRes, warehouseRes] = await Promise.all([
           client.get('/api/shop/admin/products?limit=1000&include_inactive=true'),
           client.get('/api/saas/suppliers'),
+          client.get('/api/saas/warehouses'),
         ]);
         if (prodRes.data?.ok && Array.isArray(prodRes.data.data?.items)) {
           setProducts(
@@ -141,6 +145,7 @@ export const SaaSStockInPage: React.FC = () => {
             }))
           );
         }
+        if (warehouseRes.data?.ok) setWarehouses((warehouseRes.data.data || []).map((w: any) => ({ id: Number(w.id), name: w.name_vi || w.name_en || '' })));
         if (suppRes.data?.ok && Array.isArray(suppRes.data.data)) {
           setSuppliers(
             suppRes.data.data.map((s: any) => ({
@@ -156,6 +161,7 @@ export const SaaSStockInPage: React.FC = () => {
       }
     };
     loadDropdownData();
+    loadStockIns().catch((error: any) => addToast(error?.response?.data?.message || error.message || 'Không tải được phiếu nhập kho.', 'error'));
   }, []);
 
   useEffect(() => {
@@ -182,8 +188,8 @@ export const SaaSStockInPage: React.FC = () => {
     setVoucherForm({
       code: nextCode,
       date: new Date().toISOString().slice(0, 10),
-      supplierId: po.supplier_id || 's1',
-      warehouse: 'Kho Chính - Hà Nội',
+      supplierId: po.supplier_id || '',
+      warehouse: '',
       invoiceNo: `HD-${po.po_number.split('-')[2] || '001'}`,
       invoiceSeries: 'C26MH',
       note: `Nhập kho tự động theo Đơn Mua Hàng ${po.po_number} (Nhà CC: ${po.supplier_name})`,
@@ -223,8 +229,8 @@ export const SaaSStockInPage: React.FC = () => {
     setVoucherForm({
       code: nextCode,
       date: new Date().toISOString().slice(0, 10),
-      supplierId: 's1',
-      warehouse: 'Kho Chính - Hà Nội',
+      supplierId: '',
+      warehouse: '',
       invoiceNo: '',
       invoiceSeries: 'C26MH',
       note: '',
@@ -232,18 +238,7 @@ export const SaaSStockInPage: React.FC = () => {
       vatRateGrouped: 10,
       status: 'Đã hoàn thành',
     });
-    setLineItems([
-      {
-        id: `item-${Date.now()}`,
-        productId: 'p1',
-        productName: 'Giấy A4 Double A 70gsm (Ream 500 tờ)',
-        sku: 'VT001',
-        unit: 'Ream',
-        quantity: 100,
-        unitPrice: 52000,
-        vatRate: 8,
-      },
-    ]);
+    setLineItems([]);
     setShowVoucherModal(true);
   };
 
@@ -267,7 +262,11 @@ export const SaaSStockInPage: React.FC = () => {
   };
 
   const handleAddLineItem = () => {
-    const defaultProd = products[0] || { id: 'p1', name: 'Sản phẩm mẫu', sku: 'SP001', unit: 'Cái', price: 0 };
+    const defaultProd = products[0];
+    if (!defaultProd) {
+      addToast('Chưa có sản phẩm thực trong tenant để thêm vào phiếu nhập.', 'error');
+      return;
+    }
     const newItem: StockInLineItem = {
       id: `item-${Date.now()}`,
       productId: defaultProd.id,
@@ -329,109 +328,27 @@ export const SaaSStockInPage: React.FC = () => {
 
   const calcTotalAmount = calcSubtotal + calcVatAmount();
 
-  const handleSaveVoucher = (e: React.FormEvent) => {
+  const handleSaveVoucher = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (lineItems.length === 0) {
-      addToast('Vui lòng thêm ít nhất 1 hàng hóa vào phiếu nhập!', 'error');
-      return;
-    }
-
-    const supp = suppliers.find((s) => s.id === voucherForm.supplierId) || suppliers[0] || { id: 's1', name: 'Nhà cung cấp mặc định', phone: '', address: '' };
-
-    const sub = calcSubtotal;
-    const vat = calcVatAmount();
-    const total = calcTotalAmount;
-
-    let voucherCode = voucherForm.code;
-
-    if (editingVoucher) {
-      setStockIns(
-        stockIns.map((v) =>
-          v.id === editingVoucher.id
-            ? {
-                ...v,
-                code: voucherForm.code,
-                date: `${voucherForm.date} ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`,
-                supplierId: supp.id,
-                supplierName: supp.name,
-                supplierPhone: supp.phone,
-                supplierAddress: supp.address,
-                warehouse: voucherForm.warehouse,
-                invoiceNo: voucherForm.invoiceNo,
-                invoiceSeries: voucherForm.invoiceSeries,
-                note: voucherForm.note,
-                vatMode: voucherForm.vatMode,
-                vatRateGrouped: voucherForm.vatRateGrouped,
-                items: lineItems,
-                subtotal: sub,
-                vatAmount: vat,
-                totalAmount: total,
-                status: voucherForm.status,
-                po_number: linkedPONumber,
-              }
-            : v
-        )
-      );
-      addToast(`Đã cập nhật phiếu nhập kho "${voucherForm.code}" thành công!`, 'success');
-    } else {
-      const newVoucher: StockInVoucher = {
-        id: Date.now(),
-        code: voucherForm.code,
-        date: `${voucherForm.date} ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`,
-        supplierId: supp.id,
-        supplierName: supp.name,
-        supplierPhone: supp.phone,
-        supplierAddress: supp.address,
-        warehouse: voucherForm.warehouse,
-        invoiceNo: voucherForm.invoiceNo,
-        invoiceSeries: voucherForm.invoiceSeries,
-        note: voucherForm.note,
-        vatMode: voucherForm.vatMode,
-        vatRateGrouped: voucherForm.vatRateGrouped,
-        items: lineItems,
-        subtotal: sub,
-        vatAmount: vat,
-        totalAmount: total,
-        status: voucherForm.status,
-        createdBy: 'Lê Quản Kho',
-        po_number: linkedPONumber,
-      };
-      setStockIns([newVoucher, ...stockIns]);
-      voucherCode = newVoucher.code;
-      addToast(`Đã lập phiếu nhập kho mới "${newVoucher.code}" thành công!`, 'success');
-    }
-
-    // Update PO status to DA_NHAP_KHO in store if linked to PO
-    if (linkedPONumber) {
-      fetchPOs()
-        .then((storedPOs) => {
-          const updatedPOs = storedPOs.map((p) => {
-            if (p.po_number === linkedPONumber) {
-              const vouchers = p.stock_in_vouchers || [];
-              if (!vouchers.includes(voucherCode)) vouchers.push(voucherCode);
-              return {
-                ...p,
-                status: 'DA_NHAP_KHO' as const,
-                stock_in_vouchers: vouchers,
-              };
-            }
-            return p;
-          });
-          setAvailablePOs(updatedPOs);
-          return savePOs(updatedPOs);
-        })
-        .catch(() => {});
-      addToast(`Đã tự động cập nhật trạng thái Đơn Mua Hàng ${linkedPONumber} ➔ Đã Nhập Kho!`, 'success');
-    }
-
-    setShowVoucherModal(false);
+    if (lineItems.length === 0) { addToast('Vui lòng thêm ít nhất 1 hàng hóa vào phiếu nhập!', 'error'); return; }
+    const supplier = suppliers.find((item) => item.id === voucherForm.supplierId);
+    const warehouse = voucherForm.warehouse;
+    if (!supplier || !warehouse) { addToast('Vui lòng chọn nhà cung cấp và kho thực trong tenant.', 'error'); return; }
+    const warehouseId = Number(warehouse);
+    if (!Number.isInteger(warehouseId) || warehouseId <= 0) { addToast('Chưa xác định được kho thực. Vui lòng chọn lại kho.', 'error'); return; }
+    try {
+      await client.post('/api/saas/inventory/movements', {
+        type: 'NHAP_KHO', warehouseId, referenceDoc: voucherForm.invoiceNo || voucherForm.code,
+        notes: voucherForm.note, items: lineItems.map((item) => ({ productId: Number(item.productId), quantity: Number(item.quantity), unitCost: Number(item.unitPrice) })),
+      });
+      await loadStockIns();
+      setShowVoucherModal(false);
+      addToast(`Đã lưu phiếu nhập kho ${voucherForm.code} vào PostgreSQL.`, 'success');
+    } catch (error: any) { addToast(error?.response?.data?.message || error.message || 'Không thể lưu phiếu nhập kho.', 'error'); }
   };
 
-  const handleDeleteVoucher = (id: number, code: string) => {
-    if (window.confirm(`Bạn có chắc muốn xóa phiếu nhập kho "${code}"?`)) {
-      setStockIns(stockIns.filter((s) => s.id !== id));
-      addToast(`Đã xóa phiếu nhập kho "${code}"`, 'warning');
-    }
+  const handleDeleteVoucher = (_id: number, code: string) => {
+    addToast(`Không xóa trực tiếp phiếu ${code}; hãy lập chứng từ điều chỉnh kho để bảo toàn sổ kho.`, 'info');
   };
 
   const columns: ColumnDef<StockInVoucher>[] = [
@@ -694,11 +611,9 @@ export const SaaSStockInPage: React.FC = () => {
                       value={voucherForm.warehouse}
                       onChange={(val) => setVoucherForm({ ...voucherForm, warehouse: val })}
                       placeholder="Chọn kho tiếp nhận..."
-                      options={[
-                        { value: 'Kho Chính - Hà Nội', label: 'Kho Chính - Hà Nội', code: 'K01' },
-                        { value: 'Kho Phụ - TP. Hồ Chí Minh', label: 'Kho Phụ - TP. Hồ Chí Minh', code: 'K02' },
-                        { value: 'Kho Hải Phòng', label: 'Kho Hải Phòng', code: 'K03' },
-                      ]}
+                      options={warehouses.map((warehouse) => ({
+                        value: String(warehouse.id), label: warehouse.name, code: `K${warehouse.id}`,
+                      }))}
                     />
                   </div>
 

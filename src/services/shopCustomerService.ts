@@ -1,142 +1,166 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
-import { query, isDbConnected } from '../db/index.js';
+import { query } from '../db/index.js';
 import { WebCustomer } from './shopDataStore.js';
 import { JWT_SECRET } from '../config.js';
+import { isValidEmail, normalizeEmail } from '../utils/identifiers.js';
 
 const BCRYPT_ROUNDS = 10;
 
+export class DuplicateWebCustomerEmailError extends Error {
+  code = 'DUPLICATE_EMAIL';
+
+  constructor() {
+    super('Email WebShop đã tồn tại trong doanh nghiệp này.');
+    this.name = 'DuplicateWebCustomerEmailError';
+  }
+}
+
+function requireCompanyId(companyId?: number): number {
+  if (!Number.isInteger(companyId) || companyId! <= 0) {
+    throw new Error('Không xác định được tenant WebShop.');
+  }
+  return companyId;
+}
+
+function publicCustomer(row: any) {
+  return {
+    id: Number(row.id),
+    name: row.full_name || row.username || 'Khách hàng',
+    email: row.email,
+    phone: row.phone || '',
+    customer_id: 100 + Number(row.id),
+  };
+}
+
 export async function loginWebCustomer(email: string, password: string, companyId?: number) {
-  const cleanEmail = String(email).trim().toLowerCase();
-  const cleanPass = String(password).trim();
+  const tenantId = requireCompanyId(companyId);
+  const cleanEmail = normalizeEmail(email);
+  const cleanPass = String(password ?? '');
+  if (!isValidEmail(cleanEmail)) throw new Error('Email hoặc mật khẩu không đúng.');
 
-  try {
-    const dbResult = await query(
-      `SELECT id, username, email, password_hash, full_name, phone FROM web_customers WHERE (LOWER(email) = $1 OR LOWER(username) = $1) ${companyId ? 'AND company_id = $2' : ''} ORDER BY id ASC LIMIT 1`,
-      companyId ? [cleanEmail, companyId] : [cleanEmail]
-    );
+  const dbResult = await query(
+    `SELECT id, username, email, password_hash, full_name, phone, company_id
+       FROM web_customers
+      WHERE company_id = $2
+        AND (LOWER(BTRIM(email)) = $1 OR LOWER(BTRIM(username)) = $1)
+        AND is_active = TRUE
+      ORDER BY id ASC
+      LIMIT 1`,
+    [cleanEmail, tenantId],
+  );
 
-    if (dbResult.rows && dbResult.rows.length > 0) {
-      const dbCust = dbResult.rows[0];
-      const storedHash = dbCust.password_hash || '';
-      let isMatch = false;
-
-      // Check bcrypt hash first
-      if (storedHash.startsWith('$2a$') || storedHash.startsWith('$2b$')) {
-        isMatch = await bcrypt.compare(cleanPass, storedHash);
-      } else if (process.env.NODE_ENV !== 'production') {
-        // Fallback plaintext chỉ dùng cho dữ liệu legacy trong môi trường dev.
-        isMatch = storedHash === cleanPass || storedHash === cleanPass.toLowerCase();
-      }
-
-      if (isMatch) {
-        const token = jwt.sign({ sub: String(dbCust.id), role: 'web_customer' }, JWT_SECRET, { expiresIn: '7d' });
-        return {
-          token,
-          customer: {
-            id: dbCust.id,
-            name: dbCust.full_name || dbCust.username || cleanEmail.split('@')[0],
-            email: dbCust.email,
-            phone: dbCust.phone || '0901234567',
-            customer_id: 100 + Number(dbCust.id),
-          },
-        };
-      }
-    }
-  } catch (err) {
-    console.warn('[DB Web Customer Login Warning]', err);
+  const dbCust = dbResult.rows[0];
+  if (!dbCust || !(dbCust.password_hash || '').startsWith('$2')) {
+    throw new Error('Email hoặc mật khẩu không đúng.');
   }
 
-  throw new Error('Email hoặc mật khẩu không đúng.');
+  const isMatch = await bcrypt.compare(cleanPass, dbCust.password_hash);
+  if (!isMatch) throw new Error('Email hoặc mật khẩu không đúng.');
+
+  const token = jwt.sign(
+    { sub: String(dbCust.id), role: 'web_customer', companyId: tenantId },
+    JWT_SECRET,
+    { expiresIn: '7d' },
+  );
+  return { token, customer: publicCustomer(dbCust) };
 }
 
 export async function fetchAllWebCustomers(companyId?: number): Promise<WebCustomer[]> {
-  try {
-    const whereCompany = companyId ? 'WHERE company_id = $1' : '';
-    const params = companyId ? [companyId] : [];
-    const dbRes = await query(
-      `SELECT id, COALESCE(full_name, username) as name, email, COALESCE(phone, '0901234567') as phone, password_hash as "passwordHash", (100 + id) as customer_id FROM web_customers ${whereCompany} ORDER BY id ASC`,
-      params
-    );
-
-    if (dbRes.rows && dbRes.rows.length > 0) {
-      return dbRes.rows.map((row) => ({
-        id: Number(row.id),
-        name: row.name || 'Khách Hàng',
-        email: row.email,
-        phone: row.phone,
-        passwordHash: row.passwordHash || '',
-        customer_id: Number(row.customer_id),
-      }));
-    }
-  } catch (err) {
-    console.warn('[DB Fetch Customers Error]', err);
-  }
-
-  return [];
+  const tenantId = requireCompanyId(companyId);
+  const dbRes = await query(
+    `SELECT id, COALESCE(full_name, username) AS name, email, COALESCE(phone, '') AS phone
+       FROM web_customers
+      WHERE company_id = $1 AND is_active = TRUE
+      ORDER BY id ASC`,
+    [tenantId],
+  );
+  return (dbRes.rows || []).map((row) => ({
+    ...publicCustomer(row),
+    // Never return password hashes or plaintext passwords to the browser.
+    passwordHash: '',
+  } as WebCustomer));
 }
 
-export async function saveOrUpdateWebCustomer(data: { name: string; email: string; phone?: string; password?: string }, companyId?: number) {
-  const cleanEmail = String(data.email).trim().toLowerCase();
-  // Không dùng mật khẩu mặc định yếu: nếu admin tạo khách hàng không cấp mật khẩu,
-  // sinh mật khẩu ngẫu nhiên (không thể đoán được).
-  const cleanPass = data.password ? String(data.password).trim() : randomBytes(16).toString('hex');
+export async function fetchWebCustomerById(id: number, companyId?: number) {
+  const tenantId = requireCompanyId(companyId);
+  const result = await query(
+    `SELECT id, username, email, full_name, phone
+       FROM web_customers
+      WHERE id = $1 AND company_id = $2 AND is_active = TRUE
+      LIMIT 1`,
+    [id, tenantId],
+  );
+  return result.rows[0] ? publicCustomer(result.rows[0]) : null;
+}
+
+export async function saveOrUpdateWebCustomer(data: { id?: number; name: string; email: string; phone?: string; password?: string }, companyId?: number) {
+  const tenantId = requireCompanyId(companyId);
+  const cleanEmail = normalizeEmail(data.email);
   const cleanName = String(data.name || cleanEmail.split('@')[0]).trim();
-  const cleanPhone = String(data.phone || '0901234567').trim();
+  const cleanPhone = String(data.phone || '').trim();
+  const cleanPass = data.password ? String(data.password) : randomBytes(16).toString('hex');
+
+  if (!isValidEmail(cleanEmail)) throw new Error('Email khách hàng không hợp lệ.');
+  if (!cleanName) throw new Error('Tên khách hàng không được để trống.');
+  if (cleanPass.length < 6) throw new Error('Mật khẩu phải có ít nhất 6 ký tự.');
+
+  const passwordHash = await bcrypt.hash(cleanPass, BCRYPT_ROUNDS);
+  if (data.id !== undefined) {
+    const existing = await query(
+      `SELECT id FROM web_customers WHERE id = $1 AND company_id = $2 AND is_active = TRUE LIMIT 1`,
+      [Number(data.id), tenantId],
+    );
+    if (!existing.rows[0]) return null;
+
+    const result = await query(
+      `UPDATE web_customers
+          SET username = $1, email = $1, full_name = $2, phone = $3,
+              password_hash = CASE WHEN $4 THEN $5 ELSE password_hash END
+        WHERE id = $6 AND company_id = $7
+        RETURNING id, username, email, full_name, phone`,
+      [cleanEmail, cleanName, cleanPhone || null, Boolean(data.password), passwordHash, Number(data.id), tenantId],
+    );
+    return result.rows[0] ? publicCustomer(result.rows[0]) : null;
+  }
+
+  const duplicate = await query(
+    `SELECT 1 FROM web_customers
+      WHERE company_id = $1 AND LOWER(BTRIM(email)) = $2 AND is_active = TRUE
+      LIMIT 1`,
+    [tenantId, cleanEmail],
+  );
+  if (duplicate.rows[0]) throw new DuplicateWebCustomerEmailError();
 
   try {
-    const passwordHash = await bcrypt.hash(cleanPass, BCRYPT_ROUNDS);
-    const res = await query(
-      `INSERT INTO web_customers (company_id, username, email, password_hash, full_name, phone)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (email) DO UPDATE SET full_name = EXCLUDED.full_name, phone = EXCLUDED.phone, password_hash = EXCLUDED.password_hash
-       RETURNING id, full_name, email, phone`,
-      [companyId || 1, cleanEmail, cleanEmail, passwordHash, cleanName, cleanPhone]
+    const result = await query(
+      `INSERT INTO web_customers (company_id, username, email, password_hash, full_name, phone, is_active)
+       VALUES ($1, $2, $2, $3, $4, $5, TRUE)
+       RETURNING id, username, email, full_name, phone`,
+      [tenantId, cleanEmail, passwordHash, cleanName, cleanPhone || null],
     );
-    const row = res.rows[0];
-    return {
-      id: Number(row.id),
-      name: row.full_name || cleanName,
-      email: row.email,
-      phone: row.phone,
-      customer_id: 100 + Number(row.id),
-      passwordHash: cleanPass,
-    };
-  } catch (err) {
-    console.warn('[DB Save Customer Error]', err);
-    throw err;
+    return result.rows[0] ? publicCustomer(result.rows[0]) : null;
+  } catch (error: any) {
+    if (error?.code === '23505') throw new DuplicateWebCustomerEmailError();
+    throw error;
   }
 }
 
-export async function resetWebCustomerPassword(id: number, email?: string, password?: string) {
-  const cleanPass = String(password).trim();
-  const cleanEmail = email ? String(email).trim().toLowerCase() : '';
+export async function resetWebCustomerPassword(id: number, email?: string, password?: string, companyId?: number) {
+  const tenantId = requireCompanyId(companyId);
+  const cleanPass = String(password || '');
+  if (cleanPass.length < 6) throw new Error('Mật khẩu phải có ít nhất 6 ký tự.');
+  const cleanEmail = email ? normalizeEmail(email) : '';
+  const passwordHash = await bcrypt.hash(cleanPass, BCRYPT_ROUNDS);
 
-  try {
-    const passwordHash = await bcrypt.hash(cleanPass, BCRYPT_ROUNDS);
-    if (cleanEmail) {
-      await query(`UPDATE web_customers SET password_hash = $1 WHERE LOWER(email) = $2 OR id = $3`, [passwordHash, cleanEmail, id]);
-    } else {
-      await query(`UPDATE web_customers SET password_hash = $1 WHERE id = $2`, [passwordHash, id]);
-    }
-  } catch (err) {
-    console.warn('[DB Reset Password Error]', err);
-    throw err;
-  }
-
-  const res = await query(`SELECT id, full_name, email, phone FROM web_customers WHERE id = $1`, [id]);
-  if (res.rows && res.rows.length > 0) {
-    const row = res.rows[0];
-    return {
-      id: Number(row.id),
-      name: row.full_name || '',
-      email: row.email,
-      phone: row.phone,
-      customer_id: 100 + Number(row.id),
-      passwordHash: cleanPass,
-    };
-  }
-
-  return null;
+  const result = await query(
+    `UPDATE web_customers
+        SET password_hash = $1
+      WHERE id = $2 AND company_id = $3
+        AND ($4 = '' OR LOWER(BTRIM(email)) = $4)
+      RETURNING id, full_name, email, phone`,
+    [passwordHash, id, tenantId, cleanEmail],
+  );
+  return result.rows[0] ? publicCustomer(result.rows[0]) : null;
 }

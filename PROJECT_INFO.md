@@ -101,15 +101,15 @@ Production: Vite build → dist/ → Express serves static files + API
 - **Company model**: Mọi business table đều có `company_id` (tham chiếu đến `companies.id`).
 - **Tenant resolution**:
   - **SaaS**: JWT token chứa `companyId` (decode trong `tenantMiddleware`). Super admin (role `ADMIN` ở cấp độ toàn hệ thống) bypass.
-  - **WebShop**: Tenant slug từ URL path (`/shop/{slug}/...`), query param (`?tenant=`), hoặc header (`x-tenant-slug`). Fallback sang `companies.id=1`.
+  - **WebShop**: Tenant slug từ URL path (`/shop/{slug}/...`), query param (`?tenant=`), header (`x-tenant-slug`), custom domain hoặc JWT. Storefront root chỉ dùng tenant được đánh dấu `is_default_shop = TRUE`; không fallback bằng ID hard-code.
 - **Database isolation**: Mỗi query đều filter theo `company_id` hoặc `WHERE ($1::int IS NULL OR company_id = $1)`.
 - **Auto-migrate**: Chỉ chạy `schema.sql` + `insertdata.sql` khi `AUTO_MIGRATE_DATABASE=true` và DB chưa có data.
 
 ### 2.3 Authentication & Authorization
 
 - **JWT token**: Ký bởi `JWT_SECRET_KEY` (env), thời hạn 7 ngày.
-- **Password hashing**: bcrypt với 10 rounds. Có fallback plaintext cho dev/legacy.
-- **Demo passwords**: `password123`, `admin123`, `web12345`, `techviet123`, v.v. (được hardcode trong code để dev test).
+- **Password hashing**: bcrypt với 10 rounds; API chỉ chấp nhận hash bcrypt và không trả hash/mật khẩu về trình duyệt.
+- **Tài khoản nền tảng**: chỉ user được đánh dấu `is_super_admin = TRUE` mới có thể quản trị toàn bộ tenant; không có mật khẩu demo/backdoor.
 - **Roles** (sys_roles):
   - `ADMIN` — Full permissions (wildcard `*` trong permissions array)
   - `SALES` — Bán hàng, CRM, trích dẫn
@@ -137,7 +137,7 @@ Production: Vite build → dist/ → Express serves static files + API
 **Bảng liên quan**: `companies`, `branches`, `departments`, `sys_users`, `sys_roles`, `categories`, `brands`, `uom`, `products`, `price_lists`, `warehouses`, `customers`, `customer_groups`, `suppliers`, `supplier_prices`
 
 #### Company & Tenant
-- **Đăng ký tenant mới**: `POST /api/saas/tenants/register` — tạo company + head office branch + BGD department + admin user (transactional).
+- **Đăng ký tenant mới**: `POST /api/saas/tenants/register` — kiểm tra email/MST duy nhất rồi tạo company + workspace ERP + WebShop riêng + head office branch + BGD department + admin tenant (transactional). Tài khoản này luôn `is_super_admin = FALSE`.
 - **Google Auth tenant creation**: `POST /api/saas/auth/google/callback` — nếu user chưa có công ty, tạo mới dựa trên `company_info`.
 - **Quản lý tenant**: `GET/PATCH/POST /api/saas/tenants/*` — xem, sửa, tạm dừng, nâng cấp gói (free/starter/professional/enterprise).
 - **Gói dịch vụ**: `plan_type` trong `companies`, `subscription_status` (trial/active/canceled), `trial_ends_at` (14 ngày dùng thử).

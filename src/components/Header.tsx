@@ -19,9 +19,7 @@ const Header: React.FC = () => {
 
   const [searchInput, setSearchInput] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [showTenantDropdown, setShowTenantDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const tenantDropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync search input from URL
   useEffect(() => {
@@ -38,9 +36,6 @@ const Header: React.FC = () => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setShowUserDropdown(false);
-      }
-      if (tenantDropdownRef.current && !tenantDropdownRef.current.contains(e.target as Node)) {
-        setShowTenantDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -68,27 +63,6 @@ const Header: React.FC = () => {
             {slug !== 'default' ? name : 'WebShop'} <span className="text-amber-500 ml-0.5 sm:ml-1"></span>
           </span>
         </Link>
-
-        {/* Tenant Switcher (for local testing) */}
-        <div className="relative hidden sm:block" ref={tenantDropdownRef}>
-          <button
-            onClick={() => setShowTenantDropdown(!showTenantDropdown)}
-            className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all cursor-pointer"
-          >
-            <Building2 className="w-3 h-3" />
-            <span className="hidden sm:inline">{slug}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${showTenantDropdown ? "rotate-180" : ""}`} />
-          </button>
-          {showTenantDropdown && (
-            <div className="absolute top-full mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl z-50 overflow-hidden">
-              <div className="p-1.5">
-                <button onClick={() => { navigate('/'); setShowTenantDropdown(false); }} className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">Default (localhost:3000)</button>
-                <button onClick={() => { navigate('/shop/erpacc-vn'); setShowTenantDropdown(false); }} className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">erpacc-vn</button>
-                <button onClick={() => { navigate('/shop/cong-ty-test-4-mshqhedq'); setShowTenantDropdown(false); }} className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">cong-ty-test-4</button>
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Search Bar - Desktop */}
         <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center flex-1 max-w-md relative">

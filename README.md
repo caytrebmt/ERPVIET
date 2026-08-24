@@ -64,6 +64,10 @@ Vào **Site settings** -> **Environment variables** -> Bấm **Add a variable** 
 | `NODE_ENV` | `production` | Chế độ Production |
 | `VITE_API_BASE_URL` | `/api` | Đường dẫn gốc API trên Netlify |
 
+> `LOAD_SEED_DATA` mặc định là `false`. Chỉ bật biến này trên một cơ sở dữ liệu load-test riêng; dữ liệu nghiệp vụ trên các màn hình được đọc trực tiếp từ PostgreSQL của tenant hiện tại.
+>
+> Khi doanh nghiệp đăng ký tenant, hệ thống tạo trong cùng transaction: tài khoản quản trị tenant, workspace ERP, head office/department và một WebShop riêng tại `/shop/{slug}`. Tài khoản quản trị tenant chỉ nhìn thấy dữ liệu của tenant mình; chỉ tài khoản nền tảng có `is_super_admin = TRUE` mới quản lý được toàn bộ tenant.
+
 ### Step 5: Đội ngũ & Kiểm thử sau khi Deploy
 Bấm **Deploy site**.
 Sau khi Netlify hoàn tất build:

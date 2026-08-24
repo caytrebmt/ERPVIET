@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Truck, Plus, Phone, Mail, MapPin, Edit2, Trash2, X } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
 import { useToast } from '../../contexts/ToastContext';
+import client from '../../api/client';
 
 interface SupplierItem {
   id: number;
@@ -18,6 +19,18 @@ interface SupplierItem {
 export const SaaSSuppliersPage: React.FC = () => {
   const { addToast } = useToast();
   const [suppliers, setSuppliers] = useState<SupplierItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    client.get('/api/saas/suppliers').then((response) => {
+      if (!response.data?.ok) throw new Error(response.data?.message || 'Không tải được nhà cung cấp.');
+      setSuppliers((response.data.data || []).map((row: any) => ({
+        id: Number(row.id), code: row.code, name: row.name, contactPerson: row.contact_person || '',
+        phone: row.phone || '', email: row.email || '', address: row.address || '', payableDebt: Number(row.payable_debt) || 0,
+      })));
+    }).catch((error: any) => addToast(error?.response?.data?.message || error.message || 'Không tải được dữ liệu nhà cung cấp.', 'error'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const [showModal, setShowModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<SupplierItem | null>(null);
@@ -57,49 +70,33 @@ export const SaaSSuppliersPage: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) return;
-
-    if (editingSupplier) {
-      setSuppliers(
-        suppliers.map((s) =>
-          s.id === editingSupplier.id
-            ? {
-                ...s,
-                name: formData.name,
-                contactPerson: formData.contactPerson,
-                phone: formData.phone,
-                email: formData.email,
-                address: formData.address,
-                payableDebt: Number(formData.payableDebt),
-              }
-            : s
-        )
-      );
-      addToast('Cập nhật nhà cung cấp thành công!', 'success');
-    } else {
-      const newSupplier: SupplierItem = {
-        id: Date.now(),
-        code: `NCC00${suppliers.length + 1}`,
-        name: formData.name,
-        contactPerson: formData.contactPerson || 'Trưởng phòng kinh doanh',
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address || 'Hà Nội',
-        payableDebt: Number(formData.payableDebt),
-      };
-      setSuppliers([newSupplier, ...suppliers]);
-      addToast('Thêm nhà cung cấp mới thành công!', 'success');
+    try {
+      const payload = { name: formData.name, phone: formData.phone, email: formData.email, address: formData.address };
+      if (editingSupplier) {
+        await client.put(`/api/saas/suppliers/${editingSupplier.id}`, payload);
+        addToast('Cập nhật nhà cung cấp thành công!', 'success');
+      } else {
+        await client.post('/api/saas/suppliers', payload);
+        addToast('Thêm nhà cung cấp mới thành công!', 'success');
+      }
+      const response = await client.get('/api/saas/suppliers');
+      if (response.data?.ok) setSuppliers((response.data.data || []).map((row: any) => ({ id: Number(row.id), code: row.code, name: row.name, contactPerson: row.contact_person || '', phone: row.phone || '', email: row.email || '', address: row.address || '', payableDebt: Number(row.payable_debt) || 0 })));
+      setShowModal(false);
+    } catch (error: any) {
+      addToast(error?.response?.data?.message || error.message || 'Không thể lưu nhà cung cấp.', 'error');
     }
-    setShowModal(false);
   };
 
-  const handleDelete = (id: number, name: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa nhà cung cấp "${name}"?`)) {
-      setSuppliers(suppliers.filter((s) => s.id !== id));
+  const handleDelete = async (id: number, name: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa nhà cung cấp "${name}"?`)) return;
+    try {
+      await client.delete(`/api/saas/suppliers/${id}`);
+      setSuppliers((current) => current.filter((supplier) => supplier.id !== id));
       addToast(`Đã xóa nhà cung cấp "${name}"`, 'warning');
-    }
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể xóa nhà cung cấp.', 'error'); }
   };
 
   const columns: ColumnDef<SupplierItem>[] = [
@@ -202,6 +199,7 @@ export const SaaSSuppliersPage: React.FC = () => {
         </button>
       </div>
 
+      {loading && <p className="text-xs text-zinc-500">Đang tải nhà cung cấp từ PostgreSQL...</p>}
       <DataTable columns={columns} data={suppliers} searchPlaceholder="Tìm tên nhà cung cấp, mã NCC, SĐT..." />
 
       {/* Modal Add/Edit Supplier */}

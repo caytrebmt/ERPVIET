@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useLocation } from "react-router-dom";
+import client from "../api/client";
 
 interface ShopTenantContextType {
   slug: string;
@@ -11,55 +12,56 @@ interface ShopTenantContextType {
 const ShopTenantContext = createContext<ShopTenantContextType>({
   slug: 'default',
   name: 'WebShop',
-  companyId: 1,
+  companyId: 0,
   settings: {},
 });
 
+function slugFromLocation(pathname: string, search: string): string {
+  const pathMatch = pathname.match(/^\/shop\/([^/]+)/i);
+  if (pathMatch?.[1]) return pathMatch[1];
+  return new URLSearchParams(search).get('tenant') || 'default';
+}
+
 export const ShopTenantProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const [tenant, setTenant] = useState<ShopTenantContextType>({
-    slug: 'default',
+  const [tenant, setTenant] = useState<ShopTenantContextType>(() => ({
+    slug: slugFromLocation(window.location.pathname, window.location.search),
     name: 'WebShop',
-    companyId: 1,
+    companyId: 0,
     settings: {},
-  });
+  }));
 
   useEffect(() => {
-    const pathParts = location.pathname.split('/');
-    let detectedSlug = 'default';
-    let detectedCompanyId = 1;
-    let detectedName = 'WebShop';
-    let detectedSettings: Record<string, any> = {};
+    let cancelled = false;
+    const requestedSlug = slugFromLocation(location.pathname, location.search);
 
-    if (pathParts[1] === 'shop' && pathParts[2]) {
-      detectedSlug = pathParts[2];
-    } else if (location.search.includes('tenant=')) {
-      const params = new URLSearchParams(location.search);
-      detectedSlug = params.get('tenant') || 'default';
-    }
+    // Clear stale tenant data immediately when navigating between storefronts.
+    setTenant({ slug: requestedSlug, name: 'WebShop', companyId: 0, settings: {} });
 
-    const stored = localStorage.getItem('shop_tenant');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.slug === detectedSlug) {
-          setTenant({
-            slug: parsed.slug,
-            name: parsed.name || 'WebShop',
-            companyId: parsed.companyId || 1,
-            settings: parsed.settings || {},
-          });
-          return;
-        }
-      } catch {}
-    }
+    client
+      .get('/api/shop/tenant/info')
+      .then((response) => {
+        const data = response.data?.data;
+        if (cancelled || !response.data?.ok || !data) return;
+        const resolved = {
+          slug: data.slug || requestedSlug,
+          name: data.name || 'WebShop',
+          companyId: Number(data.companyId) || 0,
+          settings: data.settings || {},
+        };
+        setTenant(resolved);
+        localStorage.setItem('shop_tenant', JSON.stringify(resolved));
+      })
+      .catch((error) => {
+        // A storefront without a resolved tenant must not silently render data
+        // from another company. The API will return the actual error to the
+        // page; keep companyId=0 here rather than inventing a tenant.
+        if (!cancelled) console.warn('[Shop Tenant] Could not load tenant info', error?.message);
+      });
 
-    setTenant({
-      slug: detectedSlug,
-      name: detectedName,
-      companyId: detectedCompanyId,
-      settings: detectedSettings,
-    });
+    return () => {
+      cancelled = true;
+    };
   }, [location.pathname, location.search]);
 
   return (
