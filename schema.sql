@@ -448,7 +448,9 @@ INSERT INTO sys_users (id, company_id, branch_id, department_id, username, email
 
 -- admin nền tảng ERPACC (quản lý MỌI tenant). Admin của từng tenant (tạo qua
 -- /tenants/register) giữ is_super_admin = FALSE.
-UPDATE sys_users SET is_super_admin = TRUE WHERE username = 'admin';
+-- BẮT BUỘC lọc company_id = 1 (công ty nền tảng): không được tự động nâng
+-- quyền cho bất kỳ user 'admin' nào thuộc tenant khác.
+UPDATE sys_users SET is_super_admin = TRUE WHERE username = 'admin' AND company_id = 1;
 
 ALTER TABLE companies ADD CONSTRAINT fk_companies_owner_user FOREIGN KEY (owner_user_id) REFERENCES sys_users(id) ON DELETE SET NULL;
 

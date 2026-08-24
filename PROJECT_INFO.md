@@ -118,6 +118,30 @@ Production: Vite build → dist/ → Express serves static files + API
   - `PURCHASING` — Mua hàng, nhận hàng
 - **Permission check**: `SaaSProtectedRoute` component kiểm tra `allowedRoles` prop, `hasRole()` và `hasPermission()` trong context.
 
+#### Nguyên tắc phân tách tính năng NỀN TẢNG vs TENANT (bắt buộc)
+
+Admin của tenant (khách hàng doanh nghiệp — role `ADMIN`, `is_super_admin = FALSE`)
+**CHỈ** thấy tính năng của chính tenant mình. Các tính năng sau thuộc về
+**quản trị viên nền tảng** (`is_super_admin = TRUE`, công ty id 1 — ERPACC) và
+**KHÔNG BAO GIỜ** hiển thị cho tenant — enforced ở 3 tầng (sidebar/route + tab UI + API):
+
+| Tính năng | Frontend | API (phải có `requireSuperAdmin`) |
+|---|---|---|
+| Quản lý Doanh nghiệp (tất cả tenant) | `/saas/tenants` — sidebar + route `superAdminOnly` | `GET/PATCH /tenants/list`, `GET/PATCH /tenants/:id`, `pause`, `upgrade` |
+| Nhật ký an ninh | `/saas/audit-logs` — sidebar + route `superAdminOnly` | `GET /audit-logs` |
+| Dịch thuật dùng chung (sửa sai = hỏng MỌI tenant) | Tab `translations` + `translations_json` trong Cài Đặt (ẩn với tenant, render qua `effectiveTab`) | `POST /translations`, `DELETE /translations/:key`, `PUT /translations/json`, `POST /translations/json/bulk`, `POST /translations/json/publish` |
+| Cấu hình menu (sys_menus toàn hệ thống) | Tab `menu` trong Cài Đặt (ẩn với tenant) | `GET /menus` |
+| Kết nối API Backend (hạ tầng nền tảng) | Tab `api` trong Cài Đặt (ẩn với tenant) | `PATCH /tenants/me` giữ nguyên `settings.api` khi caller không phải super admin |
+
+Tenant admin VẪN thấy trong Cài Đặt Hệ Thống: Người dùng & RBAC (tenant mình),
+Doanh nghiệp & Mẫu in (tenant mình), Quy trình kho & thuế, Cảnh báo & thông báo,
+Sao lưu & khôi phục (chỉ dữ liệu tenant).
+
+**Lưu ý quyền `is_super_admin`**: migration/schema chỉ tự động gán `TRUE` cho
+user `admin` thuộc `company_id = 1` (nền tảng). User `admin` của tenant khác
+KHÔNG được tự động nâng quyền (trước đây bug này đã nâng nhầm admin tenant
+thành super admin). Người vận hành khác cần quyền → DBA set thủ công.
+
 ### 2.4 i18n (Internationalization)
 
 - **Thư viện**: `i18next` + `react-i18next`.

@@ -64,4 +64,53 @@ describe('security regression guards', () => {
     const src = readSource('src/middleware/tenant.ts');
     expect(src).not.toMatch(/companyId\s*=\s*1/);
   });
+
+  it('endpoint dịch thuật dùng chung chỉ super admin được ghi (không còn unauthenticated)', () => {
+    const src = readSource('src/api/saasRouter.ts');
+    expect(src).toContain("saasRouter.post('/translations', tenantMiddleware, requireSuperAdmin");
+    expect(src).toContain("saasRouter.delete('/translations/:key', tenantMiddleware, requireSuperAdmin");
+    expect(src).toContain("saasRouter.put('/translations/json', tenantMiddleware, requireSuperAdmin");
+    expect(src).toContain("saasRouter.post('/translations/json/bulk', tenantMiddleware, requireSuperAdmin");
+    expect(src).toContain("saasRouter.post('/translations/json/publish', tenantMiddleware, requireSuperAdmin");
+  });
+
+  it('nhật ký an ninh + menu DB toàn hệ thống chỉ super admin (API, route, sidebar)', () => {
+    const router = readSource('src/api/saasRouter.ts');
+    expect(router).toContain("saasRouter.get('/audit-logs', tenantMiddleware, requireSuperAdmin");
+    expect(router).toContain("saasRouter.get('/menus', tenantMiddleware, requireSuperAdmin");
+    const app = readSource('src/App.tsx');
+    const auditRoute = app.match(/path="\/saas\/audit-logs"[\s\S]{0,200}?SaaSProtectedRoute([^>]*)/);
+    expect(auditRoute, 'route /saas/audit-logs phải có superAdminOnly').toBeTruthy();
+    expect(auditRoute?.[1]).toContain('superAdminOnly');
+    const sidebar = readSource('src/components/SaaSSidebar.tsx');
+    expect(sidebar).toContain("path === '/saas/tenants' || path === '/saas/audit-logs'");
+  });
+
+  it('nâng quyền is_super_admin chỉ áp cho company nền tảng (id = 1)', () => {
+    const db = readSource('src/db/index.ts');
+    const schema = readSource('schema.sql');
+    for (const src of [db, schema]) {
+      // Không được có câu UPDATE không lọc company_id (từng nâng nhầm admin
+      // của mọi tenant thành super admin nền tảng).
+      expect(src).not.toMatch(/UPDATE sys_users SET is_super_admin = TRUE WHERE username = 'admin'\s*;/);
+      expect(src).toContain("UPDATE sys_users SET is_super_admin = TRUE WHERE username = 'admin' AND company_id = 1");
+    }
+  });
+
+  it('tenant admin không nhìn thấy 4 tab nền tảng trong Cài Đặt Hệ Thống', () => {
+    const src = readSource('src/pages/saas/SaaSSettingsPage.tsx');
+    expect(src).toContain("const SUPER_ADMIN_ONLY_TABS: SettingsTabId[] = ['translations', 'translations_json', 'menu', 'api'];");
+    expect(src).toContain('const isSuperAdmin = !!erpUser?.is_super_admin;');
+    // Nội dung tab phải render qua effectiveTab (đã lọc quyền)
+    expect(src).toContain("{effectiveTab === 'translations' && <SaaSTranslationsTab />}");
+    expect(src).toContain("{effectiveTab === 'translations_json' && <SaaSTranslationsJsonTab />}");
+    expect(src).toContain("{effectiveTab === 'menu' && (");
+    expect(src).toContain("{effectiveTab === 'api' && (");
+  });
+
+  it('tenant không ghi đè được cấu hình "Kết nối API Backend" (settings.api)', () => {
+    const src = readSource('src/api/saasRouter.ts');
+    expect(src).toContain('if (!req.isSuperAdmin && settingsToWrite.api !== undefined)');
+    expect(src).toContain('settingsToWrite = { ...settingsToWrite, api: currentSettings.api };');
+  });
 });

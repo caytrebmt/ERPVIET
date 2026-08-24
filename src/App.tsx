@@ -297,7 +297,7 @@ export default function App() {
                       <Route
                         path="/saas/audit-logs"
                         element={
-                          <SaaSProtectedRoute allowedRoles={["ADMIN"]}>
+                          <SaaSProtectedRoute allowedRoles={["ADMIN"]} superAdminOnly>
                             <SaaSLayout title={t('layout_audit_logs')}>
                               <SaaSAuditLogsPage />
                             </SaaSLayout>

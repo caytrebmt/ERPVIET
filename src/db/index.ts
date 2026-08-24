@@ -156,7 +156,10 @@ const MIGRATIONS: Migration[] = [
     name: 'add_is_super_admin',
     up: async () => {
       await pool.query('ALTER TABLE sys_users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE');
-      await pool.query("UPDATE sys_users SET is_super_admin = TRUE WHERE username = 'admin'");
+      // CHỈ admin của công ty nền tảng (id = 1 — ERPACC) mới là super admin.
+      // Admin của tenant khác (kể cả nếu trùng tên 'admin') chỉ quản lý
+      // tenant của mình — KHÔNG bao giờ tự động nâng quyền toàn hệ thống.
+      await pool.query("UPDATE sys_users SET is_super_admin = TRUE WHERE username = 'admin' AND company_id = 1");
     },
   },
   {
@@ -276,6 +279,29 @@ const MIGRATIONS: Migration[] = [
         ON web_customers (company_id, LOWER(BTRIM(email)))`);
       await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_companies_default_shop
         ON companies (is_default_shop) WHERE is_default_shop = TRUE`);
+    },
+  },
+  {
+    version: 6,
+    name: 'demote_tenant_admins_misflagged_super_admin',
+    up: async () => {
+      // Migration v1 (bản gốc) đã chạy:
+      //   UPDATE sys_users SET is_super_admin = TRUE WHERE username = 'admin'
+      // mà KHÔNG lọc theo tenant → admin của MỌI doanh nghiệp có tên 'admin'
+      // (vd: khách hàng doanh nghiệp đăng ký tài khoản 'admin') bị nâng nhầm
+      // thành super admin nền tảng → nhìn thấy Quản lý Doanh nghiệp, Nhật ký
+      // an ninh, Dịch thuật dùng chung, Cấu hình menu, Kết nối API backend.
+      //
+      // Đây là phép đảo ngược đúng: chỉ hạ quyền những user 'admin' KHÔNG
+      // thuộc công ty nền tảng (id = 1 — ERPACC). Admin nền tảng thật (company
+      // 1) không bị ảnh hưởng. Nếu nền tảng có user vận hành khác cần quyền
+      // super admin → DBA set is_super_admin = TRUE thủ công cho đúng người.
+      await pool.query(
+        `UPDATE sys_users SET is_super_admin = FALSE
+          WHERE is_super_admin = TRUE
+            AND LOWER(username) = 'admin'
+            AND (company_id IS NULL OR company_id <> 1)`,
+      );
     },
   },
 ];
