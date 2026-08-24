@@ -57,7 +57,7 @@ export async function testDbConnection(): Promise<boolean> {
     return true;
   } catch (err: any) {
     isConnected = false;
-    console.warn(`[Database Warning] Could not connect to PostgreSQL DB (${err.message}). Using fallback in-memory handler.`);
+    console.warn(`[Database Warning] Could not connect to PostgreSQL DB (${err.message}). Database-backed requests will report the connection error.`);
     return false;
   }
 }
@@ -88,7 +88,8 @@ export async function query(text: string, params?: any[]) {
   }
 }
 
-// Auto-run schema.sql and insertdata.sql if DATABASE_URL is active and requested
+// Apply schema.sql only when explicitly enabled. The bulk insertdata.sql load-test
+// dataset is opt-in through LOAD_SEED_DATA and is never a production default.
 export async function autoMigrateDatabase() {
   const connected = await testDbConnection();
   if (!connected) return;
@@ -117,12 +118,19 @@ export async function autoMigrateDatabase() {
       console.log('[Database] Migrations applied successfully!');
     }
 
-    const insertDataPath = path.join(process.cwd(), 'insertdata.sql');
-    if (fs.existsSync(insertDataPath)) {
-      console.log('[Database] Applying insertdata.sql test dataset...');
-      const insertSql = fs.readFileSync(insertDataPath, 'utf8');
-      await pool.query(insertSql);
-      console.log('[Database] insertdata.sql dataset executed successfully!');
+    // The bulk dataset is for load testing only. It must never be loaded as a
+    // side effect of a production deployment: application pages read the
+    // tenant's real rows and an empty tenant must remain empty.
+    if (process.env.LOAD_SEED_DATA === 'true') {
+      const insertDataPath = path.join(process.cwd(), 'insertdata.sql');
+      if (fs.existsSync(insertDataPath)) {
+        console.log('[Database] Applying explicitly requested insertdata.sql test dataset...');
+        const insertSql = fs.readFileSync(insertDataPath, 'utf8');
+        await pool.query(insertSql);
+        console.log('[Database] insertdata.sql test dataset executed successfully!');
+      }
+    } else {
+      console.log('[Database] Skipping insertdata.sql. Set LOAD_SEED_DATA=true only for a non-production load-test database.');
     }
   } catch (err) {
     console.error('[Database Migration Error]', err);
@@ -186,6 +194,88 @@ const MIGRATIONS: Migration[] = [
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (company_id, list_type)
       )`);
+    },
+  },
+  {
+    version: 5,
+    name: 'tenant_workspaces_and_normalized_uniqueness',
+    up: async () => {
+      // A tenant is provisioned with an explicit ERP workspace and WebShop.
+      // The backfill is idempotent so it is safe for databases created before
+      // this migration was introduced.
+      await pool.query('ALTER TABLE companies ADD COLUMN IF NOT EXISTS is_default_shop BOOLEAN NOT NULL DEFAULT FALSE');
+      await pool.query(`WITH ranked_defaults AS (
+                           SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS position
+                             FROM companies WHERE is_default_shop = TRUE
+                         )
+                         UPDATE companies c
+                            SET is_default_shop = (r.position = 1)
+                           FROM ranked_defaults r
+                          WHERE c.id = r.id`);
+      await pool.query(`UPDATE companies
+                           SET is_default_shop = TRUE
+                         WHERE id = (SELECT id FROM companies WHERE is_active = TRUE ORDER BY id ASC LIMIT 1)
+                           AND NOT EXISTS (SELECT 1 FROM companies WHERE is_default_shop = TRUE)`);
+      await pool.query('ALTER TABLE fixed_assets ADD COLUMN IF NOT EXISTS category_code VARCHAR(100)');
+      await pool.query('ALTER TABLE warehouses ADD COLUMN IF NOT EXISTS capacity VARCHAR(100)');
+      await pool.query(`CREATE TABLE IF NOT EXISTS tenant_workspaces (
+        id SERIAL PRIMARY KEY,
+        company_id INT NOT NULL UNIQUE REFERENCES companies(id) ON DELETE CASCADE,
+        workspace_slug VARCHAR(80) NOT NULL UNIQUE,
+        workspace_name_vi VARCHAR(255) NOT NULL,
+        workspace_name_en VARCHAR(255),
+        webshop_slug VARCHAR(80) NOT NULL UNIQUE,
+        webshop_name_vi VARCHAR(255) NOT NULL,
+        webshop_name_en VARCHAR(255),
+        settings JSONB NOT NULL DEFAULT '{}',
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`);
+      await pool.query(`
+        INSERT INTO tenant_workspaces (
+          company_id, workspace_slug, workspace_name_vi, workspace_name_en,
+          webshop_slug, webshop_name_vi, webshop_name_en
+        )
+        SELECT
+          c.id,
+          COALESCE(NULLIF(c.slug, ''), 'workspace-' || c.id::text),
+          'Không gian làm việc ' || c.name_vi,
+          'Workspace ' || COALESCE(NULLIF(c.name_en, ''), c.name_vi),
+          COALESCE(NULLIF(c.slug, ''), 'shop-' || c.id::text),
+          'WebShop ' || c.name_vi,
+          'WebShop ' || COALESCE(NULLIF(c.name_en, ''), c.name_vi)
+        FROM companies c
+        ON CONFLICT (company_id) DO NOTHING
+      `);
+
+      // Normalise values in the index expression instead of relying on the
+      // client to format email/tax-code input consistently.
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_companies_tax_code_normalized
+        ON companies (UPPER(regexp_replace(BTRIM(tax_code), '[[:space:].-]+', '', 'g')))
+        WHERE tax_code IS NOT NULL AND BTRIM(tax_code) <> ''`);
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_companies_email_normalized
+        ON companies (LOWER(BTRIM(email)))
+        WHERE email IS NOT NULL AND BTRIM(email) <> ''`);
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_sys_users_email_normalized
+        ON sys_users (LOWER(BTRIM(email)))
+        WHERE email IS NOT NULL AND BTRIM(email) <> ''`);
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_customers_company_tax_code_normalized
+        ON customers (company_id, UPPER(regexp_replace(BTRIM(tax_code), '[[:space:].-]+', '', 'g')))
+        WHERE tax_code IS NOT NULL AND BTRIM(tax_code) <> ''`);
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_customers_company_email_normalized
+        ON customers (company_id, LOWER(BTRIM(email)))
+        WHERE email IS NOT NULL AND BTRIM(email) <> ''`);
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_suppliers_company_tax_code_normalized
+        ON suppliers (company_id, UPPER(regexp_replace(BTRIM(tax_code), '[[:space:].-]+', '', 'g')))
+        WHERE tax_code IS NOT NULL AND BTRIM(tax_code) <> ''`);
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_suppliers_company_email_normalized
+        ON suppliers (company_id, LOWER(BTRIM(email)))
+        WHERE email IS NOT NULL AND BTRIM(email) <> ''`);
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_web_customers_company_email_normalized
+        ON web_customers (company_id, LOWER(BTRIM(email)))`);
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_companies_default_shop
+        ON companies (is_default_shop) WHERE is_default_shop = TRUE`);
     },
   },
 ];

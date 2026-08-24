@@ -30,7 +30,7 @@ const baseHandler = serverless(api);
 // The Netlify Function is a cold-start Lambda wrapper. `src/db/index.ts` only
 // flips `isConnected = true` inside `testDbConnection()`; server.ts calls it
 // on boot, but the Function handler did not — so `isDbConnected()` stayed
-// false and every SaaS route silently served DEMO data instead of Supabase.
+// false and the tenant middleware could not resolve a real database scope.
 // Probe the DB once per cold start so the real connection state is known
 // before the first request is served.
 let connectionChecked = false;

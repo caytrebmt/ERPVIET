@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Building2,
   Plus,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../contexts/ToastContext';
+import client from '../../api/client';
 
 interface Asset {
   id: number;
@@ -28,53 +29,13 @@ interface Asset {
   purchase_date: string;
 }
 
-const MOCK_ASSETS: Asset[] = [
-  {
-    id: 1,
-    asset_code: 'TSCD-2026-001',
-    asset_name: 'Hệ Thống Máy Chủ Server Dell PowerEdge R750',
-    category_code: 'MÁY MÓC THIẾT BỊ',
-    original_cost: 180000000,
-    useful_life_months: 60,
-    monthly_depreciation: 3000000,
-    accumulated_depreciation: 36000000,
-    net_book_value: 144000000,
-    status: 'IN_USE',
-    purchase_date: '2025-08-01',
-  },
-  {
-    id: 2,
-    asset_code: 'TSCD-2026-002',
-    asset_name: 'Xe Tải Chở Hàng Hyundai Mighty 2.5 Tấn',
-    category_code: 'PHƯƠNG TIỆN VẬN TẢI',
-    original_cost: 520000000,
-    useful_life_months: 120,
-    monthly_depreciation: 4333333,
-    accumulated_depreciation: 104000000,
-    net_book_value: 416000000,
-    status: 'IN_USE',
-    purchase_date: '2024-06-15',
-  },
-  {
-    id: 3,
-    asset_code: 'TSCD-2026-003',
-    asset_name: 'Tòa Nhà Văn Phòng & Kho Bãi Trung Tâm',
-    category_code: 'NHÀ CỬA VẬT KIẾN TRÚC',
-    original_cost: 3500000000,
-    useful_life_months: 240,
-    monthly_depreciation: 14583333,
-    accumulated_depreciation: 350000000,
-    net_book_value: 3150000000,
-    status: 'IN_USE',
-    purchase_date: '2024-01-01',
-  },
-];
 
 export const SaaSAssetsPage: React.FC = () => {
   const { language, t } = useLanguage();
   const { showToast } = useToast();
 
-  const [assets, setAssets] = useState<Asset[]>(MOCK_ASSETS);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -85,51 +46,60 @@ export const SaaSAssetsPage: React.FC = () => {
     useful_life_months: 36,
   });
 
-  const handleCreateAsset = (e: React.FormEvent) => {
+  const loadAssets = async () => {
+    setLoading(true);
+    try {
+      const response = await client.get('/api/saas/assets');
+      if (!response.data?.ok) throw new Error(response.data?.message || 'Không tải được tài sản.');
+      setAssets((response.data.data || []).map((row: any) => ({
+        id: Number(row.id),
+        asset_code: row.asset_code,
+        asset_name: row.asset_name,
+        category_code: row.category_code || '',
+        original_cost: Number(row.original_cost) || 0,
+        useful_life_months: Number(row.useful_life_months) || 0,
+        monthly_depreciation: Number(row.monthly_depreciation) || 0,
+        accumulated_depreciation: Number(row.accumulated_depreciation) || 0,
+        net_book_value: Number(row.net_book_value) || 0,
+        status: row.status || 'IN_USE',
+        purchase_date: row.purchase_date || '',
+      })));
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || error.message || 'Không tải được dữ liệu tài sản.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAssets();
+  }, []);
+
+  const handleCreateAsset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAsset.asset_name || !newAsset.original_cost) {
+    if (!newAsset.asset_name || !newAsset.original_cost || !newAsset.useful_life_months) {
       showToast(t('assets_please_fill'), 'error');
       return;
     }
-
-    const monthly = Math.round(newAsset.original_cost / newAsset.useful_life_months);
-    const created: Asset = {
-      id: Date.now(),
-      asset_code: `TSCD-2026-00${assets.length + 1}`,
-      asset_name: newAsset.asset_name,
-      category_code: newAsset.category_code,
-      original_cost: Number(newAsset.original_cost),
-      useful_life_months: Number(newAsset.useful_life_months),
-      monthly_depreciation: monthly,
-      accumulated_depreciation: 0,
-      net_book_value: Number(newAsset.original_cost),
-      status: 'IN_USE',
-      purchase_date: new Date().toISOString().split('T')[0],
-    };
-
-    setAssets([created, ...assets]);
-    setShowAddModal(false);
-    setNewAsset({ asset_name: '', category_code: 'MÁY MÓC THIẾT BỊ', original_cost: 0, useful_life_months: 36 });
-    showToast(t('assets_added_success'), 'success');
+    try {
+      await client.post('/api/saas/assets', newAsset);
+      await loadAssets();
+      setShowAddModal(false);
+      setNewAsset({ asset_name: '', category_code: 'MÁY MÓC THIẾT BỊ', original_cost: 0, useful_life_months: 36 });
+      showToast(t('assets_added_success'), 'success');
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || 'Không thể lưu tài sản vào cơ sở dữ liệu.', 'error');
+    }
   };
 
-  const handleRunDepreciation = () => {
-    setAssets((prev) =>
-      prev.map((a) => {
-        const newAccum = a.accumulated_depreciation + a.monthly_depreciation;
-        const newNet = Math.max(0, a.original_cost - newAccum);
-        return {
-          ...a,
-          accumulated_depreciation: newAccum,
-          net_book_value: newNet,
-          status: newNet === 0 ? 'FULLY_DEPRECIATED' : a.status,
-        };
-      })
-    );
-    showToast(
-      t('assets_depreciation_done'),
-      'success'
-    );
+  const handleRunDepreciation = async () => {
+    try {
+      await client.post('/api/saas/assets/depreciate');
+      await loadAssets();
+      showToast(t('assets_depreciation_done'), 'success');
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || 'Không thể chạy khấu hao từ cơ sở dữ liệu.', 'error');
+    }
   };
 
   const totalOriginalCost = assets.reduce((acc, curr) => acc + curr.original_cost, 0);
@@ -220,6 +190,8 @@ export const SaaSAssetsPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {loading && <p className="text-xs text-zinc-500">Đang tải tài sản từ PostgreSQL...</p>}
 
       {/* Assets Table */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-2xs">

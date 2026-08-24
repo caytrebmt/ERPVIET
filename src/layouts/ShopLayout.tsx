@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Sidebar from "../components/Sidebar";
+import { ShopTenantProvider } from "../contexts/ShopTenantContext";
 
 interface ShopLayoutProps {
   children: React.ReactNode;
@@ -17,7 +18,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F9FAFB] dark:bg-[#030712] text-[#111827] dark:text-gray-100 font-sans transition-colors duration-200">
+    <ShopTenantProvider>
+      <div className="min-h-screen flex flex-col bg-[#F9FAFB] dark:bg-[#030712] text-[#111827] dark:text-gray-100 font-sans transition-colors duration-200">
       {/* Universal Sticky Header */}
       <Header />
 
@@ -40,7 +42,8 @@ const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
 
       {/* Universal Footer */}
       <Footer />
-    </div>
+      </div>
+    </ShopTenantProvider>
   );
 };
 

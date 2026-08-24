@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Receipt, DollarSign, Clock, Plus, ArrowDownLeft, ArrowUpRight, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
 import { StatusBadge } from '../../components/StatusBadge';
+import client from '../../api/client';
 
 interface DebtItem {
   id: number;
@@ -21,6 +22,8 @@ export const SaaSDebtPage: React.FC = () => {
   const [partnerTypeTab, setPartnerTypeTab] = useState<'customer' | 'supplier' | 'aging'>('customer');
 
   const [debts, setDebts] = useState<DebtItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<DebtItem | null>(null);
@@ -28,30 +31,58 @@ export const SaaSDebtPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank'>('bank');
   const [paymentNote, setPaymentNote] = useState('');
 
+  const loadDebts = async () => {
+    setLoading(true);
+    try {
+      const response = await client.get('/api/saas/reports/summary');
+      if (!response.data?.ok) throw new Error(response.data?.message || 'Không tải được công nợ.');
+      const data = response.data.data || {};
+      const customerDebts: DebtItem[] = (data.customers || []).map((row: any) => ({
+        id: Number(row.id), partnerName: row.customerName || 'Khách lẻ', type: 'Phải thu KH',
+        initialBalance: 0, increment: Number(row.totalRevenue) || 0, decrement: Number(row.paidAmount) || 0,
+        closingBalance: Number(row.debtAmount) || 0, dueDate: '', agingDays: 0,
+        status: 'Trong hạn',
+      }));
+      const supplierDebts: DebtItem[] = (data.suppliers || []).map((row: any) => ({
+        id: Number(row.id), partnerName: row.supplierName || 'Nhà cung cấp', type: 'Phải trả NCC',
+        initialBalance: 0, increment: Number(row.totalPurchase) || 0, decrement: Number(row.paidAmount) || 0,
+        closingBalance: Number(row.debtAmount) || 0, dueDate: '', agingDays: 0,
+        status: 'Trong hạn',
+      }));
+      setDebts([...customerDebts, ...supplierDebts]);
+      setLoadError(null);
+    } catch (error: any) {
+      setLoadError(error?.response?.data?.message || error.message || 'Không tải được công nợ từ cơ sở dữ liệu.');
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadDebts(); }, []);
+
   const handleOpenPayment = (debt: DebtItem) => {
     setSelectedDebt(debt);
     setPaymentAmount(debt.closingBalance);
     setShowPaymentModal(true);
   };
 
-  const handleConfirmPayment = (e: React.FormEvent) => {
+  const handleConfirmPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDebt || paymentAmount <= 0) return;
-
-    const updated = debts.map((d) => {
-      if (d.id === selectedDebt.id) {
-        const newClosing = Math.max(0, d.closingBalance - paymentAmount);
-        return {
-          ...d,
-          decrement: d.decrement + paymentAmount,
-          closingBalance: newClosing,
-        };
-      }
-      return d;
-    });
-
-    setDebts(updated);
-    setShowPaymentModal(false);
+    if (!selectedDebt || paymentAmount <= 0 || paymentAmount > selectedDebt.closingBalance) return;
+    try {
+      await client.post('/api/saas/receipts-payments', {
+        partner_id: selectedDebt.id,
+        partner_type: selectedDebt.type === 'Phải thu KH' ? 'KHACH_HANG' : 'NHA_CUNG_CAP',
+        amount: paymentAmount,
+        payment_method: paymentMethod,
+        reason: paymentNote,
+      });
+      await loadDebts();
+      setShowPaymentModal(false);
+      setSelectedDebt(null);
+      setPaymentNote('');
+    } catch (error: any) {
+      // The current balance is kept untouched when the database rejects the voucher.
+      alert(error?.response?.data?.message || error.message || 'Không thể ghi nhận phiếu thu/chi.');
+    }
   };
 
   const filteredDebts = debts.filter((d) => {
@@ -129,6 +160,11 @@ export const SaaSDebtPage: React.FC = () => {
     },
   ];
 
+  const agingTotal = debts.reduce((sum, debt) => sum + debt.closingBalance, 0);
+  const agingOverdue30 = debts.filter((debt) => debt.agingDays > 0 && debt.agingDays < 30).reduce((sum, debt) => sum + debt.closingBalance, 0);
+  const agingOverdue60 = debts.filter((debt) => debt.agingDays >= 30 && debt.agingDays < 60).reduce((sum, debt) => sum + debt.closingBalance, 0);
+  const agingOverdueMore = debts.filter((debt) => debt.agingDays >= 60).reduce((sum, debt) => sum + debt.closingBalance, 0);
+
   return (
     <div className="space-y-6">
       {/* Title */}
@@ -177,6 +213,9 @@ export const SaaSDebtPage: React.FC = () => {
         </button>
       </div>
 
+      {loadError && <p className="text-xs text-red-600">{loadError}</p>}
+      {loading && <p className="text-xs text-zinc-500">Đang tải công nợ từ PostgreSQL...</p>}
+
       {/* Content depending on tab */}
       {partnerTypeTab !== 'aging' ? (
         <DataTable columns={columns} data={filteredDebts} searchPlaceholder="Tìm tên đối tác công nợ..." />
@@ -189,25 +228,25 @@ export const SaaSDebtPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
             <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-1">
               <span className="font-bold text-emerald-700 dark:text-emerald-300">TRONG HẠN THANH TOÁN</span>
-              <p className="text-lg font-extrabold text-emerald-800 dark:text-emerald-200">165,000,000 đ</p>
+              <p className="text-lg font-extrabold text-emerald-800 dark:text-emerald-200">{(agingTotal - agingOverdue30 - agingOverdue60 - agingOverdueMore).toLocaleString('vi-VN')} đ</p>
               <p className="text-[10px] text-zinc-500">Chưa đến hạn hợp đồng</p>
             </div>
 
             <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 space-y-1">
               <span className="font-bold text-amber-700 dark:text-amber-300">TRỄ NỢ DƯỚI 30 NGÀY</span>
-              <p className="text-lg font-extrabold text-amber-800 dark:text-amber-200">12,500,000 đ</p>
+              <p className="text-lg font-extrabold text-amber-800 dark:text-amber-200">{agingOverdue30.toLocaleString('vi-VN')} đ</p>
               <p className="text-[10px] text-zinc-500">Cần nhắc thanh toán đợt 1</p>
             </div>
 
             <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 space-y-1">
               <span className="font-bold text-orange-700 dark:text-orange-300">TRỄ NỢ 30 - 60 NGÀY</span>
-              <p className="text-lg font-extrabold text-orange-800 dark:text-orange-200">0 đ</p>
+              <p className="text-lg font-extrabold text-orange-800 dark:text-orange-200">{agingOverdue60.toLocaleString('vi-VN')} đ</p>
               <p className="text-[10px] text-zinc-500">Cần gửi biên bản đối soát nợ</p>
             </div>
 
             <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 space-y-1">
               <span className="font-bold text-red-700 dark:text-red-300">NỢ QUÁ HẠN TRÊN 60 NGÀY</span>
-              <p className="text-lg font-extrabold text-red-800 dark:text-red-200">0 đ</p>
+              <p className="text-lg font-extrabold text-red-800 dark:text-red-200">{agingOverdueMore.toLocaleString('vi-VN')} đ</p>
               <p className="text-[10px] text-zinc-500">Cảnh báo nợ khó đòi</p>
             </div>
           </div>

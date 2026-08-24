@@ -132,6 +132,7 @@ DROP TABLE IF EXISTS exchange_rates CASCADE;
 DROP TABLE IF EXISTS currencies CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
 DROP TABLE IF EXISTS branches CASCADE;
+DROP TABLE IF EXISTS tenant_workspaces CASCADE;
 DROP TABLE IF EXISTS companies CASCADE;
 
 DROP TABLE IF EXISTS sys_user_roles CASCADE;
@@ -178,13 +179,42 @@ CREATE TABLE companies (
     max_warehouses INT DEFAULT 3,
     is_paused BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
+    -- Chỉ tenant được đánh dấu rõ ràng mới được dùng ở storefront root (/).
+    -- Không suy đoán tenant mặc định bằng id = 1.
+    is_default_shop BOOLEAN DEFAULT FALSE,
     owner_user_id INT,
     onboarding_completed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO companies (id, code, name_vi, name_en, tax_code, address, phone, email, website, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_active) VALUES
-(1, 'ERPACC_VN', 'Công Ty Cổ Phần Công Nghệ ERPACC Việt Nam', 'ERPACC Technology Vietnam JSC', '0109988776', 'Tầng 12, Tòa nhà Landmark 81, Bình Thạnh, TP.HCM', '028.7300.9999', 'info@erpacc.vn', 'https://erpacc.vn', 'erpacc-vn', 'erpacc', 'enterprise', 'active', NULL, 50, 10, TRUE);
+INSERT INTO companies (id, code, name_vi, name_en, tax_code, address, phone, email, website, slug, subdomain, plan_type, subscription_status, trial_ends_at, max_users, max_warehouses, is_active, is_default_shop) VALUES
+(1, 'ERPACC_VN', 'Công Ty Cổ Phần Công Nghệ ERPACC Việt Nam', 'ERPACC Technology Vietnam JSC', '0109988776', 'Tầng 12, Tòa nhà Landmark 81, Bình Thạnh, TP.HCM', '028.7300.9999', 'info@erpacc.vn', 'https://erpacc.vn', 'erpacc-vn', 'erpacc', 'enterprise', 'active', NULL, 50, 10, TRUE, TRUE);
+
+-- Mỗi tenant có một workspace ERP và một storefront WebShop riêng. Các slug
+-- này là dữ liệu tenant, không phải giá trị mặc định hard-code trong ứng dụng.
+CREATE TABLE tenant_workspaces (
+    id SERIAL PRIMARY KEY,
+    company_id INT NOT NULL UNIQUE REFERENCES companies(id) ON DELETE CASCADE,
+    workspace_slug VARCHAR(80) NOT NULL UNIQUE,
+    workspace_name_vi VARCHAR(255) NOT NULL,
+    workspace_name_en VARCHAR(255),
+    webshop_slug VARCHAR(80) NOT NULL UNIQUE,
+    webshop_name_vi VARCHAR(255) NOT NULL,
+    webshop_name_en VARCHAR(255),
+    settings JSONB NOT NULL DEFAULT '{}',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO tenant_workspaces (
+    company_id, workspace_slug, workspace_name_vi, workspace_name_en,
+    webshop_slug, webshop_name_vi, webshop_name_en
+) VALUES (
+    1, 'erpacc-vn', 'Không gian làm việc ERPACC Việt Nam',
+    'ERPACC Vietnam workspace', 'erpacc-vn', 'WebShop ERPACC Việt Nam',
+    'ERPACC Vietnam WebShop'
+);
 
 CREATE TABLE branches (
     id SERIAL PRIMARY KEY,
@@ -756,6 +786,7 @@ CREATE TABLE warehouses (
     address VARCHAR(255),
     manager_name VARCHAR(100),
     phone VARCHAR(20),
+    capacity VARCHAR(100),
     is_active BOOLEAN DEFAULT TRUE
 );
 
@@ -1364,6 +1395,7 @@ CREATE TABLE fixed_assets (
     code VARCHAR(50) UNIQUE NOT NULL,
     name_vi VARCHAR(200) NOT NULL,
     name_en VARCHAR(200) NOT NULL,
+    category_code VARCHAR(100),
     original_cost NUMERIC(15, 2) NOT NULL,
     depreciation_months INT NOT NULL CHECK (depreciation_months > 0),
     purchase_date DATE DEFAULT CURRENT_DATE,
@@ -2242,6 +2274,38 @@ SELECT setval(pg_get_serial_sequence('web_orders', 'id'), COALESCE(MAX(id), 1)) 
 -- ============================================================
 -- MULTI-TENANCY: ADD company_id TO ALL BUSINESS TABLES
 -- ============================================================
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS is_default_shop BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS tenant_workspaces (
+    id SERIAL PRIMARY KEY,
+    company_id INT NOT NULL UNIQUE REFERENCES companies(id) ON DELETE CASCADE,
+    workspace_slug VARCHAR(80) NOT NULL UNIQUE,
+    workspace_name_vi VARCHAR(255) NOT NULL,
+    workspace_name_en VARCHAR(255),
+    webshop_slug VARCHAR(80) NOT NULL UNIQUE,
+    webshop_name_vi VARCHAR(255) NOT NULL,
+    webshop_name_en VARCHAR(255),
+    settings JSONB NOT NULL DEFAULT '{}',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO tenant_workspaces (
+    company_id, workspace_slug, workspace_name_vi, workspace_name_en,
+    webshop_slug, webshop_name_vi, webshop_name_en
+)
+SELECT
+    c.id,
+    COALESCE(NULLIF(c.slug, ''), 'workspace-' || c.id::text),
+    'Không gian làm việc ' || c.name_vi,
+    'Workspace ' || COALESCE(NULLIF(c.name_en, ''), c.name_vi),
+    COALESCE(NULLIF(c.slug, ''), 'shop-' || c.id::text),
+    'WebShop ' || c.name_vi,
+    'WebShop ' || COALESCE(NULLIF(c.name_en, ''), c.name_vi)
+FROM companies c
+ON CONFLICT (company_id) DO NOTHING;
+
 ALTER TABLE products ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
 ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
 ALTER TABLE product_images ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1;
@@ -2334,6 +2398,38 @@ CREATE INDEX IF NOT EXISTS idx_purchase_orders_company ON purchase_orders(compan
 CREATE INDEX IF NOT EXISTS idx_invoices_company ON invoices(company_id);
 CREATE INDEX IF NOT EXISTS idx_web_orders_company ON web_orders(company_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_company ON notifications(company_id);
+
+-- Normalised uniqueness rules. Formatting/case differences must not create a
+-- second company or account (for example `ABC-123` vs `abc 123`).
+CREATE UNIQUE INDEX IF NOT EXISTS uq_companies_tax_code_normalized
+  ON companies (UPPER(regexp_replace(BTRIM(tax_code), '[[:space:].-]+', '', 'g')))
+  WHERE tax_code IS NOT NULL AND BTRIM(tax_code) <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_companies_email_normalized
+  ON companies (LOWER(BTRIM(email)))
+  WHERE email IS NOT NULL AND BTRIM(email) <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_sys_users_email_normalized
+  ON sys_users (LOWER(BTRIM(email)))
+  WHERE email IS NOT NULL AND BTRIM(email) <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_customers_company_tax_code_normalized
+  ON customers (company_id, UPPER(regexp_replace(BTRIM(tax_code), '[[:space:].-]+', '', 'g')))
+  WHERE tax_code IS NOT NULL AND BTRIM(tax_code) <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_customers_company_email_normalized
+  ON customers (company_id, LOWER(BTRIM(email)))
+  WHERE email IS NOT NULL AND BTRIM(email) <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_suppliers_company_tax_code_normalized
+  ON suppliers (company_id, UPPER(regexp_replace(BTRIM(tax_code), '[[:space:].-]+', '', 'g')))
+  WHERE tax_code IS NOT NULL AND BTRIM(tax_code) <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_suppliers_company_email_normalized
+  ON suppliers (company_id, LOWER(BTRIM(email)))
+  WHERE email IS NOT NULL AND BTRIM(email) <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_web_customers_company_email_normalized
+  ON web_customers (company_id, LOWER(BTRIM(email)));
+
+-- Only one explicit storefront may answer requests that do not contain a
+-- tenant slug. Tenant-specific stores always use their own slug.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_companies_default_shop
+  ON companies (is_default_shop)
+  WHERE is_default_shop = TRUE;
 
 -- ============================================================
 -- END MULTI-TENANCY SCHEMA EXTENSION

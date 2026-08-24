@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ClipboardList, Plus, CheckCircle2, AlertTriangle, Warehouse, Save, ArrowRightLeft, FileSpreadsheet } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
 import { StatusBadge } from '../../components/StatusBadge';
+import client from '../../api/client';
 
 interface StocktakingItem {
   id: number;
@@ -18,6 +19,7 @@ interface StocktakingItem {
 }
 
 interface ProductStocktakingRow {
+  productId: number;
   sku: string;
   productName: string;
   unit: string;
@@ -34,6 +36,49 @@ export const SaaSStocktakingPage: React.FC = () => {
   const [stockNote, setStockNote] = useState('');
 
   const [checkingRows, setCheckingRows] = useState<ProductStocktakingRow[]>([]);
+  const [warehouses, setWarehouses] = useState<Array<{ id: number; name_vi: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadStocktakings = async () => {
+    setLoading(true);
+    try {
+      const [sessionsResponse, warehousesResponse] = await Promise.all([
+        client.get('/api/saas/stocktaking'),
+        client.get('/api/saas/warehouses'),
+      ]);
+      if (!sessionsResponse.data?.ok) throw new Error(sessionsResponse.data?.message || 'Không tải được phiếu kiểm kê.');
+      setStocktakings((sessionsResponse.data.data || []).map((row: any) => ({
+        id: Number(row.id), code: row.code, warehouseName: row.warehouse_name || '',
+        date: row.date ? String(row.date).slice(0, 10) : '', creator: row.creator || '',
+        totalProducts: Number(row.total_products) || 0, totalDiffQty: Number(row.total_diff_qty) || 0,
+        totalDiffValue: Number(row.total_diff_value) || 0,
+        status: row.status === 'HOAN_THANH' ? 'Đã hoàn thành' : row.status === 'CHO_DUYET' ? 'Đang kiểm kê' : 'Đã điều chỉnh kho',
+        note: row.note || '',
+      })));
+      if (warehousesResponse.data?.ok) setWarehouses((warehousesResponse.data.data || []).map((row: any) => ({ id: Number(row.id), name_vi: row.name_vi })));
+      setLoadError(null);
+    } catch (error: any) {
+      setLoadError(error?.response?.data?.message || error.message || 'Không tải được dữ liệu kiểm kê từ cơ sở dữ liệu.');
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadStocktakings(); }, []);
+
+  const openCreateStocktaking = async () => {
+    setShowCreateModal(true);
+    try {
+      const warehouseId = selectedWarehouse || String(warehouses[0]?.id || '');
+      if (!warehouseId) return;
+      setSelectedWarehouse(warehouseId);
+      const response = await client.get(`/api/saas/stocktaking/products?warehouse_id=${warehouseId}`);
+      if (response.data?.ok) setCheckingRows((response.data.data || []).map((row: any) => ({
+        productId: Number(row.product_id), sku: row.sku, productName: row.product_name,
+        unit: row.unit || '', bookQty: Number(row.book_qty) || 0, actualQty: Number(row.actual_qty) || 0,
+        unitPrice: Number(row.unit_price) || 0,
+      })));
+    } catch (error: any) { setLoadError(error?.response?.data?.message || error.message || 'Không tải được tồn kho để kiểm kê.'); }
+  };
 
   const handleActualQtyChange = (index: number, val: number) => {
     const updated = [...checkingRows];
@@ -41,33 +86,22 @@ export const SaaSStocktakingPage: React.FC = () => {
     setCheckingRows(updated);
   };
 
-  const handleSaveStocktaking = (e: React.FormEvent) => {
+  const handleSaveStocktaking = async (e: React.FormEvent) => {
     e.preventDefault();
-    let totalDiffQty = 0;
-    let totalDiffValue = 0;
-
-    checkingRows.forEach((r) => {
-      const diff = r.actualQty - r.bookQty;
-      totalDiffQty += diff;
-      totalDiffValue += diff * r.unitPrice;
-    });
-
-    const newRec: StocktakingItem = {
-      id: Date.now(),
-      code: `KK-2026-${String(stocktakings.length + 1).padStart(3, '0')}`,
-      warehouseName: selectedWarehouse,
-      date: new Date().toISOString().split('T')[0],
-      creator: 'Quản trị viên',
-      totalProducts: checkingRows.length,
-      totalDiffQty,
-      totalDiffValue,
-      status: 'Đã điều chỉnh kho',
-      note: stockNote || 'Kiểm kê kho & điều chỉnh số liệu tự động',
-    };
-
-    setStocktakings([newRec, ...stocktakings]);
-    setShowCreateModal(false);
-    setStockNote('');
+    if (!selectedWarehouse || checkingRows.length === 0) return;
+    try {
+      await client.post('/api/saas/stocktaking', {
+        warehouse_id: Number(selectedWarehouse),
+        notes: stockNote,
+        items: checkingRows.map((row) => ({ product_id: row.productId, actual_quantity: row.actualQty })),
+      });
+      await loadStocktakings();
+      setShowCreateModal(false);
+      setStockNote('');
+      setCheckingRows([]);
+    } catch (error: any) {
+      setLoadError(error?.response?.data?.message || error.message || 'Không thể lưu phiếu kiểm kê.');
+    }
   };
 
   const columns: ColumnDef<StocktakingItem>[] = [
@@ -156,12 +190,15 @@ export const SaaSStocktakingPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={openCreateStocktaking}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all"
         >
           <Plus className="h-4 w-4" /> Tạo Phiếu Kiểm Kê Mới
         </button>
       </div>
+
+      {loading && <p className="text-xs text-zinc-500">Đang tải phiếu kiểm kê từ PostgreSQL...</p>}
+      {loadError && <p className="text-xs text-red-600">{loadError}</p>}
 
       {/* Main Table */}
       <DataTable columns={columns} data={stocktakings} searchPlaceholder="Tìm mã phiếu kiểm, tên kho, người kiểm..." />
@@ -185,9 +222,8 @@ export const SaaSStocktakingPage: React.FC = () => {
                     onChange={(e) => setSelectedWarehouse(e.target.value)}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 font-medium"
                   >
-                    <option value="Kho Chính - Hà Nội">Kho Chính - Hà Nội</option>
-                    <option value="Kho Phụ - TP. Hồ Chí Minh">Kho Phụ - TP. Hồ Chí Minh</option>
-                    <option value="Kho Miền Trung - Đà Nẵng">Kho Miền Trung - Đà Nẵng</option>
+                    <option value="">Chọn kho</option>
+                    {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name_vi}</option>)}
                   </select>
                 </div>
                 <div>

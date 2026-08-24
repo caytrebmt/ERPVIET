@@ -71,23 +71,13 @@ export const SaaSQuotationsPage: React.FC = () => {
     code: '',
     date: new Date().toISOString().slice(0, 10),
     validUntil: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 10),
-    customerId: 'c1',
-    notes: 'Báo giá có hiệu lực trong 30 ngày. Đã bao gồm chi phí vận chuyển.',
+    customerId: '',
+    notes: '',
     vatRate: 10,
     status: 'Đã gửi' as 'Đã gửi' | 'Chấp nhận' | 'Đã xuất hóa đơn' | 'Nháp',
   });
 
-  const [lineItems, setLineItems] = useState<QuotationLineItem[]>([
-    {
-      id: 'qitem-1',
-      productId: 'p1',
-      productName: 'Laptop Dell Inspiron 15 3520 (i5/16GB/512GB)',
-      sku: 'SP001',
-      unit: 'Cái',
-      quantity: 1,
-      unitPrice: 18000000,
-    },
-  ]);
+  const [lineItems, setLineItems] = useState<QuotationLineItem[]>([]);
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -124,6 +114,28 @@ export const SaaSQuotationsPage: React.FC = () => {
     loadDropdownData();
   }, []);
 
+  const mapQuotation = (row: any): QuotationItem => {
+    const statusMap: Record<string, QuotationItem['status']> = { DA_GUI: 'Đã gửi', DONG_Y: 'Chấp nhận', NHAP: 'Nháp', TU_CHOI: 'Nháp' };
+    return {
+      id: Number(row.id), code: row.code, date: String(row.date || '').slice(0, 10),
+      validUntil: String(row.valid_until || '').slice(0, 10), customerId: String(row.customer_id || ''),
+      customerName: row.customer_name || '', customerPhone: row.customer_phone || '', customerAddress: row.customer_address || '',
+      items: (row.items || []).map((item: any) => ({ id: String(item.id), productId: String(item.product_id), productName: item.product_name || '', sku: item.sku || '', unit: item.unit || '', quantity: Number(item.quantity) || 0, unitPrice: Number(item.unit_price) || 0 })),
+      amount: Number(row.amount) || 0, vatAmount: Number(row.vat_amount) || 0, totalAmount: Number(row.total_amount) || 0,
+      notes: row.notes || '', status: statusMap[row.status] || 'Nháp',
+    };
+  };
+
+  const loadQuotations = async () => {
+    const response = await client.get('/api/saas/quotations');
+    if (!response.data?.ok) throw new Error(response.data?.message || 'Không tải được báo giá.');
+    setQuotations((response.data.data || []).map(mapQuotation));
+  };
+
+  useEffect(() => {
+    loadQuotations().catch((error: any) => addToast(error?.response?.data?.message || error.message || 'Không tải được báo giá từ cơ sở dữ liệu.', 'error'));
+  }, []);
+
   const handleOpenPrint = (quotation: QuotationItem) => {
     setSelectedQuotation(quotation);
     setPrintModalOpen(true);
@@ -145,22 +157,12 @@ export const SaaSQuotationsPage: React.FC = () => {
       code: nextCode,
       date: new Date().toISOString().slice(0, 10),
       validUntil: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 10),
-      customerId: 'c1',
-      notes: 'Báo giá đã bao gồm phí đóng gói & bảo hành 12 tháng.',
+      customerId: customers[0]?.id || '',
+      notes: '',
       vatRate: 10,
       status: 'Đã gửi',
     });
-    setLineItems([
-      {
-        id: `qitem-${Date.now()}`,
-        productId: 'p1',
-        productName: 'Laptop Dell Inspiron 15 3520 (i5/16GB/512GB)',
-        sku: 'SP001',
-        unit: 'Cái',
-        quantity: 1,
-        unitPrice: 18000000,
-      },
-    ]);
+    setLineItems([]);
     setShowModal(true);
   };
 
@@ -180,7 +182,11 @@ export const SaaSQuotationsPage: React.FC = () => {
   };
 
   const handleAddLineItem = () => {
-    const p = products[0] || { id: 'p1', name: 'Sản phẩm mẫu', sku: 'SP001', unit: 'Cái', price: 0 };
+    const p = products[0];
+    if (!p) {
+      addToast('Chưa có sản phẩm thực trong tenant để thêm vào báo giá.', 'error');
+      return;
+    }
     const newItem: QuotationLineItem = {
       id: `qitem-${Date.now()}`,
       productId: p.id,
@@ -230,67 +236,33 @@ export const SaaSQuotationsPage: React.FC = () => {
   const calcVat = (calcSubtotal * formState.vatRate) / 100;
   const calcTotal = calcSubtotal + calcVat;
 
-  const handleSaveQuotation = (e: React.FormEvent) => {
+  const handleSaveQuotation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (lineItems.length === 0) {
-      addToast('Vui lòng thêm sản phẩm vào báo giá!', 'error');
-      return;
-    }
-
-    const cust = customers.find((c) => c.id === formState.customerId) || customers[0] || { id: 'c1', name: 'Khách hàng mặc định', phone: '', address: '' };
-
-    if (editingQuotation) {
-      setQuotations(
-        quotations.map((q) =>
-          q.id === editingQuotation.id
-            ? {
-                ...q,
-                code: formState.code,
-                date: formState.date,
-                validUntil: formState.validUntil,
-                customerId: cust.id,
-                customerName: cust.name,
-                customerPhone: cust.phone,
-                customerAddress: cust.address,
-                items: lineItems,
-                amount: calcSubtotal,
-                vatAmount: calcVat,
-                totalAmount: calcTotal,
-                notes: formState.notes,
-                status: formState.status,
-              }
-            : q
-        )
-      );
-      addToast(`Đã cập nhật Báo giá "${formState.code}"!`, 'success');
-    } else {
-      const newQ: QuotationItem = {
-        id: Date.now(),
-        code: formState.code,
-        date: formState.date,
-        validUntil: formState.validUntil,
-        customerId: cust.id,
-        customerName: cust.name,
-        customerPhone: cust.phone,
-        customerAddress: cust.address,
-        items: lineItems,
-        amount: calcSubtotal,
-        vatAmount: calcVat,
-        totalAmount: calcTotal,
-        notes: formState.notes,
-        status: formState.status,
+    if (!lineItems.length) { addToast('Vui lòng thêm sản phẩm vào báo giá!', 'error'); return; }
+    const customer = customers.find((item) => item.id === formState.customerId);
+    if (!customer) { addToast('Vui lòng chọn khách hàng thực trong tenant.', 'error'); return; }
+    try {
+      const payload = {
+        code: formState.code, date: formState.date, valid_until: formState.validUntil,
+        customer_id: Number(customer.id), vat_rate: formState.vatRate,
+        status: formState.status === 'Đã gửi' ? 'DA_GUI' : formState.status === 'Chấp nhận' ? 'DONG_Y' : formState.status === 'Nháp' ? 'NHAP' : 'DONG_Y',
+        items: lineItems.map((item) => ({ product_id: Number(item.productId), quantity: Number(item.quantity), unit_price: Number(item.unitPrice) })),
       };
-      setQuotations([newQ, ...quotations]);
-      addToast(`Đã soạn thành công Báo Giá Mới "${newQ.code}"!`, 'success');
-    }
-    setShowModal(false);
+      if (editingQuotation) await client.put(`/api/saas/quotations/${editingQuotation.id}`, payload);
+      else await client.post('/api/saas/quotations', payload);
+      await loadQuotations();
+      setShowModal(false);
+      addToast(editingQuotation ? `Đã cập nhật Báo giá "${formState.code}"!` : `Đã lưu Báo giá "${formState.code}" vào PostgreSQL!`, 'success');
+    } catch (error: any) { addToast(error?.response?.data?.message || error.message || 'Không thể lưu báo giá.', 'error'); }
   };
 
-  const handleDeleteQuotation = (id: number, code: string) => {
-    if (window.confirm(`Xóa báo giá "${code}"?`)) {
-      setQuotations(quotations.filter((q) => q.id !== id));
+  const handleDeleteQuotation = async (id: number, code: string) => {
+    if (!window.confirm(`Xóa báo giá "${code}"?`)) return;
+    try {
+      await client.delete(`/api/saas/quotations/${id}`);
+      setQuotations((current) => current.filter((quotation) => quotation.id !== id));
       addToast(`Đã xóa báo giá "${code}"`, 'warning');
-    }
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể xóa báo giá.', 'error'); }
   };
 
   const columns: ColumnDef<QuotationItem>[] = [

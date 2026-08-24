@@ -1,190 +1,72 @@
-import React, { useState } from 'react';
-import {
-  ShieldAlert,
-  Search,
-  User,
-  Clock,
-  Activity,
-  Key,
-  Globe,
-  Database,
-  Lock,
-  CheckCircle2,
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ShieldAlert, Search, User, Clock, Activity, Database, Loader2, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import client from '../../api/client';
 
 interface AuditLog {
   id: number;
   user_name: string;
+  username?: string;
   action: string;
-  entity_type: string;
+  entity_name: string;
   entity_id: string;
   ip_address: string;
   created_at: string;
   status: 'SUCCESS' | 'WARNING' | 'FAILED';
 }
 
-const MOCK_LOGS: AuditLog[] = [
-  {
-    id: 1,
-    user_name: 'Quản Trị Viên (admin)',
-    action: 'CREATE_PROMOTION',
-    entity_type: 'web_promotions',
-    entity_id: 'PRM-2026-001',
-    ip_address: '14.226.12.98',
-    created_at: '2026-08-03 07:45:12',
-    status: 'SUCCESS',
-  },
-  {
-    id: 2,
-    user_name: 'Trần Kế Toán (accountant1)',
-    action: 'POST_VAT_DECLARATION',
-    entity_type: 'vat_declarations',
-    entity_id: 'VAT-Q2-2026',
-    ip_address: '113.161.42.10',
-    created_at: '2026-08-03 06:30:00',
-    status: 'SUCCESS',
-  },
-  {
-    id: 3,
-    user_name: 'Lê Thủ Kho (warehouse1)',
-    action: 'APPROVE_STOCK_IN',
-    entity_type: 'stock_transfers',
-    entity_id: 'STK-IN-009',
-    ip_address: '27.72.100.15',
-    created_at: '2026-08-02 16:20:44',
-    status: 'SUCCESS',
-  },
-  {
-    id: 4,
-    user_name: 'Unidentified IP',
-    action: 'FAILED_LOGIN_ATTEMPT',
-    entity_type: 'sys_users',
-    entity_id: 'admin',
-    ip_address: '103.142.11.5',
-    created_at: '2026-08-02 03:12:09',
-    status: 'FAILED',
-  },
-];
-
 export const SaaSAuditLogsPage: React.FC = () => {
-  const { language, t } = useLanguage();
-
-  const [logs] = useState<AuditLog[]>(MOCK_LOGS);
+  const { t } = useLanguage();
+  const [logs, setLogs] = useState<AuditLog[]>([]);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredLogs = logs.filter(
-    (l) =>
-      l.user_name.toLowerCase().includes(search.toLowerCase()) ||
-      l.action.toLowerCase().includes(search.toLowerCase()) ||
-      l.entity_type.toLowerCase().includes(search.toLowerCase()) ||
-      l.ip_address.includes(search)
-  );
+  useEffect(() => {
+    let cancelled = false;
+    client.get('/api/saas/audit-logs')
+      .then((response) => {
+        if (cancelled) return;
+        if (!response.data?.ok) throw new Error(response.data?.message || 'Không tải được nhật ký.');
+        setLogs((response.data.data || []).map((row: any) => ({
+          id: Number(row.id),
+          user_name: row.user_name || row.username || 'Hệ thống',
+          username: row.username,
+          action: row.action || '',
+          entity_name: row.entity_name || '',
+          entity_id: row.entity_id || '',
+          ip_address: row.ip_address || '',
+          created_at: row.created_at ? new Date(row.created_at).toLocaleString('vi-VN') : '',
+          status: 'SUCCESS',
+        })));
+      })
+      .catch((requestError: any) => {
+        if (!cancelled) setError(requestError?.response?.data?.message || requestError.message || 'Không tải được nhật ký từ cơ sở dữ liệu.');
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const term = search.toLowerCase();
+  const filteredLogs = logs.filter((log) => [log.user_name, log.action, log.entity_name, log.entity_id, log.ip_address].some((value) => value.toLowerCase().includes(term)));
 
   return (
     <div className="space-y-6">
-      {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-center gap-4 shadow-2xs">
-          <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl">
-            <Activity className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-               {t('audit_recorded_events')}
-            </p>
-            <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{logs.length}</p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-center gap-4 shadow-2xs">
-          <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
-            <ShieldAlert className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-               {t('audit_active_status')}
-            </p>
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-               {t('audit_protected')}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-center gap-4 shadow-2xs">
-          <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl">
-            <Database className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-               {t('audit_retention')}
-            </p>
-             <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">365 {t('audit_days')}</p>
-          </div>
-        </div>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-center gap-4"><Activity className="h-6 w-6 text-amber-500" /><div><p className="text-xs text-zinc-500">{t('audit_recorded_events')}</p><p className="text-2xl font-bold">{loading ? '—' : logs.length}</p></div></div>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-center gap-4"><ShieldAlert className="h-6 w-6 text-emerald-500" /><div><p className="text-xs text-zinc-500">{t('audit_active_status')}</p><p className="text-2xl font-bold text-emerald-600">{t('audit_protected')}</p></div></div>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-center gap-4"><Database className="h-6 w-6 text-blue-500" /><div><p className="text-xs text-zinc-500">{t('audit_retention')}</p><p className="text-2xl font-bold">365 {t('audit_days')}</p></div></div>
       </div>
 
-      {/* Control Bar */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-2xs">
-        <div className="relative w-full sm:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-             placeholder={t('audit_search_placeholder')}
-            className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500/50"
-          />
-        </div>
-      </div>
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4"><div className="relative w-full sm:w-96"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('audit_search_placeholder')} className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm" /></div></div>
+      {error && <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700"><AlertCircle className="h-4 w-4" />{error}</div>}
+      {loading && <div className="flex items-center gap-2 text-xs text-zinc-500"><Loader2 className="h-4 w-4 animate-spin" /> Đang tải nhật ký thật từ PostgreSQL...</div>}
 
-      {/* Logs Table */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-2xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 uppercase text-xs">
-              <tr>
-                 <th className="px-4 py-3 font-semibold">{t('audit_user')}</th>
-                 <th className="px-4 py-3 font-semibold">{t('audit_action')}</th>
-                 <th className="px-4 py-3 font-semibold">{t('audit_target')}</th>
-                 <th className="px-4 py-3 font-semibold">{t('audit_ip')}</th>
-                 <th className="px-4 py-3 font-semibold">{t('audit_status')}</th>
-                 <th className="px-4 py-3 font-semibold">{t('audit_timestamp')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {filteredLogs.map((item) => (
-                <tr key={item.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
-                  <td className="px-4 py-3.5 font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                    <User className="h-4 w-4 text-zinc-400" />
-                    <span>{item.user_name}</span>
-                  </td>
-                  <td className="px-4 py-3.5 font-mono text-xs font-semibold text-amber-600 dark:text-amber-400">
-                    {t(`audit_action_${item.action}`, item.action)}
-                  </td>
-                  <td className="px-4 py-3.5 text-zinc-600 dark:text-zinc-400 text-xs">
-                    <span className="font-semibold">{t(`audit_entity_${item.entity_type}`, item.entity_type)}</span> ({item.entity_id})
-                  </td>
-                  <td className="px-4 py-3.5 text-zinc-600 dark:text-zinc-400 text-xs font-mono">
-                    {item.ip_address}
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
-                        item.status === 'SUCCESS'
-                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                          : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-zinc-500 dark:text-zinc-400 text-xs">{item.created_at}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 uppercase text-xs"><tr><th className="px-4 py-3">{t('audit_user')}</th><th className="px-4 py-3">{t('audit_action')}</th><th className="px-4 py-3">{t('audit_target')}</th><th className="px-4 py-3">{t('audit_ip')}</th><th className="px-4 py-3">{t('audit_status')}</th><th className="px-4 py-3">{t('audit_timestamp')}</th></tr></thead><tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          {filteredLogs.map((item) => <tr key={item.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40"><td className="px-4 py-3.5 font-medium"><span className="inline-flex items-center gap-2"><User className="h-4 w-4 text-zinc-400" />{item.user_name}</span></td><td className="px-4 py-3.5 font-mono text-xs font-semibold text-amber-600">{t(`audit_action_${item.action}`, item.action)}</td><td className="px-4 py-3.5 text-xs"><span className="font-semibold">{t(`audit_entity_${item.entity_name}`, item.entity_name)}</span>{item.entity_id ? ` (${item.entity_id})` : ''}</td><td className="px-4 py-3.5 text-xs font-mono text-zinc-500">{item.ip_address || '—'}</td><td className="px-4 py-3.5"><span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">{item.status}</span></td><td className="px-4 py-3.5 text-xs text-zinc-500"><Clock className="inline h-3.5 w-3.5 mr-1" />{item.created_at}</td></tr>)}
+        </tbody></table></div>
+        {!loading && filteredLogs.length === 0 && <p className="px-4 py-10 text-center text-xs text-zinc-500">Chưa có nhật ký phù hợp.</p>}
       </div>
     </div>
   );

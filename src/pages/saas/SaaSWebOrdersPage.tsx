@@ -371,7 +371,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                   setSelectedOrder(order);
                   setEditingStatus({
                     erpStatus: 'Đã đóng gói & Bàn giao Shipper',
-                    erpNote: 'Đã đóng gói hoàn tất & bàn giao cho Shipper GHN. Mã vận đơn: #GHN-' + Math.floor(100000 + Math.random() * 900000),
+                    erpNote: 'Đã đóng gói hoàn tất và bàn giao cho đơn vị vận chuyển.',
                   });
                   setStatusModalOpen(true);
                 }}
@@ -403,7 +403,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                 setSelectedOrder(order);
                 setEditingStatus({
                   erpStatus: order.erp_status || 'Đã đóng gói & Bàn giao Shipper',
-                  erpNote: order.erp_note || 'Đã bàn giao đơn vị vận chuyển GHN. Mã vận đơn: #GHN-' + Math.floor(100000 + Math.random() * 900000),
+                  erpNote: order.erp_note || 'Đã bàn giao cho đơn vị vận chuyển.',
                 });
                 setStatusModalOpen(true);
               }}
@@ -671,7 +671,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                       setDetailModalOpen(false);
                       setEditingStatus({
                         erpStatus: 'Đã đóng gói & Bàn giao Shipper',
-                        erpNote: 'Đã đóng gói hoàn tất & bàn giao cho Shipper GHN. Mã vận đơn: #GHN-' + Math.floor(100000 + Math.random() * 900000),
+                        erpNote: 'Đã đóng gói hoàn tất và bàn giao cho đơn vị vận chuyển.',
                       });
                       setStatusModalOpen(true);
                     }}

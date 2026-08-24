@@ -20,41 +20,8 @@ interface MovementItem { id: number; code: string; movement_type: string; moveme
 interface XntRow { product_id: number; sku: string; name_vi?: string; unit_vi?: string; cost_price: number; opening_qty: number; in_qty: number; out_qty: number; closing_qty: number; closing_value: number; min_stock: number; }
 
 export const SaaSInventoryPage: React.FC = () => {
-  const [items, setItems] = useState<InventoryItem[]>([
-    {
-      id: 1,
-      sku: 'SP001',
-      name: 'Laptop Dell Inspiron 15 3520',
-      warehouse: 'Kho Chính - Hà Nội',
-      stock: 15,
-      reserved: 2,
-      available: 13,
-      unitCost: 15500000,
-      totalValue: 232500000,
-    },
-    {
-      id: 2,
-      sku: 'SP002',
-      name: 'Chuột không dây Logitech M235',
-      warehouse: 'Kho Chính - Hà Nội',
-      stock: 45,
-      reserved: 5,
-      available: 40,
-      unitCost: 240000,
-      totalValue: 10800000,
-    },
-    {
-      id: 3,
-      sku: 'VT001',
-      name: 'Giấy A4 Double A 70gsm (Ream 500 tờ)',
-      warehouse: 'Kho Phụ - HCM',
-      stock: 120,
-      reserved: 10,
-      available: 110,
-      unitCost: 52000,
-      totalValue: 6240000,
-    },
-  ]);
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [movements, setMovements] = useState<MovementItem[]>([]);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -77,7 +44,7 @@ export const SaaSInventoryPage: React.FC = () => {
       const xntRes = await client.get(`/api/saas/inventory/xnt?from=${fromDate || '1900-01-01'}&to=${toDate || new Date().toISOString().slice(0, 10)}`);
       if (xntRes.data?.ok) { setXntRows(xntRes.data.data.rows); setKpi(xntRes.data.data.kpi); }
     };
-    load().catch(console.error);
+    load().catch((error) => setLoadError(error?.response?.data?.message || error.message || 'Không tải được tồn kho từ cơ sở dữ liệu.'));
     const interval = window.setInterval(() => load().catch(console.error), 10000);
     return () => window.clearInterval(interval);
   }, [fromDate, toDate]);
@@ -149,6 +116,8 @@ export const SaaSInventoryPage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {loadError && <p className="text-xs text-red-600">{loadError}</p>}
 
       <DataTable columns={columns} data={items} searchPlaceholder="Tìm mã SKU, tên hàng hóa..." />
 

@@ -51,7 +51,7 @@ export const SaaSRegisterPage: React.FC = () => {
     if (!form.name_vi.trim()) errs.name_vi = t("saas_register_company_name_required");
     if (!form.tax_code.trim()) errs.tax_code = t("saas_register_tax_code_required");
     if (!form.owner_email.trim()) errs.owner_email = t("saas_register_admin_email_required");
-    if (!form.owner_password || form.owner_password.length < 6) errs.owner_password = t("saas_register_admin_password_min");
+    if (!isGoogleFlow && (!form.owner_password || form.owner_password.length < 6)) errs.owner_password = t("saas_register_admin_password_min");
     if (!form.owner_name.trim()) errs.owner_name = t("saas_register_admin_name_required");
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -61,54 +61,42 @@ export const SaaSRegisterPage: React.FC = () => {
     setIsGoogleFlow(true);
     setGoogleSubmitting(true);
     try {
-      let googleProfile: any = null;
-
-      try {
-        await loadGoogleGsi();
-      } catch {
-        // Fall through to the demo/mock path below if GSI is unavailable.
+      await loadGoogleGsi();
+      const google = (window as any).google;
+      const clientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '';
+      if (!clientId || !google?.accounts?.oauth2) {
+        throw new Error('Google Sign-In chưa được cấu hình.');
       }
 
-      if (typeof window !== 'undefined' && (window as any).google?.accounts?.oauth2) {
-        const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
-            client_id: (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '',
-          scope: 'profile email',
-          callback: (resp: any) => {
-            if (resp.access_token) {
-              fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${resp.access_token}` },
-              })
-                .then((r) => r.json())
-                .then((profile) => {
-                  prefillFromGoogle(profile);
-                })
-                .catch(() => showToast(t("page_saas_register_google_failed"), "error"))
-                .finally(() => setGoogleSubmitting(false));
-            } else {
-              setGoogleSubmitting(false);
-            }
-          },
-        });
-        tokenClient.requestAccessToken();
-        return;
-      }
-
-      googleProfile = {
-        sub: 'mock-google-' + Date.now(),
-        email: 'demo.user@gmail.com',
-        name: 'Nguyễn Văn A',
-        given_name: 'Nguyễn Văn',
-        family_name: 'A',
-        picture: '',
-      };
-
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      prefillFromGoogle(googleProfile);
-      showToast(t("page_saas_register_google_demo"), "success");
-    } catch (err) {
-      showToast(t("page_saas_register_google_login_failed"), "error");
+      const tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'profile email',
+        callback: (response: any) => {
+          if (!response?.access_token) {
+            setGoogleSubmitting(false);
+            setIsGoogleFlow(false);
+            return;
+          }
+          fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${response.access_token}` },
+          })
+            .then((result) => {
+              if (!result.ok) throw new Error('Google profile request failed');
+              return result.json();
+            })
+            .then((profile) => prefillFromGoogle(profile))
+            .catch(() => {
+              showToast(t("page_saas_register_google_failed"), "error");
+              setIsGoogleFlow(false);
+            })
+            .finally(() => setGoogleSubmitting(false));
+        },
+      });
+      tokenClient.requestAccessToken();
+    } catch {
       setGoogleSubmitting(false);
       setIsGoogleFlow(false);
+      showToast(t("page_saas_register_google_login_failed"), "error");
     }
   };
 
@@ -167,7 +155,8 @@ export const SaaSRegisterPage: React.FC = () => {
       if (data.ok) {
         showToast(data.message || t("page_saas_register_success"), "success");
         if (data.data?.token) {
-          storage.setAccessToken(data.data.token);
+          storage.setErpToken(data.data.token);
+          if (data.data.user) storage.setErpUser(data.data.user);
         }
         setTimeout(() => navigate('/saas/login', { replace: true }), 800);
       } else {

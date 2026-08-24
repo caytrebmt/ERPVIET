@@ -46,133 +46,9 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
   const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'categories' | 'units' | 'conversions'>('categories');
 
-  const [categories, setCategories] = useState<CategoryItem[]>([
-    {
-      id: 1,
-      code: 'CAT-VPP',
-      name: 'Văn Phòng Phẩm',
-      name_vi: 'Văn Phòng Phẩm',
-      name_en: 'Office Supplies & Stationery',
-      description: 'Giấy in A4, Bìa thái, Kẹp bướm, Sổ tay, Bút viết các loại',
-      description_vi: 'Giấy in A4, Bìa thái, Kẹp bướm, Sổ tay, Bút viết các loại',
-      description_en: 'A4 printing paper, binders, paperclips, notebooks, pens & office items',
-      productCount: 145,
-      status: 'Hoạt động',
-    },
-    {
-      id: 2,
-      code: 'CAT-LAPTOP',
-      name: 'Laptop & Máy Tính Khối Văn Phòng',
-      name_vi: 'Laptop & Máy Tính Khối Văn Phòng',
-      name_en: 'Laptops & Office Computers',
-      description: 'Laptop Dell, HP, Lenovo, ASUS chính hãng cho doanh nghiệp',
-      description_vi: 'Laptop Dell, HP, Lenovo, ASUS chính hãng cho doanh nghiệp',
-      description_en: 'Genuine Dell, HP, Lenovo, ASUS laptops for enterprise',
-      productCount: 38,
-      status: 'Hoạt động',
-    },
-    {
-      id: 3,
-      code: 'CAT-ELEC',
-      name: 'Linh Kiện & Thiết Bị Điện Tử',
-      name_vi: 'Linh Kiện & Thiết Bị Điện Tử',
-      name_en: 'Electronics & Computer Accessories',
-      description: 'Chuột máy tính, Bàn phím cơ, Tai nghe, Chuột không dây',
-      description_vi: 'Chuột máy tính, Bàn phím cơ, Tai nghe, Chuột không dây',
-      description_en: 'Computer mice, mechanical keyboards, headsets, wireless mice',
-      productCount: 64,
-      status: 'Hoạt động',
-    },
-    {
-      id: 4,
-      code: 'CAT-PRINT',
-      name: 'Mực In & Phụ Kiện Máy In',
-      name_vi: 'Mực In & Phụ Kiện Máy In',
-      name_en: 'Printer Ink & Accessories',
-      description: 'Hộp mực in HP, Canon, Epson và linh kiện thay thế',
-      description_vi: 'Hộp mực in HP, Canon, Epson và linh kiện thay thế',
-      description_en: 'HP, Canon, Epson ink cartridges and replacement parts',
-      productCount: 22,
-      status: 'Hoạt động',
-    },
-  ]);
-
-  const [units, setUnits] = useState<UnitItem[]>([
-    {
-      id: 1,
-      code: 'CAI',
-      name: 'Cái',
-      name_vi: 'Cái',
-      name_en: 'Piece (Pcs)',
-      description: 'Đơn vị đếm chiếc/cái tiêu chuẩn',
-      description_vi: 'Đơn vị đếm chiếc/cái tiêu chuẩn',
-      description_en: 'Standard piece/item counting unit',
-      isFractional: false,
-    },
-    {
-      id: 2,
-      code: 'REAM',
-      name: 'Ream',
-      name_vi: 'Ream',
-      name_en: 'Ream (500 sheets)',
-      description: 'Đơn vị tính đóng gói giấy (500 tờ)',
-      description_vi: 'Đơn vị tính đóng gói giấy (500 tờ)',
-      description_en: 'Paper ream packaging unit (500 sheets)',
-      isFractional: false,
-    },
-    {
-      id: 3,
-      code: 'TEP',
-      name: 'Tệp',
-      name_vi: 'Tệp',
-      name_en: 'Pack (100 sheets)',
-      description: 'Tệp bìa thái (100 tờ)',
-      description_vi: 'Tệp bìa thái (100 tờ)',
-      description_en: 'Paper pack unit (100 sheets)',
-      isFractional: false,
-    },
-    {
-      id: 4,
-      code: 'HOP',
-      name: 'Hộp',
-      name_vi: 'Hộp',
-      name_en: 'Box',
-      description: 'Hộp đóng gói quy chuẩn',
-      description_vi: 'Hộp đóng gói quy chuẩn',
-      description_en: 'Standard box package unit',
-      isFractional: false,
-    },
-    {
-      id: 5,
-      code: 'KG',
-      name: 'Kilogram (Kg)',
-      name_vi: 'Kilogram (Kg)',
-      name_en: 'Kilogram (Kg)',
-      description: 'Đơn vị đo khối lượng hàng hóa',
-      description_vi: 'Đơn vị đo khối lượng hàng hóa',
-      description_en: 'Weight measurement unit',
-      isFractional: true,
-    },
-    {
-      id: 6,
-      code: 'MET',
-      name: 'Mét (m)',
-      name_vi: 'Mét (m)',
-      name_en: 'Meter (m)',
-      description: 'Đơn vị đo chiều dài dây cáp, vật tư',
-      description_vi: 'Đơn vị đo chiều dài dây cáp, vật tư',
-      description_en: 'Length measurement unit for cables & supplies',
-      isFractional: true,
-    },
-  ]);
-
-  const [conversions, setConversions] = useState<UomConversionItem[]>([
-    { id: 1, fromUnit: 'Ream', toUnit: 'Tờ', factor: 500, note: '1 Ream Giấy in A4 = 500 Tờ', note_vi: '1 Ream Giấy in A4 = 500 Tờ', note_en: '1 Ream A4 Paper = 500 Sheets' },
-    { id: 2, fromUnit: 'Tệp', toUnit: 'Tờ', factor: 100, note: '1 Tệp Bìa thái = 100 Tờ', note_vi: '1 Tệp Bìa thái = 100 Tờ', note_en: '1 Pack Thai Board = 100 Sheets' },
-    { id: 3, fromUnit: 'Thùng', toUnit: 'Hộp', factor: 24, note: '1 Thùng hàng đóng quy chuẩn = 24 Hộp', note_vi: '1 Thùng hàng đóng quy chuẩn = 24 Hộp', note_en: '1 Master Carton = 24 Boxes' },
-    { id: 4, fromUnit: 'Kiện', toUnit: 'Ream', factor: 10, note: '1 Kiện giấy xuất xưởng = 10 Ream', note_vi: '1 Kiện giấy xuất xưởng = 10 Ream', note_en: '1 Paper Bale = 10 Reams' },
-    { id: 5, fromUnit: 'Hộp', toUnit: 'Cái', factor: 10, note: '1 Hộp bút bi = 10 Cái', note_vi: '1 Hộp bút bi = 10 Cái', note_en: '1 Box Pens = 10 Pieces' },
-  ]);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [units, setUnits] = useState<UnitItem[]>([]);
+  const [conversions, setConversions] = useState<UomConversionItem[]>([]);
 
   // Category Modals & Form State
   const [showCatModal, setShowCatModal] = useState(false);
@@ -228,53 +104,28 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
     setShowCatModal(true);
   };
 
-  const handleSaveCategory = (e: React.FormEvent) => {
+  const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!catFormData.name_vi || !catFormData.code) return;
-
-    if (editingCat) {
-      setCategories(
-        categories.map((c) =>
-          c.id === editingCat.id
-            ? {
-                ...c,
-                code: catFormData.code.toUpperCase(),
-                name: catFormData.name_vi,
-                name_vi: catFormData.name_vi,
-                name_en: catFormData.name_en || catFormData.name_vi,
-                description: catFormData.description_vi || 'Chưa có mô tả',
-                description_vi: catFormData.description_vi || 'Chưa có mô tả',
-                description_en: catFormData.description_en || catFormData.description_vi || 'No description',
-              }
-            : c
-        )
-      );
-      addToast(language === 'en' ? 'Updated category successfully!' : 'Cập nhật danh mục hàng hóa thành công!', 'success');
-    } else {
-      const newCat: CategoryItem = {
-        id: Date.now(),
-        code: catFormData.code.toUpperCase(),
-        name: catFormData.name_vi,
-        name_vi: catFormData.name_vi,
-        name_en: catFormData.name_en || catFormData.name_vi,
-        description: catFormData.description_vi || 'Chưa có mô tả',
-        description_vi: catFormData.description_vi || 'Chưa có mô tả',
-        description_en: catFormData.description_en || catFormData.description_vi || 'No description',
-        productCount: 0,
-        status: 'Hoạt động',
-      };
-      setCategories([...categories, newCat]);
-      addToast(language === 'en' ? 'Created new category successfully!' : 'Thêm danh mục mới thành công!', 'success');
-    }
-    setShowCatModal(false);
+    try {
+      const payload = { code: catFormData.code, name_vi: catFormData.name_vi, name_en: catFormData.name_en };
+      if (editingCat) await client.put(`/api/saas/categories/${editingCat.id}`, payload);
+      else await client.post('/api/saas/categories', payload);
+      const response = await client.get('/api/saas/categories');
+      if (response.data?.ok) setCategories(response.data.data.map((item: any) => ({ ...item, name: item.name_vi || item.name, description: item.description || '', productCount: Number(item.product_count || 0), status: item.is_active === false ? 'Tạm khóa' : 'Hoạt động' })));
+      setShowCatModal(false);
+      addToast(language === 'en' ? (editingCat ? 'Updated category successfully!' : 'Created new category successfully!') : (editingCat ? 'Cập nhật danh mục hàng hóa thành công!' : 'Thêm danh mục mới thành công!'), 'success');
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể lưu danh mục vào cơ sở dữ liệu.', 'error'); }
   };
 
-  const handleDeleteCategory = (id: number, cat: CategoryItem) => {
+  const handleDeleteCategory = async (id: number, cat: CategoryItem) => {
     const catName = language === 'en' ? (cat.name_en || cat.name) : (cat.name_vi || cat.name);
-    if (window.confirm(language === 'en' ? `Delete category "${catName}"?` : `Bạn có chắc muốn xóa nhóm danh mục "${catName}"?`)) {
-      setCategories(categories.filter((c) => c.id !== id));
+    if (!window.confirm(language === 'en' ? `Delete category "${catName}"?` : `Bạn có chắc muốn xóa nhóm danh mục "${catName}"?`)) return;
+    try {
+      await client.delete(`/api/saas/categories/${id}`);
+      setCategories((current) => current.filter((item) => item.id !== id));
       addToast(language === 'en' ? `Deleted category "${catName}"` : `Đã xóa danh mục "${catName}"`, 'warning');
-    }
+    } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể xóa danh mục.', 'error'); }
   };
 
   const handleOpenUnitAdd = () => {

@@ -101,82 +101,6 @@ const ACTION_CODES = [
   { code: 'approve', labelVi: 'Phê duyệt / Khóa', labelEn: 'Approve / Lock', icon: '🛡️' },
 ];
 
-// Standard Roles Default Presets
-const DEFAULT_ROLES: SystemRole[] = [
-  {
-    id: 'admin',
-    nameVi: 'Quản Trị Viên (Admin)',
-    nameEn: 'System Administrator',
-    description: 'Toàn quyền truy cập, chỉnh sửa cấu hình và phân quyền toàn bộ hệ thống',
-    isSystem: true,
-    permissions: SYSTEM_MODULES.reduce((acc, mod) => {
-      ACTION_CODES.forEach((act) => {
-        acc[`${mod.code}:${act.code}`] = true;
-      });
-      return acc;
-    }, {} as Record<string, boolean>),
-  },
-  {
-    id: 'manager',
-    nameVi: 'Quản Lý Doanh Nghiệp (Manager)',
-    nameEn: 'General Manager',
-    description: 'Quản lý toàn bộ hoạt động kinh doanh, kho bãi và tài chính trừ cấu hình hệ thống sâu',
-    isSystem: true,
-    permissions: SYSTEM_MODULES.reduce((acc, mod) => {
-      ACTION_CODES.forEach((act) => {
-        const isSys = mod.code === 'system_settings' || mod.code === 'users_rbac';
-        acc[`${mod.code}:${act.code}`] = isSys ? (act.code === 'view') : true;
-      });
-      return acc;
-    }, {} as Record<string, boolean>),
-  },
-  {
-    id: 'accountant',
-    nameVi: 'Kế Toán Trưởng (Chief Accountant)',
-    nameEn: 'Chief Accountant',
-    description: 'Phụ trách công nợ, thu chi, kê khai thuế GTGT và sổ sách kế toán TT200',
-    isSystem: true,
-    permissions: SYSTEM_MODULES.reduce((acc, mod) => {
-      const isFin = mod.code === 'debt_finance' || mod.code === 'vat_accounting' || mod.code === 'web_orders' || mod.code === 'dashboard';
-      ACTION_CODES.forEach((act) => {
-        acc[`${mod.code}:${act.code}`] = isFin ? true : (act.code === 'view');
-      });
-      return acc;
-    }, {} as Record<string, boolean>),
-  },
-  {
-    id: 'warehouse_keeper',
-    nameVi: 'Thủ Kho (Warehouse Manager)',
-    nameEn: 'Warehouse Keeper',
-    description: 'Chuyên trách xuất nhập kho, kiểm kê hàng hóa và điều chuyển kho bãi',
-    isSystem: true,
-    permissions: SYSTEM_MODULES.reduce((acc, mod) => {
-      const isWh = mod.code === 'stock_in_out' || mod.code === 'stocktaking' || mod.code === 'products';
-      ACTION_CODES.forEach((act) => {
-        acc[`${mod.code}:${act.code}`] = isWh ? true : (act.code === 'view');
-      });
-      return acc;
-    }, {} as Record<string, boolean>),
-  },
-  {
-    id: 'sales_rep',
-    nameVi: 'Nhân Viên Bán Hàng (Sales Executive)',
-    nameEn: 'Sales Executive',
-    description: 'Tạo báo giá, theo dõi đơn hàng WebShop và tra cứu danh mục hàng hóa',
-    isSystem: true,
-    permissions: SYSTEM_MODULES.reduce((acc, mod) => {
-      const isSales = mod.code === 'products' || mod.code === 'web_orders' || mod.code === 'dashboard';
-      ACTION_CODES.forEach((act) => {
-        acc[`${mod.code}:${act.code}`] = isSales ? (act.code !== 'delete' && act.code !== 'approve') : false;
-      });
-      return acc;
-    }, {} as Record<string, boolean>),
-  },
-];
-
-// Initial Demo Users
-const INITIAL_USERS: SaasUserItem[] = [];
-
 export const SaaSUsersRbacTab: React.FC = () => {
   const { addToast } = useToast();
   const { language } = useLanguage();
@@ -185,175 +109,78 @@ export const SaaSUsersRbacTab: React.FC = () => {
   // Active view tab: 'users_list' | 'webshop_users' | 'roles_matrix'
   const [subTab, setSubTab] = useState<'users_list' | 'webshop_users' | 'roles_matrix'>('users_list');
 
-  // Load WebShop Customers/Users List from LocalStorage
-  const [webshopUsers, setWebshopUsers] = useState<any[]>(() => {
-    const saved = localStorage.getItem('saas_webshop_customers');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.length > 0) {
-        return parsed.map((c: any) => ({
-          ...c,
-          password: c.password || '',
-        }));
-      }
-    }
-    return [];
-  });
+  // WebShop customers are read from the current tenant API.
+  const [webshopUsers, setWebshopUsers] = useState<any[]>([]);
 
   const persistWebshopUsers = (newList: any[]) => {
     setWebshopUsers(newList);
-    localStorage.setItem('saas_webshop_customers', JSON.stringify(newList));
   };
 
   useEffect(() => {
-    client
-      .get('/api/shop/admin/customers')
+    client.get('/api/shop/admin/customers')
       .then((res) => {
+        if (!res.data?.ok) throw new Error(res.data?.message || 'Không tải được khách hàng WebShop.');
         const items = res.data?.data?.items || [];
-        if (items.length > 0) {
-          const knownHashes: Record<string, string> = {
-            '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C': 'web12345',
-          };
-
-          const mapped = items.map((it: any, idx: number) => {
-            const hash = it.passwordHash || '';
-            const plaintext = knownHashes[hash] || (hash && !hash.startsWith('$2') ? hash : '');
-            
-            return {
-              id: it.id,
-              code: `KH${String(it.id || idx + 1).padStart(3, '0')}`,
-              name: it.name || it.email?.split('@')[0] || 'Khách hàng',
-              phone: it.phone || '0901234567',
-              email: it.email,
-              taxCode: '-',
-              type: (idx % 3 === 0 ? 'Khách sỉ' : idx % 3 === 1 ? 'Đại lý' : 'Khách lẻ'),
-              creditLimit: 50000000,
-              currentDebt: 0,
-              password: plaintext,
-            };
-          });
-          setWebshopUsers(mapped);
-          localStorage.setItem('saas_webshop_customers', JSON.stringify(mapped));
-        }
+        setWebshopUsers(items.map((it: any, idx: number) => ({
+          id: it.id,
+          code: `KH${String(it.id || idx + 1).padStart(3, '0')}`,
+          name: it.name || it.email?.split('@')[0] || 'Khách hàng',
+          phone: it.phone || '', email: it.email || '', taxCode: it.tax_code || '-',
+          type: 'Khách lẻ', creditLimit: Number(it.credit_limit) || 0,
+          currentDebt: Number(it.current_debt) || 0, password: '',
+        })));
       })
-      .catch((err) => {
-        console.warn('Failed to fetch webshop customers in RBAC tab:', err);
-      });
+      .catch((err) => console.warn('Failed to fetch webshop customers in RBAC tab:', err));
   }, []);
 
-  // Cached plaintext passwords (separate from usersList, survives hash reloads)
-  const [cachedPasswords, setCachedPasswords] = useState<Record<string, string>>(() => {
-    const saved = localStorage.getItem('saas_users_passwords');
-    return saved ? JSON.parse(saved) : {};
-  });
+  // Passwords are never cached in localStorage; the API does not expose them.
+  const [usersList, setUsersList] = useState<SaasUserItem[]>([]);
 
-  // Load Users List from API + LocalStorage fallback
-  const [usersList, setUsersList] = useState<SaasUserItem[]>(() => {
-    const saved = localStorage.getItem('saas_users_list');
-    if (saved) {
-      const parsed: SaasUserItem[] = JSON.parse(saved);
-      return parsed.map((u, idx) => ({
-        ...u,
-        password: (u.password && !u.password.startsWith('$2a$') && !u.password.startsWith('$2b$')) ? u.password : '',
-      }));
-    }
-    return [];
-  });
-
-  // Load users from backend API
+  // Load users from the current tenant API.
   useEffect(() => {
-    client
-      .get('/api/saas/users')
+    client.get('/api/saas/users')
       .then((res) => {
+        if (!res.data?.ok) throw new Error(res.data?.message || 'Không tải được người dùng.');
         const items = res.data?.data || [];
-        if (items.length > 0) {
-          // Load cached plaintext passwords from localStorage (separate storage)
-          const savedPasswords = localStorage.getItem('saas_users_passwords');
-          const cachedPasswords: Record<string, string> = {};
-          if (savedPasswords) {
-            try {
-              Object.assign(cachedPasswords, JSON.parse(savedPasswords));
-            } catch {}
-          }
-
-          // Known demo bcrypt hashes -> plaintext mapping (for seed data)
-          const knownHashes: Record<string, string> = {
-            '$2a$10$wT0C2c2E1v6cE8Xg8A3A8uQ4P0O6N9M8L7K6J5H4G3F2E1D0C': 'web12345',
-          };
-
-          const mapped: SaasUserItem[] = items.map((u: any) => {
-            const hash = u.password_hash || '';
-            let plaintext = cachedPasswords[String(u.id)];
-            
-            // If no cached plaintext, check if it's a known demo hash
-            if (!plaintext && knownHashes[hash]) {
-              plaintext = knownHashes[hash];
-              cachedPasswords[String(u.id)] = plaintext;
-            }
-            
-            return {
-              id: String(u.id),
-              username: u.username,
-              fullName: u.full_name || u.username,
-              email: u.email || '',
-              phone: u.phone || '',
-              department: (language === 'en' ? u.dept_name_en : u.dept_name_vi) || u.department_id || 'Chưa phân bổ',
-              departmentId: u.dept_id ? String(u.dept_id) : '',
-              roleId: String(u.role_id || 5),
-              roleName: u.role_name_vi || u.role_name_en || 'Nhân Viên',
-              status: u.status === 'locked' ? 'locked' : 'active',
-              createdAt: u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
-              password: plaintext || '',
-            };
-          });
-          
-          // Save updated cache with any newly discovered demo passwords
-          if (Object.keys(cachedPasswords).length > 0) {
-            localStorage.setItem('saas_users_passwords', JSON.stringify(cachedPasswords));
-            setCachedPasswords(cachedPasswords);
-          }
-          
-          persistUsers(mapped);
-        }
+        setUsersList(items.map((u: any) => ({
+          id: String(u.id), username: u.username, fullName: u.full_name || u.username,
+          email: u.email || '', phone: u.phone || '',
+          department: (language === 'en' ? u.dept_name_en : u.dept_name_vi) || u.department_id || 'Chưa phân bổ',
+          departmentId: u.dept_id ? String(u.dept_id) : '', roleId: String(u.role_id || 5),
+          roleName: u.role_name_vi || u.role_name_en || 'Nhân Viên',
+          status: u.status === 'locked' ? 'locked' : 'active',
+          createdAt: u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : '', password: '',
+        })));
       })
-      .catch((err) => {
-        console.warn('Failed to fetch ERP users from backend:', err);
-      });
-  }, []);
+      .catch((err) => console.warn('Failed to fetch ERP users from backend:', err));
+  }, [language]);
 
-  // Load Departments from backend
-   const [allDepartments, setAllDepartments] = useState<Department[]>(() => {
-    const saved = localStorage.getItem('saas_departments');
-    if (saved) {
-      try { return JSON.parse(saved); } catch {}
-    }
-    return [];
-  });
+  // Load departments from the current tenant API.
+  const [allDepartments, setAllDepartments] = useState<Department[]>([]);
   useEffect(() => {
-    client
-      .get('/api/saas/departments')
+    client.get('/api/saas/departments')
       .then((res) => {
-        if (res.data?.ok && Array.isArray(res.data.data)) {
-          const mapped: Department[] = res.data.data.map((d: any) => ({
-            id: String(d.id),
-            code: d.code || '',
-            nameVi: d.name_vi || '',
-            nameEn: d.name_en || d.name_vi || '',
-          }));
-          setAllDepartments(mapped);
-          localStorage.setItem('saas_departments', JSON.stringify(mapped));
-        }
+        if (!res.data?.ok) throw new Error(res.data?.message || 'Không tải được phòng ban.');
+        setAllDepartments((res.data.data || []).map((d: any) => ({ id: String(d.id), code: d.code || '', nameVi: d.name_vi || '', nameEn: d.name_en || d.name_vi || '' })));
       })
-      .catch((err) => {
-        console.warn('Failed to fetch departments:', err);
-      });
+      .catch((err) => console.warn('Failed to fetch departments:', err));
   }, []);
 
-  // Load Roles Matrix from LocalStorage
-  const [rolesList, setRolesList] = useState<SystemRole[]>(() => {
-    const saved = localStorage.getItem('saas_roles_matrix');
-    return saved ? JSON.parse(saved) : DEFAULT_ROLES;
-  });
+  // Load role names and permissions from the database.
+  const [rolesList, setRolesList] = useState<SystemRole[]>([]);
+  useEffect(() => {
+    client.get('/api/saas/roles')
+      .then((res) => {
+        if (!res.data?.ok) throw new Error(res.data?.message || 'Không tải được vai trò.');
+        const roleIdMap: Record<string, string> = { ADMIN: 'admin', MANAGER: 'manager', ACCOUNTANT: 'accountant', WAREHOUSE: 'warehouse_keeper', SALES: 'sales_rep' };
+        setRolesList((res.data.data || []).map((role: any) => ({
+          id: roleIdMap[role.code] || String(role.code).toLowerCase(), nameVi: role.name || role.code,
+          nameEn: role.name || role.code, description: role.description || '', isSystem: Boolean(role.is_system),
+          permissions: Object.fromEntries((role.permissions || []).map((permission: string) => [permission, true])),
+        })));
+      })
+      .catch((err) => console.warn('Failed to fetch roles:', err));
+  }, []);
 
   // Selected Role for Matrix Editing
   const [selectedRoleId, setSelectedRoleId] = useState<string>('admin');
@@ -403,26 +230,13 @@ export const SaaSUsersRbacTab: React.FC = () => {
     return rolesList.find((r) => r.id === selectedRoleId) || rolesList[0];
   }, [rolesList, selectedRoleId]);
 
-  // Save Users to Storage
   const persistUsers = (newList: SaasUserItem[]) => {
     setUsersList(newList);
-    localStorage.setItem('saas_users_list', JSON.stringify(newList));
-
-    // Extract and cache plaintext passwords separately so they survive backend reloads
-    const plaintextPasswords: Record<string, string> = {};
-    for (const u of newList) {
-      if (u.password && !u.password.startsWith('$2a$') && !u.password.startsWith('$2b$')) {
-        plaintextPasswords[u.id] = u.password;
-      }
-    }
-    localStorage.setItem('saas_users_passwords', JSON.stringify(plaintextPasswords));
-    setCachedPasswords(plaintextPasswords);
   };
 
   // Save Roles to Storage
   const persistRoles = (newList: SystemRole[]) => {
     setRolesList(newList);
-    localStorage.setItem('saas_roles_matrix', JSON.stringify(newList));
   };
 
   // Password Helper Actions
@@ -448,7 +262,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
   const handleOpenResetPasswordModal = (user: SaasUserItem) => {
     setResetTargetUser(user);
     setResetWebshopTargetUser(null);
-    setNewResetPassword(user.password || 'Erp@2026');
+    setNewResetPassword('');
     setShowResetPasswordEye(true);
     setIsResetModalOpen(true);
   };
@@ -456,7 +270,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
   const handleOpenResetWebshopPasswordModal = (user: any) => {
     setResetWebshopTargetUser(user);
     setResetTargetUser(null);
-    setNewResetPassword(user.password || 'Web@2026');
+    setNewResetPassword('');
     setShowResetPasswordEye(true);
     setIsResetModalOpen(true);
   };
@@ -477,10 +291,16 @@ export const SaaSUsersRbacTab: React.FC = () => {
         addToast(language === 'en' ? 'Please enter a valid password' : 'Vui lòng nhập mật khẩu mới', 'error');
         return;
       }
-      const updated = webshopUsers.map((w) =>
-        w.id === resetWebshopTargetUser.id ? { ...w, password: newResetPassword.trim() } : w
-      );
-      persistWebshopUsers(updated);
+      try {
+        await client.put(`/api/shop/admin/customers/${resetWebshopTargetUser.id}/password`, {
+          password: newResetPassword.trim(),
+          email: resetWebshopTargetUser.email,
+        });
+      } catch (error: any) {
+        addToast(error?.response?.data?.message || (language === 'en' ? 'Password reset failed' : 'Cấp lại mật khẩu thất bại'), 'error');
+        return;
+      }
+      // The new password is never stored in React state or localStorage.
       addToast(
         language === 'en'
           ? `WebShop password for ${resetWebshopTargetUser.name} successfully reset!`
@@ -500,7 +320,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
     try {
       await client.put(`/api/saas/users/${resetTargetUser.id}`, { password: newResetPassword.trim() });
       const updated = usersList.map((u) =>
-        u.id === resetTargetUser.id ? { ...u, password: newResetPassword.trim() } : u
+        u.id === resetTargetUser.id ? { ...u, password: '' } : u
       );
       persistUsers(updated);
       addToast(
@@ -540,7 +360,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
       department: defaultDept ? (language === 'en' ? defaultDept.nameEn : defaultDept.nameVi) : '',
       departmentId: defaultDept ? defaultDept.id : '',
       roleId: 'sales_rep',
-      password: 'user123',
+      password: '',
       status: 'active',
     });
     setShowModalPassword(false);
@@ -557,7 +377,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
       department: user.department,
       departmentId: user.departmentId || '',
       roleId: user.roleId,
-      password: user.password && !user.password.startsWith('$2a$') && !user.password.startsWith('$2b$') ? user.password : '',
+      password: '',
       status: user.status,
     });
     setShowModalPassword(false);
@@ -566,7 +386,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
 
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userFormData.username || !userFormData.fullName) {
+    if (!userFormData.username || !userFormData.fullName || (!editingUserId && !userFormData.password.trim())) {
       addToast(
         language === 'en' ? 'Please enter username and full name' : 'Vui lòng nhập tên đăng nhập và họ tên',
         'error'
@@ -629,7 +449,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
           role_id: backendRoleId,
           department_id: userFormData.departmentId || null,
           status: userFormData.status,
-          password: userFormData.password || '123456',
+          password: userFormData.password,
         });
         if (res.data?.ok) {
           const dbUser = res.data.data;
@@ -644,7 +464,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
             roleId: userFormData.roleId,
             roleName,
             status: dbUser.status === 'locked' ? 'locked' : 'active',
-            password: userFormData.password || '123456',
+            password: userFormData.password,
             createdAt: dbUser.created_at ? new Date(dbUser.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
           };
           persistUsers([...usersList, newUser]);

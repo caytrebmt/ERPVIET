@@ -58,6 +58,7 @@ interface WebShopOrder {
   quantity: number;
   amount: number;
   status: 'Chờ duyệt xuất kho' | 'Đã duyệt & Xuất kho (PX)';
+  items?: Array<{ product_id: number; name?: string; sku?: string; quantity: number; unit_price?: number }>;
 }
 
 interface ProductOption {
@@ -83,24 +84,26 @@ export const SaaSStockOutPage: React.FC = () => {
 
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [warehouses, setWarehouses] = useState<Array<{ id: number; name: string }>>([]);
   const [webOrders, setWebOrders] = useState<WebShopOrder[]>([]);
 
   useEffect(() => {
     const fetchWebOrders = async () => {
       try {
         const res = await client.get('/api/shop/orders?admin=true&per_page=100');
-        if (res.data?.ok && Array.isArray(res.data.data?.items) && res.data.data.items.length > 0) {
+        if (res.data?.ok && Array.isArray(res.data.data?.items)) {
           const items: WebShopOrder[] = res.data.data.items.map((o: any) => ({
             id: String(o.id),
             code: o.code,
-            date: o.createdAt ? new Date(o.createdAt).toLocaleString('vi-VN') : '2026-07-30 08:30',
-            customerName: o.customerName || 'Khách Hàng Web',
+            date: o.createdAt ? new Date(o.createdAt).toLocaleString('vi-VN') : '',
+            customerName: o.customerName || '',
             customerPhone: o.customerPhone || '',
             customerAddress: o.shippingAddress || '',
-            productName: o.items?.[0]?.name || 'Sản phẩm WebShop',
-            sku: o.items?.[0]?.sku || 'SKU-WEB',
-            quantity: o.items?.[0]?.quantity || 1,
+            productName: o.items?.[0]?.name || '',
+            sku: o.items?.[0]?.sku || '',
+            quantity: o.items?.[0]?.quantity || 0,
             amount: o.total_amount || 0,
+            items: o.items || [],
             status: o.erp_status?.includes('PXK') || o.erp_status?.includes('duyệt') || o.erp_status?.includes('xuất kho') || o.erp_status?.includes('Đóng gói') || o.erp_status?.includes('Shipper') || o.erp_status?.includes('thành công')
               ? 'Đã duyệt & Xuất kho (PX)'
               : 'Chờ duyệt xuất kho',
@@ -118,9 +121,10 @@ export const SaaSStockOutPage: React.FC = () => {
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
-        const [prodRes, custRes] = await Promise.all([
+        const [prodRes, custRes, warehouseRes] = await Promise.all([
           client.get('/api/shop/admin/products?limit=1000&include_inactive=true'),
           client.get('/api/saas/customers'),
+          client.get('/api/saas/warehouses'),
         ]);
         if (prodRes.data?.ok && Array.isArray(prodRes.data.data?.items)) {
           setProducts(
@@ -134,6 +138,7 @@ export const SaaSStockOutPage: React.FC = () => {
             }))
           );
         }
+        if (warehouseRes.data?.ok) setWarehouses((warehouseRes.data.data || []).map((w: any) => ({ id: Number(w.id), name: w.name_vi || w.name_en || '' })));
         if (custRes.data?.ok && Array.isArray(custRes.data.data)) {
           setCustomers(
             custRes.data.data.map((c: any) => ({
@@ -149,6 +154,7 @@ export const SaaSStockOutPage: React.FC = () => {
       }
     };
     loadDropdownData();
+    loadStockOuts().catch((error: any) => addToast(error?.response?.data?.message || error.message || 'Không tải được phiếu xuất kho.', 'error'));
   }, []);
 
   const [stockOuts, setStockOuts] = useState<StockOutVoucher[]>([]);
@@ -163,8 +169,8 @@ export const SaaSStockOutPage: React.FC = () => {
   const [voucherForm, setVoucherForm] = useState({
     code: '',
     date: new Date().toISOString().slice(0, 10),
-    customerId: 'c1',
-    warehouse: 'Kho Chính - Hà Nội',
+    customerId: '',
+    warehouse: '',
     invoiceNo: '',
     invoiceSeries: 'C26TVN',
     note: '',
@@ -174,79 +180,46 @@ export const SaaSStockOutPage: React.FC = () => {
     status: 'Đã xác nhận' as 'Nháp' | 'Đã xác nhận',
   });
 
-  const [lineItems, setLineItems] = useState<StockOutLineItem[]>([
-    {
-      id: 'item-1',
-      productId: 'p1',
-      productName: 'Laptop Dell Inspiron 15 3520 (i5/16GB/512GB)',
-      sku: 'SP001',
-      unit: 'Cái',
-      stock: 45,
-      quantity: 1,
-      factor: 1,
-      unitPrice: 18000000,
-      vatRate: 10,
-    },
-  ]);
+  const [lineItems, setLineItems] = useState<StockOutLineItem[]>([]);
+
+  const loadStockOuts = async () => {
+    const response = await client.get('/api/saas/inventory/movements?limit=500');
+    if (!response.data?.ok) throw new Error(response.data?.message || 'Không tải được phiếu xuất kho.');
+    setStockOuts((response.data.data || []).filter((row: any) => row.movement_type === 'XUAT_KHO').map((row: any) => ({
+      id: Number(row.id), code: row.code, date: row.movement_date ? String(row.movement_date).slice(0, 10) : '',
+      customerId: '', customerName: '', customerPhone: '', customerAddress: '', warehouse: row.warehouse_vi || row.warehouse_en || '',
+      invoiceNo: row.reference_doc || '', invoiceSeries: '', note: row.notes || '', vatMode: 'grouped', vatRateGrouped: 0,
+      items: [{ id: String(row.id), productId: String(row.product_id || ''), productName: row.name_vi || '', sku: row.sku || '', unit: '', stock: 0, quantity: Number(row.quantity) || 0, factor: 1, unitPrice: Number(row.unit_cost) || 0, vatRate: 0 }],
+      subtotal: Number(row.subtotal_cost) || 0, vatAmount: 0, totalAmount: Number(row.subtotal_cost) || 0,
+      paymentStatus: 'Còn nợ', status: 'Đã xác nhận', createdBy: '', sourceWebCode: row.reference_doc || '',
+    })));
+  };
 
   const handleOpenPrint = (item: StockOutVoucher) => {
     setSelectedStockOut(item);
     setPrintModalOpen(true);
   };
 
-  const handleApproveWebOrder = (order: WebShopOrder) => {
-    const pxCode = generateERPCode('PX', stockOuts.length + 1);
-    const nowStr = new Date().toISOString().slice(0, 10);
-
-    const newPX: StockOutVoucher = {
-      id: Date.now(),
-      code: pxCode,
-      date: `${nowStr} ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`,
-      customerId: 'c_web',
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      customerAddress: order.customerAddress,
-      warehouse: 'Kho Chính - Hà Nội',
-      invoiceNo: `INV-${order.code}`,
-      invoiceSeries: 'C26WEB',
-      note: `Xuất kho tự động cho Đơn Hàng Web ${order.code}`,
-      vatMode: 'grouped',
-      vatRateGrouped: 10,
-      items: [
-        {
-          id: `line-${Date.now()}`,
-          productId: 'p_web',
-          productName: order.productName,
-          sku: order.sku,
-          unit: 'Cái',
-          stock: 50,
-          quantity: order.quantity,
-          factor: 1,
-          unitPrice: order.amount / order.quantity,
-          vatRate: 10,
-        },
-      ],
-      subtotal: order.amount,
-      vatAmount: Math.round(order.amount * 0.1),
-      totalAmount: Math.round(order.amount * 1.1),
-      paymentStatus: 'Đã thanh toán',
-      status: 'Đã xác nhận',
-      createdBy: 'Hệ Thống WebShop Sync',
-      sourceWebCode: order.code,
-    };
-
-    setStockOuts([newPX, ...stockOuts]);
-    setWebOrders(
-      webOrders.map((w) => (w.id === order.id ? { ...w, status: 'Đã duyệt & Xuất kho (PX)' } : w))
-    );
-
-    // Call API sync
-    client.post(`/api/shop/orders/${order.code}/erp-status`, {
-      erpStatus: `Đã duyệt - Đã lập PXK #${pxCode}`,
-      erpNote: `Đã duyệt kho & tự động xuất kho theo phiếu ${pxCode}`,
-    }).catch((err) => console.warn('Lỗi đồng bộ ERP Status sang Server:', err));
-
-    addToast(`Đã duyệt đơn web ${order.code} -> Tạo phiếu xuất kho ${pxCode} thành công!`, 'success');
+  const handleApproveWebOrder = async (order: WebShopOrder) => {
+    const warehouseId = warehouses[0]?.id;
+    const items = (order.items && order.items.length ? order.items : [{ product_id: Number((order as any).productId), quantity: order.quantity }]);
+    if (!warehouseId || items.some((item) => !Number.isInteger(Number(item.product_id)) || Number(item.product_id) <= 0)) {
+      addToast('Không thể lập phiếu: đơn hàng chưa có kho hoặc sản phẩm thực.', 'error');
+      return;
+    }
+    try {
+      await client.post('/api/saas/inventory/movements', {
+        type: 'XUAT_KHO', warehouseId, referenceDoc: order.code,
+        notes: `Xuất kho theo đơn WebShop ${order.code}`,
+        items: items.map((item) => ({ productId: Number(item.product_id), quantity: Number(item.quantity) })),
+      });
+      await client.post(`/api/shop/orders/${order.code}/erp-status`, { erpStatus: 'Đã duyệt - Đã lập PXK' });
+      await loadStockOuts();
+      setWebOrders((current) => current.map((item) => item.id === order.id ? { ...item, status: 'Đã duyệt & Xuất kho (PX)' } : item));
+      addToast(`Đã duyệt đơn web ${order.code} và cập nhật tồn kho thực.`, 'success');
+    } catch (error: any) {
+      addToast(error?.response?.data?.message || error.message || 'Không thể xuất kho đơn WebShop.', 'error');
+    }
   };
 
   const handleOpenAddVoucher = () => {
@@ -255,8 +228,8 @@ export const SaaSStockOutPage: React.FC = () => {
     setVoucherForm({
       code: nextCode,
       date: new Date().toISOString().slice(0, 10),
-      customerId: 'c1',
-      warehouse: 'Kho Chính - Hà Nội',
+      customerId: '',
+      warehouse: '',
       invoiceNo: '',
       invoiceSeries: 'C26TVN',
       note: '',
@@ -265,20 +238,7 @@ export const SaaSStockOutPage: React.FC = () => {
       paymentStatus: 'Còn nợ',
       status: 'Đã xác nhận',
     });
-    setLineItems([
-      {
-        id: `item-${Date.now()}`,
-        productId: 'p1',
-        productName: 'Laptop Dell Inspiron 15 3520 (i5/16GB/512GB)',
-        sku: 'SP001',
-        unit: 'Cái',
-        stock: 45,
-        quantity: 1,
-        factor: 1,
-        unitPrice: 18000000,
-        vatRate: 10,
-      },
-    ]);
+    setLineItems([]);
     setShowVoucherModal(true);
   };
 
@@ -302,7 +262,8 @@ export const SaaSStockOutPage: React.FC = () => {
   };
 
   const handleAddLineItem = () => {
-    const defaultProd = products[0] || { id: 'p1', name: 'Sản phẩm mẫu', sku: 'SP001', unit: 'Cái', stock: 0, price: 0 };
+    const defaultProd = products[0];
+    if (!defaultProd) { addToast('Chưa có sản phẩm thực trong tenant để thêm vào phiếu xuất.', 'error'); return; }
     const newItem: StockOutLineItem = {
       id: `item-${Date.now()}`,
       productId: defaultProd.id,
@@ -368,82 +329,25 @@ export const SaaSStockOutPage: React.FC = () => {
 
   const calcTotalAmount = calcSubtotal + calcVatAmount();
 
-  const handleSaveVoucher = (e: React.FormEvent) => {
+  const handleSaveVoucher = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (lineItems.length === 0) {
-      addToast('Vui lòng thêm ít nhất 1 hàng hóa vào phiếu xuất!', 'error');
-      return;
-    }
-
-    const cust = customers.find((c) => c.id === voucherForm.customerId) || customers[0] || { id: 'c1', name: 'Khách hàng mặc định', phone: '', address: '' };
-
-    const sub = calcSubtotal;
-    const vat = calcVatAmount();
-    const total = calcTotalAmount;
-
-    if (editingVoucher) {
-      setStockOuts(
-        stockOuts.map((v) =>
-          v.id === editingVoucher.id
-            ? {
-                ...v,
-                code: voucherForm.code,
-                date: `${voucherForm.date} ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`,
-                customerId: cust.id,
-                customerName: cust.name,
-                customerPhone: cust.phone,
-                customerAddress: cust.address,
-                warehouse: voucherForm.warehouse,
-                invoiceNo: voucherForm.invoiceNo,
-                invoiceSeries: voucherForm.invoiceSeries,
-                note: voucherForm.note,
-                vatMode: voucherForm.vatMode,
-                vatRateGrouped: voucherForm.vatRateGrouped,
-                items: lineItems,
-                subtotal: sub,
-                vatAmount: vat,
-                totalAmount: total,
-                paymentStatus: voucherForm.paymentStatus,
-                status: voucherForm.status,
-              }
-            : v
-        )
-      );
-      addToast(`Đã cập nhật phiếu xuất kho "${voucherForm.code}" thành công!`, 'success');
-    } else {
-      const newVoucher: StockOutVoucher = {
-        id: Date.now(),
-        code: voucherForm.code,
-        date: `${voucherForm.date} ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`,
-        customerId: cust.id,
-        customerName: cust.name,
-        customerPhone: cust.phone,
-        customerAddress: cust.address,
-        warehouse: voucherForm.warehouse,
-        invoiceNo: voucherForm.invoiceNo,
-        invoiceSeries: voucherForm.invoiceSeries,
-        note: voucherForm.note,
-        vatMode: voucherForm.vatMode,
-        vatRateGrouped: voucherForm.vatRateGrouped,
-        items: lineItems,
-        subtotal: sub,
-        vatAmount: vat,
-        totalAmount: total,
-        paymentStatus: voucherForm.paymentStatus,
-        status: voucherForm.status,
-        createdBy: 'SaaS Admin',
-      };
-      setStockOuts([newVoucher, ...stockOuts]);
-      addToast(`Đã lập phiếu xuất kho mới "${newVoucher.code}" thành công!`, 'success');
-    }
-    setShowVoucherModal(false);
+    if (!lineItems.length) { addToast('Vui lòng thêm ít nhất 1 hàng hóa vào phiếu xuất!', 'error'); return; }
+    const customer = customers.find((item) => item.id === voucherForm.customerId);
+    const warehouseId = Number(voucherForm.warehouse);
+    if (!customer || !Number.isInteger(warehouseId) || warehouseId <= 0) { addToast('Vui lòng chọn khách hàng và kho thực trong tenant.', 'error'); return; }
+    try {
+      await client.post('/api/saas/inventory/movements', {
+        type: 'XUAT_KHO', warehouseId, referenceDoc: voucherForm.invoiceNo || voucherForm.code,
+        notes: voucherForm.note, items: lineItems.map((item) => ({ productId: Number(item.productId), quantity: Number(item.quantity), unitCost: Number(item.unitPrice) })),
+      });
+      await loadStockOuts();
+      setShowVoucherModal(false);
+      addToast(`Đã lưu phiếu xuất kho ${voucherForm.code} vào PostgreSQL.`, 'success');
+    } catch (error: any) { addToast(error?.response?.data?.message || error.message || 'Không thể lưu phiếu xuất kho.', 'error'); }
   };
 
-  const handleDeleteVoucher = (id: number, code: string) => {
-    if (window.confirm(`Bạn có chắc muốn xóa phiếu xuất kho "${code}"?`)) {
-      setStockOuts(stockOuts.filter((s) => s.id !== id));
-      addToast(`Đã xóa phiếu xuất kho "${code}"`, 'warning');
-    }
+  const handleDeleteVoucher = (_id: number, code: string) => {
+    addToast(`Không xóa trực tiếp phiếu ${code}; hãy lập chứng từ điều chỉnh kho để bảo toàn sổ kho.`, 'info');
   };
 
   const columns: ColumnDef<StockOutVoucher>[] = [
@@ -774,9 +678,7 @@ export const SaaSStockOutPage: React.FC = () => {
                       onChange={(val) => setVoucherForm({ ...voucherForm, warehouse: val })}
                       placeholder="Chọn kho xuất..."
                       options={[
-                        { value: 'Kho Chính - Hà Nội', label: 'Kho Chính - Hà Nội', code: 'K01' },
-                        { value: 'Kho Phụ - TP. Hồ Chí Minh', label: 'Kho Phụ - TP. Hồ Chí Minh', code: 'K02' },
-                        { value: 'Kho Hải Phòng', label: 'Kho Hải Phòng', code: 'K03' },
+                        ...warehouses.map((warehouse) => ({ value: String(warehouse.id), label: warehouse.name, code: `K${warehouse.id}` })),
                       ]}
                     />
                   </div>

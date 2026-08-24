@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Receipt, FileSpreadsheet, Download, Filter, CheckCircle2, ArrowDownLeft, ArrowUpRight, Calculator } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
+import client from '../../api/client';
 
 interface VatRecordItem {
   id: number;
@@ -19,10 +20,32 @@ interface VatRecordItem {
 
 export const SaaSVATPage: React.FC = () => {
   const [vatType, setVatType] = useState<'output' | 'input'>('output');
-  const [month, setMonth] = useState<number>(7);
-  const [year, setYear] = useState<number>(2026);
+  const now = new Date();
+  const [month, setMonth] = useState<number>(now.getMonth() + 1);
+  const [year, setYear] = useState<number>(now.getFullYear());
+  const [records, setRecords] = useState<VatRecordItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [records] = useState<VatRecordItem[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    client.get(`/api/saas/vat/summary?month=${month}&year=${year}`)
+      .then((response) => {
+        if (cancelled) return;
+        if (!response.data?.ok) throw new Error(response.data?.message || 'Không tải được VAT.');
+        setRecords((response.data.data?.records || []).map((row: any, index: number) => ({
+          id: Number(row.id) || index, code: row.code, date: row.date, partnerName: row.partner_name || '',
+          taxCode: row.tax_code || '', description: row.description || '', vatRate: Number(row.vatRate) || 0,
+          taxableAmount: Number(row.taxableAmount) || 0, vatAmount: Number(row.vatAmount) || 0,
+          totalAmount: Number(row.totalAmount) || 0, vatType: row.vat_type,
+        })));
+        setLoadError(null);
+      })
+      .catch((error: any) => { if (!cancelled) setLoadError(error?.response?.data?.message || error.message || 'Không tải được dữ liệu VAT từ cơ sở dữ liệu.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [month, year]);
 
   const filteredRecords = records.filter((r) => r.vatType === vatType);
 
@@ -210,6 +233,9 @@ export const SaaSVATPage: React.FC = () => {
           </select>
         </div>
       </div>
+
+      {loading && <p className="text-xs text-zinc-500">Đang tải VAT từ PostgreSQL...</p>}
+      {loadError && <p className="text-xs text-red-600">{loadError}</p>}
 
       {/* Main Table */}
       <DataTable columns={columns} data={filteredRecords} searchPlaceholder="Tìm mã hóa đơn, tên đối tác, mã số thuế..." />

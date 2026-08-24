@@ -8,7 +8,6 @@ import { SaaSAuthProvider } from "./contexts/SaaSAuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
-import { ShopTenantProvider } from "./contexts/ShopTenantContext";
 
 // Layouts & Protects
 import ShopLayout from "./layouts/ShopLayout";
@@ -322,9 +321,8 @@ export default function App() {
                         path="/*"
                         element={
                           <ShopLayout>
-                            <ShopTenantProvider>
-                              <Suspense fallback={<PageSkeleton />}>
-                                <Routes>
+                            <Suspense fallback={<PageSkeleton />}>
+                              <Routes>
                                   <Route path="/" element={<CatalogPage />} />
                                   <Route path="/product/:slug" element={<ProductPage />} />
                                   <Route path="/cart" element={<CartPage />} />
@@ -333,6 +331,19 @@ export default function App() {
                                   <Route path="/login" element={<LoginPage />} />
                                   <Route path="/register" element={<RegisterPage />} />
                                   <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+
+                                  {/* A registered tenant gets a stable, isolated
+                                      storefront URL. Keep the same page set under
+                                      /shop/:tenant so all existing shop flows
+                                      work on that URL as well as on root. */}
+                                  <Route path="/shop/:tenant" element={<CatalogPage />} />
+                                  <Route path="/shop/:tenant/product/:slug" element={<ProductPage />} />
+                                  <Route path="/shop/:tenant/cart" element={<CartPage />} />
+                                  <Route path="/shop/:tenant/checkout" element={<CheckoutPage />} />
+                                  <Route path="/shop/:tenant/order-success/:code" element={<OrderSuccessPage />} />
+                                  <Route path="/shop/:tenant/login" element={<LoginPage />} />
+                                  <Route path="/shop/:tenant/register" element={<RegisterPage />} />
+                                  <Route path="/shop/:tenant/auth/google/callback" element={<GoogleCallbackPage />} />
 
                                   <Route
                                     path="/orders"
@@ -358,10 +369,33 @@ export default function App() {
                                       </ProtectedRoute>
                                     }
                                   />
+                                  <Route
+                                    path="/shop/:tenant/orders"
+                                    element={
+                                      <ProtectedRoute>
+                                        <OrdersPage />
+                                      </ProtectedRoute>
+                                    }
+                                  />
+                                  <Route
+                                    path="/shop/:tenant/orders/:code"
+                                    element={
+                                      <ProtectedRoute>
+                                        <OrderDetailPage />
+                                      </ProtectedRoute>
+                                    }
+                                  />
+                                  <Route
+                                    path="/shop/:tenant/account"
+                                    element={
+                                      <ProtectedRoute>
+                                        <AccountPage />
+                                      </ProtectedRoute>
+                                    }
+                                  />
                                   <Route path="*" element={<Navigate to="/" replace />} />
-                                </Routes>
-                              </Suspense>
-                            </ShopTenantProvider>
+                              </Routes>
+                            </Suspense>
                           </ShopLayout>
                         }
                       />
