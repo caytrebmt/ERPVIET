@@ -1058,7 +1058,10 @@ saasRouter.get('/translations/all', async (req: Request, res: Response) => {
   }
 });
 
-saasRouter.post('/translations', async (req: Request, res: Response) => {
+// sys_translations + file locale là dữ liệu DỊCH THUẬT DÙNG CHUNG cho toàn
+// bộ hệ thống — viết sai một key là hỏng giao diện MỌI tenant. Chỉ quản trị
+// viên nền tảng được ghi (trước đây endpoint này hoàn toàn không xác thực).
+saasRouter.post('/translations', tenantMiddleware, requireSuperAdmin, async (req: Request, res: Response) => {
   const { key, category = 'common', vi, en } = req.body;
   if (!key) {
     return res.status(400).json({ ok: false, error: 'Key is required' });
@@ -1087,7 +1090,7 @@ saasRouter.post('/translations', async (req: Request, res: Response) => {
   }
 });
 
-saasRouter.delete('/translations/:key', async (req: Request, res: Response) => {
+saasRouter.delete('/translations/:key', tenantMiddleware, requireSuperAdmin, async (req: Request, res: Response) => {
   const { key } = req.params;
   try {
     await query('DELETE FROM sys_translations WHERE key_name = $1', [key]);
@@ -1132,7 +1135,7 @@ saasRouter.get('/translations/json', tenantMiddleware, async (req: TenantRequest
   }
 });
 
-saasRouter.put('/translations/json', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+saasRouter.put('/translations/json', tenantMiddleware, requireSuperAdmin, async (req: TenantRequest, res: Response) => {
   const { key, lang, value } = req.body;
   if (!key || !lang || value === undefined) {
     return res.status(400).json({ ok: false, error: 'Key, lang, and value are required' });
@@ -1167,7 +1170,7 @@ saasRouter.put('/translations/json', tenantMiddleware, async (req: TenantRequest
   }
 });
 
-saasRouter.post('/translations/json/bulk', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+saasRouter.post('/translations/json/bulk', tenantMiddleware, requireSuperAdmin, async (req: TenantRequest, res: Response) => {
   const { translations } = req.body;
   if (!translations || typeof translations !== 'object') {
     return res.status(400).json({ ok: false, error: 'translations object is required' });
@@ -1216,7 +1219,7 @@ saasRouter.post('/translations/json/bulk', tenantMiddleware, async (req: TenantR
   }
 });
 
-saasRouter.post('/translations/json/publish', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+saasRouter.post('/translations/json/publish', tenantMiddleware, requireSuperAdmin, async (req: TenantRequest, res: Response) => {
   try {
     const fs = await import('fs');
     const path = await import('path');
@@ -1285,7 +1288,9 @@ saasRouter.get('/settings', async (req: Request, res: Response) => {
 // ==========================================
 // 3. DYNAMIC MENUS (MULTILINGUAL)
 // ==========================================
-saasRouter.get('/menus', tenantMiddleware, async (req: TenantRequest, res: Response) => {
+// sys_menus là định nghĩa menu TOÀN HỆ THỐNG (dùng chung mọi tenant) — chỉ
+// quản trị viên nền tảng được đọc/cấu hình. Tenant không được chạm vào.
+saasRouter.get('/menus', tenantMiddleware, requireSuperAdmin, async (req: TenantRequest, res: Response) => {
   const lang = getLang(req);
   try {
     const result = await query(
@@ -2114,7 +2119,10 @@ saasRouter.post('/assets/depreciate', tenantMiddleware, async (req: TenantReques
 // ==========================================
 // 11. AUDIT LOGS & USER SESSIONS ENDPOINTS
 // ==========================================
-saasRouter.get('/audit-logs', tenantMiddleware, async (req: TenantRequest, res) => {
+// Nhật ký an ninh là tính năng bảo mật của NỀN TẢNG — chỉ quản trị viên nền
+// tảng (super admin) được xem. Admin của tenant (khách hàng doanh nghiệp)
+// KHÔNG được truy cập.
+saasRouter.get('/audit-logs', tenantMiddleware, requireSuperAdmin, async (req: TenantRequest, res) => {
   try {
     const companyId = req.isSuperAdmin ? null : req.companyId;
     const result = await query(
@@ -2184,7 +2192,16 @@ saasRouter.patch('/tenants/me', tenantMiddleware, requireTenantAdmin, async (req
     sets.push(`${column} = $${values.length}`);
   }
   if (body.settings !== undefined) {
-    values.push(JSON.stringify(body.settings || {}));
+    let settingsToWrite = body.settings || {};
+    if (!req.isSuperAdmin && settingsToWrite.api !== undefined) {
+      // "Kết nối API Backend" (apiBaseUrl, webhook, logLevel...) là cấu hình
+      // hạ tầng của NỀN TẢNG. Admin tenant (khách hàng doanh nghiệp) không
+      // được thay đổi: giữ nguyên giá trị cũ, bỏ qua giá trị tenant gửi lên.
+      const current = await query(`SELECT settings FROM companies WHERE id = $1`, [companyId]);
+      const currentSettings: any = current.rows[0]?.settings || {};
+      settingsToWrite = { ...settingsToWrite, api: currentSettings.api };
+    }
+    values.push(JSON.stringify(settingsToWrite));
     sets.push(`settings = $${values.length}::jsonb`);
   }
   if (body.tax_code !== undefined && !taxCode) return res.status(400).json({ ok: false, message: 'Mã số thuế không được để trống.' });

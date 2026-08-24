@@ -93,7 +93,11 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
 
   // Role based filtering logic
   const isAllowedPath = (path: string): boolean => {
-    if (path === '/saas/tenants') return !!erpUser?.is_super_admin;
+    // Tính năng quản trị NỀN TẢNG — chỉ quản trị viên nền tảng (super admin)
+    // nhìn thấy. Admin của tenant (khách hàng doanh nghiệp) KHÔNG nhìn thấy:
+    //  - /saas/tenants     : Quản lý Doanh nghiệp (toàn bộ tenant khác)
+    //  - /saas/audit-logs  : Nhật ký an ninh (bảo mật toàn hệ thống)
+    if (path === '/saas/tenants' || path === '/saas/audit-logs') return !!erpUser?.is_super_admin;
     if (role === 'ADMIN') return true;
     if (path === '/saas/dashboard' || path === '/') return true;
 

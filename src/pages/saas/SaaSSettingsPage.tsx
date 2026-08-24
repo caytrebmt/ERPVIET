@@ -33,15 +33,33 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSaaSAuth } from '../../contexts/SaaSAuthContext';
 import { SaaSTranslationsTab } from '../../components/SaaSTranslationsTab';
 import { SaaSTranslationsJsonTab } from '../../components/SaaSTranslationsJsonTab';
 import { SaaSUsersRbacTab } from '../../components/SaaSUsersRbacTab';
 import client from '../../api/client';
 
+type SettingsTabId = 'users_rbac' | 'translations' | 'translations_json' | 'company' | 'menu' | 'inventory' | 'api' | 'notifications' | 'backup';
+
+// Các tab thuộc quản trị NỀN TẢNG (dữ liệu dùng chung toàn hệ thống) — chỉ
+// quản trị viên nền tảng (super admin) nhìn thấy. Admin của tenant (khách
+// hàng doanh nghiệp) CHỈ thấy cấu hình của chính tenant mình:
+//   - translations / translations_json : Dịch thuật dùng chung (sửa sai là
+//     hỏng giao diện MỌI tenant → chỉ nền tảng được phép)
+//   - menu                             : Cấu hình menu DB (sys_menus toàn hệ thống)
+//   - api                              : Kết nối API Backend (hạ tầng nền tảng)
+const SUPER_ADMIN_ONLY_TABS: SettingsTabId[] = ['translations', 'translations_json', 'menu', 'api'];
+
 export const SaaSSettingsPage: React.FC = () => {
   const { addToast } = useToast();
   const { language, t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'users_rbac' | 'translations' | 'translations_json' | 'company' | 'menu' | 'inventory' | 'api' | 'notifications' | 'backup'>('users_rbac');
+  const { erpUser } = useSaaSAuth();
+  const isSuperAdmin = !!erpUser?.is_super_admin;
+  const canSeeTab = (tab: SettingsTabId) => isSuperAdmin || !SUPER_ADMIN_ONLY_TABS.includes(tab);
+  const [activeTab, setActiveTab] = useState<SettingsTabId>('users_rbac');
+  // Phòng chống deep-link/trạng thái cũ: tab nền tảng bị ẩn thì trả về tab
+  // người dùng của tenant.
+  const effectiveTab: SettingsTabId = canSeeTab(activeTab) ? activeTab : 'users_rbac';
 
   // Tab 1: Company Profile & PDF Print Settings. Values are loaded from the
   // current tenant; no browser-local copy is used as the source of truth.
@@ -103,7 +121,10 @@ export const SaaSSettingsPage: React.FC = () => {
       .finally(() => setCompanyLoading(false));
   }, []);
 
+  // sys_menus là bảng menu TOÀN HỆ THỐNG — endpoint chỉ mở cho super admin.
+  // Tenant không cần gọi (tab "Cấu hình menu" bị ẩn với tenant).
   useEffect(() => {
+    if (!isSuperAdmin) return;
     client.get('/api/saas/menus')
       .then((response) => {
         if (!response.data?.ok) return;
@@ -112,7 +133,7 @@ export const SaaSSettingsPage: React.FC = () => {
         })));
       })
       .catch(() => undefined);
-  }, []);
+  }, [isSuperAdmin]);
 
   // Action Handlers
   const handleSaveCompany = async (e: React.FormEvent) => {
@@ -206,15 +227,25 @@ export const SaaSSettingsPage: React.FC = () => {
   };
 
   const handleExportBackup = () => {
-    const backupData = {
-      version: 'ERP-SaaS 2026.1',
-      exportedAt: new Date().toISOString(),
-      companyInfo,
-      menuItems,
-      policySettings,
-      apiConfig,
-      notifyConfig,
-    };
+    // Tenant chỉ được xuất dữ liệu của CHÍNH TENANT MÌNH: không kèm định
+    // nghĩa menu toàn hệ thống (menuItems) hay cấu hình API nền tảng (apiConfig).
+    const backupData = isSuperAdmin
+      ? {
+          version: 'ERP-SaaS 2026.1',
+          exportedAt: new Date().toISOString(),
+          companyInfo,
+          menuItems,
+          policySettings,
+          apiConfig,
+          notifyConfig,
+        }
+      : {
+          version: 'ERP-SaaS 2026.1',
+          exportedAt: new Date().toISOString(),
+          companyInfo,
+          policySettings,
+          notifyConfig,
+        };
     const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -295,28 +326,32 @@ export const SaaSSettingsPage: React.FC = () => {
                   <ShieldCheck className="h-4 w-4 shrink-0" />
                   {t('settings_users_rbac')}
                 </button>
-                <button
-                  onClick={() => setActiveTab('translations')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'translations'
-                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  <Globe className="h-4 w-4 shrink-0" />
-                  {t('settings_translations_languages')}
-                </button>
-                <button
-                  onClick={() => setActiveTab('translations_json')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'translations_json'
-                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  <FileJson className="h-4 w-4 shrink-0" />
-                  {language === 'en' ? 'JSON Translation Editor' : 'Trình Dịch Thuật JSON'}
-                </button>
+                {isSuperAdmin && (
+                  <>
+                    <button
+                      onClick={() => setActiveTab('translations')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                        activeTab === 'translations'
+                          ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      <Globe className="h-4 w-4 shrink-0" />
+                      {t('settings_translations_languages')}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('translations_json')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                        activeTab === 'translations_json'
+                          ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      <FileJson className="h-4 w-4 shrink-0" />
+                      {language === 'en' ? 'JSON Translation Editor' : 'Trình Dịch Thuật JSON'}
+                    </button>
+                  </>
+                )}
               </nav>
             </div>
 
@@ -337,17 +372,19 @@ export const SaaSSettingsPage: React.FC = () => {
                   <Building2 className="h-4 w-4 shrink-0" />
                   {t('settings_company_templates')}
                 </button>
-                <button
-                  onClick={() => setActiveTab('menu')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'menu'
-                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  <Database className="h-4 w-4 shrink-0" />
-                  {t('settings_db_menu')}
-                </button>
+                {isSuperAdmin && (
+                  <button
+                    onClick={() => setActiveTab('menu')}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                      activeTab === 'menu'
+                        ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    <Database className="h-4 w-4 shrink-0" />
+                    {t('settings_db_menu')}
+                  </button>
+                )}
               </nav>
             </div>
 
@@ -368,17 +405,19 @@ export const SaaSSettingsPage: React.FC = () => {
                   <Boxes className="h-4 w-4 shrink-0" />
                   {t('settings_warehouse_rules')}
                 </button>
-                <button
-                  onClick={() => setActiveTab('api')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'api'
-                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  <Server className="h-4 w-4 shrink-0" />
-                  {t('settings_backend_api')}
-                </button>
+                {isSuperAdmin && (
+                  <button
+                    onClick={() => setActiveTab('api')}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                      activeTab === 'api'
+                        ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    <Server className="h-4 w-4 shrink-0" />
+                    {t('settings_backend_api')}
+                  </button>
+                )}
               </nav>
             </div>
 
@@ -418,22 +457,26 @@ export const SaaSSettingsPage: React.FC = () => {
         {/* Mobile Dropdown */}
         <div className="lg:hidden">
           <select
-            value={activeTab}
+            value={effectiveTab}
             onChange={(e) => setActiveTab(e.target.value as any)}
             className="w-full px-3 py-2.5 text-xs font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 cursor-pointer"
           >
             <optgroup label={language === 'en' ? 'Administration & HR' : 'Quản Trị & Nhân Sự'}>
               <option value="users_rbac">{t('settings_users_rbac')}</option>
-              <option value="translations">{t('settings_translations_languages')}</option>
-              <option value="translations_json">{language === 'en' ? 'JSON Translation Editor' : 'Trình Dịch Thuật JSON'}</option>
+              {isSuperAdmin && (
+                <>
+                  <option value="translations">{t('settings_translations_languages')}</option>
+                  <option value="translations_json">{language === 'en' ? 'JSON Translation Editor' : 'Trình Dịch Thuật JSON'}</option>
+                </>
+              )}
             </optgroup>
             <optgroup label={language === 'en' ? 'System & Enterprise' : 'Hệ Thống & Doanh Nghiệp'}>
               <option value="company">{t('settings_company_templates')}</option>
-              <option value="menu">{t('settings_db_menu')}</option>
+              {isSuperAdmin && <option value="menu">{t('settings_db_menu')}</option>}
             </optgroup>
             <optgroup label={language === 'en' ? 'Operations & Integration' : 'Nghiệp Vụ & Kết Nối'}>
               <option value="inventory">{t('settings_warehouse_rules')}</option>
-              <option value="api">{t('settings_backend_api')}</option>
+              {isSuperAdmin && <option value="api">{t('settings_backend_api')}</option>}
             </optgroup>
             <optgroup label={language === 'en' ? 'Operations & Data' : 'Vận Hành & Dữ Liệu'}>
               <option value="notifications">{t('settings_alerts_notifications')}</option>
@@ -445,16 +488,16 @@ export const SaaSSettingsPage: React.FC = () => {
         {/* Main Content Panel */}
         <div className="min-w-0">
           {/* TAB 0: USERS MANAGEMENT & RBAC PERMISSION MATRIX */}
-          {activeTab === 'users_rbac' && <SaaSUsersRbacTab />}
+          {effectiveTab === 'users_rbac' && <SaaSUsersRbacTab />}
 
           {/* TAB 1: TRANSLATIONS & SYSTEM LANGUAGES */}
-          {activeTab === 'translations' && <SaaSTranslationsTab />}
+          {effectiveTab === 'translations' && <SaaSTranslationsTab />}
 
           {/* TAB 1b: JSON TRANSLATION EDITOR */}
-          {activeTab === 'translations_json' && <SaaSTranslationsJsonTab />}
+          {effectiveTab === 'translations_json' && <SaaSTranslationsJsonTab />}
 
           {/* TAB 1: COMPANY PROFILE & PRINT TEMPLATES */}
-          {activeTab === 'company' && (
+          {effectiveTab === 'company' && (
               <form onSubmit={handleSaveCompany} className="space-y-6">
             {companyLoading && <p className="text-xs text-zinc-500">Đang tải thông tin doanh nghiệp từ PostgreSQL...</p>}
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
@@ -631,7 +674,7 @@ export const SaaSSettingsPage: React.FC = () => {
       )}
 
       {/* TAB 2: MENU SYSTEM & DATABASE ROLES */}
-      {activeTab === 'menu' && (
+      {effectiveTab === 'menu' && (
         <div className="space-y-6">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-4 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
@@ -761,7 +804,7 @@ export const SaaSSettingsPage: React.FC = () => {
       )}
 
       {/* TAB 3: INVENTORY POLICY & VAT */}
-      {activeTab === 'inventory' && (
+      {effectiveTab === 'inventory' && (
         <form onSubmit={handleSavePolicy} className="space-y-6">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
@@ -993,7 +1036,7 @@ export const SaaSSettingsPage: React.FC = () => {
       )}
 
       {/* TAB 4: API BACKEND CONFIGURATION */}
-      {activeTab === 'api' && (
+      {effectiveTab === 'api' && (
         <form onSubmit={handleSaveApiConfig} className="space-y-6">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
@@ -1074,7 +1117,7 @@ export const SaaSSettingsPage: React.FC = () => {
       )}
 
       {/* TAB 5: NOTIFICATIONS & ALERTS */}
-      {activeTab === 'notifications' && (
+      {effectiveTab === 'notifications' && (
         <form onSubmit={handleSaveNotify} className="space-y-6">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
@@ -1147,7 +1190,7 @@ export const SaaSSettingsPage: React.FC = () => {
       )}
 
       {/* TAB 6: BACKUP & RESTORE */}
-      {activeTab === 'backup' && (
+      {effectiveTab === 'backup' && (
         <div className="space-y-6">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-4 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
