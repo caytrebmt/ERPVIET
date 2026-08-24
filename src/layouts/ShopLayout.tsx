@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Sidebar from "../components/Sidebar";
 import { ShopTenantProvider } from "../contexts/ShopTenantContext";
+import { useCart } from "../contexts/CartContext";
 
 interface ShopLayoutProps {
   children: React.ReactNode;
@@ -12,10 +13,23 @@ interface ShopLayoutProps {
 
 const ShopLayout: React.FC<ShopLayoutProps> = ({ children }) => {
   const location = useLocation();
+  const { fetchCart } = useCart();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [location.pathname]);
+
+  // Identity of the CURRENT storefront ("/shop/<slug>" or the default root).
+  // When the visitor moves between two tenants' WebShops the cart of the
+  // previous tenant must never keep rendering in the new storefront.
+  const storefrontKey = useMemo(() => {
+    const match = location.pathname.match(/^\/shop\/([^/]+)/i);
+    return match?.[1] || 'default';
+  }, [location.pathname]);
+
+  useEffect(() => {
+    fetchCart();
+  }, [storefrontKey]);
 
   return (
     <ShopTenantProvider>

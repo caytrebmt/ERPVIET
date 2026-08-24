@@ -158,4 +158,19 @@ describe('security regression guards', () => {
     expect(page).not.toContain('localhost:3000');
     expect(page).toContain('webshop_slug');
   });
+
+  it('tài khoản khách WebShop unique THEO TENANT (không còn UNIQUE toàn cục username/email)', () => {
+    const schema = readSource('schema.sql');
+    const table = schema.match(/CREATE TABLE web_customers \([\s\S]*?\n\);/);
+    expect(table, 'bảng web_customers phải tồn tại').toBeTruthy();
+    // Lỗi từng khiến cùng 1 email không đăng ký được ở WebShop của tenant khác
+    expect(table![0]).not.toContain('username VARCHAR(50) UNIQUE');
+    expect(table![0]).not.toContain('email VARCHAR(100) UNIQUE');
+    expect(schema).toContain('uq_web_customers_company_username_normalized');
+    // Migration gỡ constraint cũ cho DB production đã tồn tại
+    const db = readSource('src/db/index.ts');
+    expect(db).toContain("name: 'web_customers_tenant_scoped_uniqueness'");
+    expect(db).toContain('DROP CONSTRAINT IF EXISTS web_customers_username_key');
+    expect(db).toContain('DROP CONSTRAINT IF EXISTS web_customers_email_key');
+  });
 });

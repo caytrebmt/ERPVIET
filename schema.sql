@@ -1478,8 +1478,12 @@ CREATE TABLE crm_activities (
 -- ------------------------------------------------------------
 CREATE TABLE web_customers (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
+    -- KHÔNG đặt UNIQUE toàn cục: cùng một khách (email/username) được phép
+    -- tồn tại ở WebShop của các tenant khác nhau. Tính duy nhất được áp theo
+    -- tenant qua index uq_web_customers_company_email_normalized và
+    -- uq_web_customers_company_username_normalized.
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
@@ -2424,6 +2428,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_suppliers_company_tax_code_normalized
 CREATE UNIQUE INDEX IF NOT EXISTS uq_suppliers_company_email_normalized
   ON suppliers (company_id, LOWER(BTRIM(email)))
   WHERE email IS NOT NULL AND BTRIM(email) <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_web_customers_company_username_normalized
+  ON web_customers (company_id, LOWER(BTRIM(username)));
+
 CREATE UNIQUE INDEX IF NOT EXISTS uq_web_customers_company_email_normalized
   ON web_customers (company_id, LOWER(BTRIM(email)));
 
@@ -2810,7 +2817,7 @@ BEGIN
             '097' || LPAD((1000000 + wc_id * 17)::text, 7, '0'),
             'Đường Số ' || wc_id || ', Phường ' || (wc_id % 15 + 1),
             CASE WHEN wc_id % 2 = 0 THEN 'TP.Hồ Chí Minh' ELSE 'Hà Nội' END
-        ) ON CONFLICT (username) DO NOTHING;
+        ) ON CONFLICT DO NOTHING;
     END LOOP;
 
     -- 1,000 Web Orders
