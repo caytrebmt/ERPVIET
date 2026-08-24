@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { LogIn, Mail, Lock, Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { useToast } from "../contexts/ToastContext";
 import { storage } from "../utils/storage";
 import { useTranslation } from "react-i18next";
@@ -13,14 +14,16 @@ const LoginPage: React.FC = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const { shopPath, pathPrefix } = useShopTenant();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Redirect if already logged in
-  const from = (location.state as any)?.from?.pathname || "/";
+  // Redirect if already logged in. The default target keeps the current
+  // storefront (a tenant WebShop stays inside /shop/<slug>).
+  const from = (location.state as any)?.from?.pathname || shopPath("/");
 
   useEffect(() => {
     if (isAuthenticated && !loading) {
@@ -131,7 +134,7 @@ const LoginPage: React.FC = () => {
         <div className="border-t border-gray-100 dark:border-gray-800 pt-4 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400 m-0">
             {t('chua-co-tai-khoan-webshop')}{" "}
-            <Link to="/register" className="font-bold text-indigo-600 dark:text-indigo-450 hover:underline inline-flex items-center gap-0.5">
+            <Link to={shopPath("/register")} className="font-bold text-indigo-600 dark:text-indigo-450 hover:underline inline-flex items-center gap-0.5">
               {t('dang-ky-tai-khoan')} <ArrowRight className="w-3 h-3" />
             </Link>
           </p>
@@ -173,9 +176,16 @@ const LoginPage: React.FC = () => {
                            headers: { Authorization: `Bearer ${resp.access_token}` },
                          });
                          const profile = await profileRes.json();
+                         // The raw fetch bypasses the axios interceptor, so
+                         // attach the tenant from the current URL explicitly —
+                         // otherwise the account is resolved in the DEFAULT
+                         // WebShop instead of this tenant's WebShop.
+                         const tenantHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+                         const slugMatch = pathPrefix.match(/^\/shop\/([^/]+)$/i);
+                         if (slugMatch?.[1]) tenantHeaders['x-tenant-slug'] = slugMatch[1];
                          const res = await fetch('/api/shop/auth/google', {
                            method: 'POST',
-                           headers: { 'Content-Type': 'application/json' },
+                           headers: tenantHeaders,
                            body: JSON.stringify({ google_profile: profile }),
                          });
                          const data = await res.json();

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, User, Mail, Phone, Lock, Loader2, ArrowLeft, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { useToast } from "../contexts/ToastContext";
 import { useTranslation } from "react-i18next";
 
@@ -10,6 +11,7 @@ const RegisterPage: React.FC = () => {
   const { register, isAuthenticated, loading } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const { shopPath } = useShopTenant();
 
   // Form states
   const [name, setName] = useState("");
@@ -23,9 +25,9 @@ const RegisterPage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated && !loading) {
-      navigate("/", { replace: true });
+      navigate(shopPath("/"), { replace: true });
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, shopPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +60,7 @@ const RegisterPage: React.FC = () => {
 
       if (result.ok) {
         showToast(result.message, "success");
-        navigate("/");
+        navigate(shopPath("/"));
       } else {
         showToast(result.message, "error");
       }
@@ -215,7 +217,7 @@ const RegisterPage: React.FC = () => {
         <div className="border-t border-gray-100 dark:border-gray-800 pt-4 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400 m-0">
             Đã sẵn có tài khoản?{" "}
-            <Link to="/login" className="font-bold text-indigo-600 dark:text-indigo-450 hover:underline inline-flex items-center gap-0.5">
+            <Link to={shopPath("/login")} className="font-bold text-indigo-600 dark:text-indigo-450 hover:underline inline-flex items-center gap-0.5">
               Đăng nhập <ArrowLeft className="w-3 h-3" />
             </Link>
           </p>

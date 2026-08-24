@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { User, Phone, Mail, KeyRound, Loader2, Package, LogOut, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { useToast } from "../contexts/ToastContext";
 import { useTranslation } from "react-i18next";
 
@@ -9,6 +10,7 @@ const AccountPage: React.FC = () => {
   const { t } = useTranslation();
   const { user, updateProfile, changePassword, logout } = useAuth();
   const { showToast } = useToast();
+  const { shopPath } = useShopTenant();
 
   // Profile Form State
   const [name, setName] = useState(user?.name || "");
@@ -95,7 +97,7 @@ const AccountPage: React.FC = () => {
         {/* Quick action shortcuts */}
         <div className="flex gap-2">
           <Link
-            to="/orders"
+            to={shopPath("/orders")}
             className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-600 dark:hover:border-indigo-400 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
           >
             <Package className="w-4 h-4 text-indigo-600" /> Lịch sử đơn hàng

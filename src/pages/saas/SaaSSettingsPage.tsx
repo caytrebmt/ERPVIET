@@ -30,6 +30,9 @@ import {
   Globe,
   Languages,
   FileJson,
+  ShoppingBag,
+  ExternalLink,
+  Copy,
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -53,6 +56,7 @@ const SUPER_ADMIN_ONLY_TABS: SettingsTabId[] = ['translations', 'translations_js
 export const SaaSSettingsPage: React.FC = () => {
   const { addToast } = useToast();
   const { language, t } = useLanguage();
+  const isEn = language === 'en';
   const { erpUser } = useSaaSAuth();
   const isSuperAdmin = !!erpUser?.is_super_admin;
   const canSeeTab = (tab: SettingsTabId) => isSuperAdmin || !SUPER_ADMIN_ONLY_TABS.includes(tab);
@@ -500,6 +504,52 @@ export const SaaSSettingsPage: React.FC = () => {
           {effectiveTab === 'company' && (
               <form onSubmit={handleSaveCompany} className="space-y-6">
             {companyLoading && <p className="text-xs text-zinc-500">Đang tải thông tin doanh nghiệp từ PostgreSQL...</p>}
+
+            {/* WebShop storefront of THIS tenant — every business opens and
+                shares its own shop URL; products/orders stay tenant-scoped. */}
+            {!companyLoading && companyInfo?.webshop?.url && (
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                    <ShoppingBag className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
+                      {isEn ? 'Your WebShop storefront' : 'WebShop của doanh nghiệp bạn'}
+                    </h3>
+                    <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5">
+                      {companyInfo.webshop.name_vi || companyInfo.webshop.name_en || 'WebShop'}
+                    </p>
+                    <code className="block text-[11px] font-mono text-emerald-800 dark:text-emerald-200 mt-1 break-all">
+                      {`${window.location.origin}${companyInfo.webshop.url}`}
+                    </code>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={companyInfo.webshop.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    {isEn ? 'Open WebShop' : 'Mở WebShop'}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}${companyInfo.webshop.url}`);
+                      addToast(isEn ? 'WebShop URL copied!' : 'Đã sao chép URL WebShop!', 'success');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    {isEn ? 'Copy URL' : 'Sao chép URL'}
+                  </button>
+                </div>
+              </div>
+            )}
+
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <Building2 className="h-5 w-5 text-amber-500" /> Thông Tin Pháp Lý Doanh Nghiệp (In trên hóa đơn & báo giá)

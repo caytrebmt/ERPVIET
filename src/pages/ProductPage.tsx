@@ -4,6 +4,7 @@ import { ShoppingCart, Loader2, PackageOpen, ChevronRight, Tag, CheckCircle2 } f
 import client from "../api/client";
 import { Product } from "../types";
 import { useCart } from "../contexts/CartContext";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { useToast } from "../contexts/ToastContext";
 import { formatPrice } from "../utils/format";
 import { getProductImageSrc } from "../utils/images";
@@ -14,6 +15,7 @@ const ProductPage: React.FC = () => {
   const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { shopPath } = useShopTenant();
   const { addToCart } = useCart();
   const { showToast } = useToast();
 
@@ -61,13 +63,13 @@ const ProductPage: React.FC = () => {
           }
         } else {
           showToast(t("page_product_not_found"), "error");
-          navigate("/");
+          navigate(shopPath("/"));
         }
       } catch (err) {
         console.error("Error loading product details", err);
         const message = err instanceof Error ? err.message : t("page_product_not_found");
         showToast(message, "error");
-        navigate("/");
+        navigate(shopPath("/"));
       } finally {
         setLoading(false);
       }
@@ -120,7 +122,7 @@ const ProductPage: React.FC = () => {
       <div className="min-h-[40vh] flex flex-col items-center justify-center text-center p-4">
         <PackageOpen className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-2" />
         <h3 className="font-semibold text-gray-700 dark:text-gray-300">Sản phẩm không khả dụng</h3>
-        <Link to="/" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-2">
+        <Link to={shopPath("/")} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-2">
           Quay lại trang chủ
         </Link>
       </div>
@@ -141,11 +143,11 @@ const ProductPage: React.FC = () => {
     <div className="flex flex-col gap-4">
       {/* Sleek Breadcrumb Navigation */}
       <nav className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xs border border-gray-200/80 dark:border-gray-800 rounded-lg px-3.5 py-2">
-        <Link to="/" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+        <Link to={shopPath("/")} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
           Trang chủ
         </Link>
         <ChevronRight className="w-3 h-3 text-gray-400" />
-        <Link to={`/?category_id=${product.categoryId}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+        <Link to={shopPath(`/?category_id=${product.categoryId}`)} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
           {categoryName || "Danh mục"}
         </Link>
         <ChevronRight className="w-3 h-3 text-gray-400" />

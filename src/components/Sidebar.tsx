@@ -16,6 +16,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import client from "../api/client";
 import { Category } from "../types";
 
@@ -37,16 +38,22 @@ const SidebarBody: React.FC<{
   const { user, isAuthenticated, logout } = useAuth();
   const { cart } = useCart();
   const { t, language } = useLanguage();
+  const { pathPrefix, shopPath } = useShopTenant();
   const location = useLocation();
   const navigate = useNavigate();
+  // Compare active state on the path without the /shop/<tenant> prefix so
+  // menu highlighting works identically on tenant and default storefronts.
+  const ownPathname = pathPrefix && location.pathname.startsWith(pathPrefix)
+    ? location.pathname.slice(pathPrefix.length) || "/"
+    : location.pathname;
   const [accountOpen, setAccountOpen] = useState(
-    location.pathname === "/orders" || location.pathname === "/account"
+    ownPathname === "/orders" || ownPathname === "/account"
   );
 
   const isActive = (item: NavItem) =>
     item.match
-      ? item.match(location.pathname, location.search)
-      : location.pathname === item.to;
+      ? item.match(ownPathname, location.search)
+      : ownPathname === item.to;
 
   const storeItems: NavItem[] = [
     { label: t("nav_home", "Trang chủ"), to: "/", icon: Home, match: (p) => p === "/" },
@@ -67,7 +74,7 @@ const SidebarBody: React.FC<{
     const params = new URLSearchParams(location.search);
     if (id) params.set("category_id", String(id));
     else params.delete("category_id");
-    navigate(`/${params.toString() ? `?${params.toString()}` : ""}`);
+    navigate(shopPath(`/${params.toString() ? `?${params.toString()}` : ""}`));
     onNavigate?.();
   };
 
@@ -78,7 +85,7 @@ const SidebarBody: React.FC<{
     return (
       <Link
         key={item.to}
-        to={item.to}
+        to={shopPath(item.to)}
         onClick={onNavigate}
         title={collapsed ? item.label : undefined}
         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
@@ -195,7 +202,7 @@ const SidebarBody: React.FC<{
                 collapsed ? (
                   <Link
                     key={it.to}
-                    to={it.to}
+                    to={shopPath(it.to)}
                     onClick={onNavigate}
                     title={it.label}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer ${
@@ -245,7 +252,7 @@ const SidebarBody: React.FC<{
             )}
             <div className="flex flex-col gap-1">
               <Link
-                to="/login"
+                to={shopPath("/login")}
                 onClick={onNavigate}
                 title={collapsed ? t("nav_login", "Đăng nhập") : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer ${
@@ -256,7 +263,7 @@ const SidebarBody: React.FC<{
                 {!collapsed && t("nav_login", "Đăng nhập")}
               </Link>
               <Link
-                to="/register"
+                to={shopPath("/register")}
                 onClick={onNavigate}
                 title={collapsed ? t("nav_register", "Đăng ký") : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs transition-all cursor-pointer ${

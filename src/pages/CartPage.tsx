@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Trash2, ShoppingBag, ArrowRight, Loader2, Minus, Plus } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { formatPrice } from "../utils/format";
 
 const CartPage: React.FC = () => {
   const { cart, loading, updateQuantity, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
+  const { shopPath } = useShopTenant();
   const [updatingItemId, setUpdatingItemId] = useState<number | null>(null);
 
   const handleQtyChange = async (itemId: number, currentQty: number, change: number) => {
@@ -111,7 +113,7 @@ const CartPage: React.FC = () => {
                     </div>
                     <div className="flex flex-col min-w-0 justify-center">
                       <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 truncate">
-                        <Link to={`/product/${item.slug || item.sku}`}>{item.name}</Link>
+                        <Link to={shopPath(`/product/${item.slug || item.sku}`)}>{item.name}</Link>
                       </h4>
                       <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5 uppercase">SKU: {item.sku}</p>
                       {/* mobile only remove */}
@@ -173,7 +175,7 @@ const CartPage: React.FC = () => {
 
           {/* Quick Clear buttons */}
           <div className="flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 shadow-xs transition-colors duration-200">
-            <Link to="/" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
+            <Link to={shopPath("/")} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
               ← Tiếp tục mua sắm
             </Link>
             <button
@@ -214,7 +216,7 @@ const CartPage: React.FC = () => {
             </div>
 
             <button
-              onClick={() => navigate("/checkout")}
+              onClick={() => navigate(shopPath("/checkout"))}
               className="w-full bg-indigo-600 text-white hover:bg-indigo-700 font-bold rounded-xl py-3 text-sm flex items-center justify-center gap-2 transition-all shadow-xs mt-2 cursor-pointer"
             >
               Tiến hành thanh toán

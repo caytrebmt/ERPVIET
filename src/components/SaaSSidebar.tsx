@@ -56,7 +56,17 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
   const location = useLocation();
   const isEn = language === 'en';
 
-  const [companyInfo, setCompanyInfo] = useState<{ name_vi?: string; name_en?: string; plan_type?: string; subscription_status?: string } | null>(null);
+  const [companyInfo, setCompanyInfo] = useState<{
+    name_vi?: string;
+    name_en?: string;
+    plan_type?: string;
+    subscription_status?: string;
+    webshop?: { slug?: string; name_vi?: string; url?: string } | null;
+  } | null>(null);
+
+  // Each tenant opens ITS OWN WebShop storefront from the ERP. Falling back to
+  // "/" would silently send tenant admins to the platform's default shop.
+  const webshopUrl = companyInfo?.webshop?.url || '/';
 
   const role = erpUser?.role_code || 'ADMIN';
 
@@ -157,7 +167,7 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
         { name: isEn ? 'Tenant Management' : 'Quản lý Doanh nghiệp', path: '/saas/tenants', icon: Building2 },
         { name: t('sidebar_security_audit'), path: '/saas/audit-logs', icon: ShieldAlert },
         { name: t('sidebar_system_settings'), path: '/saas/settings', icon: Settings },
-        { name: t('sidebar_webshop_front'), path: '//', icon: ShoppingBag },
+        { name: t('sidebar_webshop_front'), path: webshopUrl, icon: ShoppingBag, external: true },
       ],
     },
   ];
@@ -344,6 +354,26 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
                       <div className={!isCollapsed ? 'pl-1 py-1 space-y-1' : 'space-y-1'}>
                         {group.items.map((item) => {
                           const Icon = item.icon;
+                          // The tenant's own WebShop opens in a new tab so the
+                          // ERP workspace stays open next to the storefront.
+                          if ((item as any).external) {
+                            return (
+                              <a
+                                key={item.path}
+                                href={item.path}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={isCollapsed ? `${group.title}: ${item.name}` : undefined}
+                                className="flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-all text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60"
+                              >
+                                <div className={`flex items-center gap-2.5 ${isCollapsed ? 'justify-center w-full' : ''}`}>
+                                  <Icon className="h-4.5 w-4.5 shrink-0" />
+                                  {!isCollapsed && <span className="truncate text-xs">{item.name}</span>}
+                                </div>
+                                {!isCollapsed && <ChevronRight className="h-3 w-3 opacity-40 shrink-0" />}
+                              </a>
+                            );
+                          }
                           return (
                             <NavLink
                               key={item.path}

@@ -7,6 +7,7 @@ import { query, pool } from '../db/index.js';
 import { tenantMiddleware, requireSuperAdmin, requireTenantAdmin, TenantRequest } from '../middleware/tenant.js';
 import { JWT_SECRET } from '../config.js';
 import { isUniqueViolation, isValidEmail, normalizeEmail, normalizeSlug, normalizeTaxCode, uniqueViolationConstraint } from '../utils/identifiers.js';
+import { resolveNewUserCompanyId } from '../utils/userScope.js';
 import { postInventoryMovement } from '../services/inventoryService.js';
 import { getProcurementList, saveProcurementList, PROCUREMENT_LIST_TYPES } from '../services/procurementService.js';
 import {
@@ -696,15 +697,28 @@ saasRouter.get('/auth/me', async (req: Request, res: Response) => {
 
 saasRouter.get('/users', tenantMiddleware, async (req: TenantRequest, res: Response) => {
   try {
-    const companyId = req.isSuperAdmin ? null : req.companyId;
+    // Tenant scoping: a normal tenant admin only ever sees the users of
+    // his own company. The platform super admin may list every tenant, but
+    // can (and the management UI does) narrow the list with ?company_id= so
+    // users of different businesses are never mixed together by accident.
+    let companyId = req.isSuperAdmin ? null : req.companyId;
+    if (req.isSuperAdmin && req.query.company_id !== undefined) {
+      const parsed = Number(req.query.company_id);
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        return res.status(400).json({ ok: false, message: 'company_id không hợp lệ.' });
+      }
+      companyId = parsed;
+    }
     const result = await query(
       `SELECT u.*, r.code as role_code, r.name_vi as role_name_vi, r.name_en as role_name_en, r.id as role_id,
-              d.id as dept_id, d.code as dept_code, d.name_vi as dept_name_vi, d.name_en as dept_name_en
+              d.id as dept_id, d.code as dept_code, d.name_vi as dept_name_vi, d.name_en as dept_name_en,
+              c.name_vi as company_name, c.slug as company_slug
          FROM sys_users u
          LEFT JOIN sys_roles r ON u.role_id = r.id
          LEFT JOIN departments d ON u.department_id = d.id
+         LEFT JOIN companies c ON c.id = u.company_id
         WHERE ($1::int IS NULL OR u.company_id = $1)
-        ORDER BY u.id ASC`,
+        ORDER BY u.company_id ASC NULLS LAST, u.id ASC`,
       [companyId],
     );
     res.json({ ok: true, data: result.rows });
@@ -715,7 +729,14 @@ saasRouter.get('/users', tenantMiddleware, async (req: TenantRequest, res: Respo
 
 saasRouter.get('/departments', tenantMiddleware, async (req: TenantRequest, res: Response) => {
   try {
-    const companyId = req.isSuperAdmin ? null : req.companyId;
+    let companyId = req.isSuperAdmin ? null : req.companyId;
+    if (req.isSuperAdmin && req.query.company_id !== undefined) {
+      const parsed = Number(req.query.company_id);
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        return res.status(400).json({ ok: false, message: 'company_id không hợp lệ.' });
+      }
+      companyId = parsed;
+    }
     const result = await query(
       `SELECT d.id, d.code, d.name_vi, d.name_en, d.is_active
          FROM departments d
@@ -736,7 +757,22 @@ saasRouter.post('/users', tenantMiddleware, async (req: TenantRequest, res: Resp
   const email = normalizeEmail(body.email || body.username);
   const password = String(body.password || '');
   const fullName = String(body.full_name || username).trim();
-  const companyId = req.isSuperAdmin ? Number(body.company_id || req.companyId) : req.companyId;
+
+  // Tenant assignment is EXPLICIT (see src/utils/userScope.ts):
+  //  - A tenant admin can only create users inside his own company — any
+  //    company_id supplied by the client is ignored.
+  //  - The platform super admin MUST choose the target company. Without an
+  //    explicit company_id the new user would silently land in the platform
+  //    company, mixing one business's staff into another business's ERP.
+  const scopeDecision = resolveNewUserCompanyId({
+    isSuperAdmin: req.isSuperAdmin === true,
+    sessionCompanyId: req.companyId,
+    requestedCompanyId: body.company_id,
+  });
+  if (!scopeDecision.ok) {
+    return res.status(400).json({ ok: false, code: scopeDecision.code, message: scopeDecision.message });
+  }
+  const companyId = scopeDecision.companyId;
 
   if (!username || !password || !fullName || !companyId) {
     return res.status(400).json({ ok: false, message: 'Thiếu tên đăng nhập, mật khẩu hoặc tenant.' });
@@ -749,6 +785,48 @@ saasRouter.post('/users', tenantMiddleware, async (req: TenantRequest, res: Resp
   }
 
   try {
+    // The target tenant must exist and be active.
+    const companyResult = await query(
+      `SELECT id, name_vi, max_users, is_active FROM companies WHERE id = $1 LIMIT 1`,
+      [companyId],
+    );
+    const company = companyResult.rows[0];
+    if (!company) {
+      return res.status(404).json({ ok: false, code: 'TENANT_NOT_FOUND', message: 'Doanh nghiệp không tồn tại.' });
+    }
+    if (company.is_active !== true) {
+      return res.status(403).json({ ok: false, message: 'Doanh nghiệp đã ngừng hoạt động, không thể thêm ngường dùng.' });
+    }
+
+    // The tenant's plan limits how many ERP accounts it may hold.
+    if (company.max_users != null) {
+      const countResult = await query(
+        `SELECT COUNT(*)::int AS total FROM sys_users WHERE company_id = $1 AND status <> 'disabled'`,
+        [companyId],
+      );
+      if (Number(countResult.rows[0]?.total || 0) >= Number(company.max_users)) {
+        return res.status(403).json({
+          ok: false,
+          code: 'MAX_USERS_REACHED',
+          message: `Doanh nghiệp đã đạt giới hạn ${company.max_users} tài khoản theo gói hiện tại.`,
+        });
+      }
+    }
+
+    // A department, when supplied, must belong to the SAME tenant.
+    const departmentId: number | null = body.department_id ? Number(body.department_id) : null;
+    if (departmentId != null) {
+      const deptResult = await query(
+        `SELECT d.id FROM departments d
+           JOIN branches b ON b.id = d.branch_id
+          WHERE d.id = $1 AND b.company_id = $2 LIMIT 1`,
+        [departmentId, companyId],
+      );
+      if (!deptResult.rows[0]) {
+        return res.status(400).json({ ok: false, message: 'Phòng ban không thuộc doanh nghiệp của ngường dùng.' });
+      }
+    }
+
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const result = await query(
       `INSERT INTO sys_users (
@@ -766,7 +844,7 @@ saasRouter.post('/users', tenantMiddleware, async (req: TenantRequest, res: Resp
         fullName,
         String(body.phone || '').trim() || null,
         Number(body.role_id) || 5,
-        body.department_id ? Number(body.department_id) : null,
+        departmentId,
         body.status || 'active',
         body.preferred_lang || 'vi',
       ],

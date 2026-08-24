@@ -47,6 +47,8 @@ export interface TenantDetail {
   onboarding_completed: boolean;
   created_at: string;
   owner_user_id?: number;
+  webshop_slug?: string;
+  webshop_name_vi?: string;
 }
 
 const PLAN_CONFIG: Record<string, { labelVi: string; labelEn: string; color: string; icon: any }> = {
@@ -291,6 +293,15 @@ export const SaaSTenantsPage: React.FC = () => {
           >
             <Eye className="w-3.5 h-3.5" />
           </button>
+          <a
+            href={`/shop/${row.original.webshop_slug || row.original.slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600 cursor-pointer"
+            title={isEn ? 'Open this tenant\'s WebShop' : 'Mở WebShop của doanh nghiệp này'}
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+          </a>
           <button
             onClick={() => handlePauseToggle(row.original)}
             disabled={!!actionLoading}
@@ -546,24 +557,36 @@ export const SaaSTenantsPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Links */}
-              <div className="flex items-center gap-2 pt-2">
-                <a
-                  href={`http://localhost:3000/shop/${selectedTenant.slug}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-gray-800 hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  {isEn ? 'Open WebShop' : 'Mở WebShop'}
-                </a>
-                <button
-                  onClick={() => copyToClipboard(`http://localhost:3000/shop/${selectedTenant.slug}`)}
-                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs font-bold rounded-xl transition-all cursor-pointer"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  {isEn ? 'Copy URL' : 'Sao chép URL'}
-                </button>
+              {/* Links — the tenant's OWN WebShop (webshop_slug), on the
+                  current origin, never a hard-coded localhost URL. */}
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                {(() => {
+                  const webshopPath = `/shop/${selectedTenant.webshop_slug || selectedTenant.slug}`;
+                  const webshopUrl = `${window.location.origin}${webshopPath}`;
+                  return (
+                    <>
+                      <a
+                        href={webshopPath}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-gray-800 hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        {isEn ? 'Open WebShop' : 'Mở WebShop'}
+                      </a>
+                      <button
+                        onClick={() => copyToClipboard(webshopUrl)}
+                        className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        {isEn ? 'Copy URL' : 'Sao chép URL'}
+                      </button>
+                      <code className="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1.5 rounded-lg break-all">
+                        {webshopUrl}
+                      </code>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import client from "../api/client";
 import { Order } from "../types";
 import { formatPrice, formatDate } from "../utils/format";
 import { useToast } from "../contexts/ToastContext";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { useCart } from "../contexts/CartContext";
 import { useTranslation } from "react-i18next";
 
@@ -12,6 +13,7 @@ const OrderDetailPage: React.FC = () => {
   const { t } = useTranslation();
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
+  const { shopPath } = useShopTenant();
   const { showToast } = useToast();
   const { fetchCart } = useCart();
 
@@ -28,12 +30,12 @@ const OrderDetailPage: React.FC = () => {
         setOrder(res.data.data);
       } else {
         showToast(t("page_order_not_found"), "error");
-        navigate("/orders");
+        navigate(shopPath("/orders"));
       }
     } catch (err) {
       console.error("Error loading order detail page", err);
       showToast(t("page_order_load_error"), "error");
-      navigate("/orders");
+      navigate(shopPath("/orders"));
     } finally {
       setLoading(false);
     }
@@ -80,7 +82,7 @@ const OrderDetailPage: React.FC = () => {
       if (res.data && res.data.ok) {
         showToast(t("page_order_reorder_success"), "success");
         await fetchCart(); // Force update cart badge count
-        navigate("/cart");
+        navigate(shopPath("/cart"));
       } else {
         showToast(res.data.message || t("page_order_reorder_failed"), "error");
       }
@@ -167,7 +169,7 @@ const OrderDetailPage: React.FC = () => {
       {/* Header breadcrumb link */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-3">
         <div className="flex items-center gap-2">
-          <Link to="/orders" className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-450 transition-colors">
+          <Link to={shopPath("/orders")} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-450 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { ShoppingCart, Check, Loader2 } from "lucide-react";
 import { Product } from "../types";
 import { formatPrice } from "../utils/format";
@@ -38,6 +39,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }
   };
 
+  const { shopPath } = useShopTenant();
   const showContact = product.contactForPrice;
   const isOutOfStock = product.stock <= 0;
 
@@ -47,7 +49,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <Link
-      to={`/product/${product.slug}`}
+      to={shopPath(`/product/${product.slug}`)}
       className="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-xs hover:shadow-sm hover:border-gray-300 dark:hover:border-gray-700 transition-all flex flex-col h-full"
     >
       {/* Product Image */}
