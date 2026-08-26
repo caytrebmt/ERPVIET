@@ -174,14 +174,243 @@ const MIGRATIONS: Migration[] = [
     },
   },
   {
+    version: 8,
+    name: 'create_missing_business_tables',
+    up: async () => {
+      // Các database tạo TRƯỚC KHI schema.sql có các bảng chứng từ nghiệp vụ
+      // (báo giá, đơn bán, đơn mua, phiếu thu/chi, tồn kho theo kho...) KHÔNG
+      // có các bảng này. autoMigrateDatabase không bao giờ áp lại schema.sql
+      // lên DB đã có data (tránh DROP), và migration trước đây cũng chưa tạo
+      // chúng → /api/saas/dashboard/summary và các trang công nợ/báo cáo lỗi
+      // "relation does not exist" → 4 thẻ KPI Dashboard hiện "Không tải được
+      // dữ liệu".Migration này tạo các bảng THIẾU một cách idempotent (KHÔNG
+      // chèn dữ liệu mẫu — tenant trống phải giữ nguyên trống) và backfill cột
+      // company_id để tách dữ liệu theo tenant, khớp chính xác định nghĩa trong
+      // schema.sql. Với DB mới (đã có đủ bảng) toàn bộ lệnh là no-op.
+      await pool.query(`CREATE TABLE IF NOT EXISTS customer_groups (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(30) UNIQUE NOT NULL,
+        name_vi VARCHAR(100) NOT NULL,
+        name_en VARCHAR(100) NOT NULL,
+        discount_percent NUMERIC(5,2) DEFAULT 0.00
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS customers (
+        id SERIAL PRIMARY KEY,
+        group_id INT REFERENCES customer_groups(id),
+        code VARCHAR(30) UNIQUE NOT NULL,
+        name VARCHAR(200) NOT NULL,
+        tax_code VARCHAR(50),
+        phone VARCHAR(20),
+        email VARCHAR(100),
+        address VARCHAR(255),
+        credit_limit NUMERIC(15, 2) DEFAULT 100000000.00,
+        payment_terms_days INT DEFAULT 30,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS suppliers (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(30) UNIQUE NOT NULL,
+        name VARCHAR(200) NOT NULL,
+        tax_code VARCHAR(50),
+        phone VARCHAR(20),
+        email VARCHAR(100),
+        address VARCHAR(255),
+        bank_account VARCHAR(50),
+        bank_name VARCHAR(100),
+        payment_terms VARCHAR(50) DEFAULT '30 ngày kể từ ngày nhận hàng',
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS batches (
+        id SERIAL PRIMARY KEY,
+        product_id INT REFERENCES products(id) ON DELETE CASCADE,
+        batch_number VARCHAR(50) NOT NULL,
+        mfg_date DATE,
+        exp_date DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT uq_product_batch UNIQUE(product_id, batch_number)
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS warehouses (
+        id SERIAL PRIMARY KEY,
+        branch_id INT REFERENCES branches(id) DEFAULT 1,
+        code VARCHAR(30) UNIQUE NOT NULL,
+        name_vi VARCHAR(100) NOT NULL,
+        name_en VARCHAR(100) NOT NULL,
+        address VARCHAR(255),
+        manager_name VARCHAR(100),
+        phone VARCHAR(20),
+        capacity VARCHAR(100),
+        is_active BOOLEAN DEFAULT TRUE
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS quotations (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        customer_id INT REFERENCES customers(id),
+        quote_date DATE DEFAULT CURRENT_DATE,
+        expiry_date DATE DEFAULT (CURRENT_DATE + INTERVAL '15 days'),
+        subtotal NUMERIC(15, 2) DEFAULT 0,
+        tax_amount NUMERIC(15, 2) DEFAULT 0,
+        total_amount NUMERIC(15, 2) DEFAULT 0,
+        status VARCHAR(30) DEFAULT 'DA_GUI' CHECK (status IN ('NHAP', 'DA_GUI', 'DONG_Y', 'TU_CHOI')),
+        created_by INT REFERENCES sys_users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS quotation_items (
+        id SERIAL PRIMARY KEY,
+        quotation_id INT REFERENCES quotations(id) ON DELETE CASCADE,
+        product_id INT REFERENCES products(id),
+        quantity INT NOT NULL CHECK (quantity > 0),
+        unit_price NUMERIC(15, 2) NOT NULL,
+        vat_rate NUMERIC(5, 2) DEFAULT 10.00,
+        subtotal NUMERIC(15, 2) NOT NULL
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS sales_orders (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        quotation_id INT REFERENCES quotations(id),
+        customer_id INT REFERENCES customers(id),
+        sales_rep_id INT REFERENCES sys_users(id),
+        order_date DATE DEFAULT CURRENT_DATE,
+        subtotal NUMERIC(15, 2) DEFAULT 0,
+        discount_amount NUMERIC(15, 2) DEFAULT 0,
+        tax_amount NUMERIC(15, 2) DEFAULT 0,
+        total_amount NUMERIC(15, 2) DEFAULT 0,
+        payment_status VARCHAR(30) DEFAULT 'CHUA_THANH_TOAN' CHECK (payment_status IN ('CHUA_THANH_TOAN', 'COC_MOT_PHAN', 'DA_THANH_TOAN')),
+        status VARCHAR(30) DEFAULT 'DANG_XU_LY' CHECK (status IN ('MOI', 'DANG_XU_LY', 'HOAN_THANH', 'HUY')),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS sales_order_items (
+        id SERIAL PRIMARY KEY,
+        sales_order_id INT REFERENCES sales_orders(id) ON DELETE CASCADE,
+        product_id INT REFERENCES products(id),
+        quantity INT NOT NULL CHECK (quantity > 0),
+        unit_price NUMERIC(15, 2) NOT NULL,
+        subtotal NUMERIC(15, 2) NOT NULL
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS purchase_orders (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        supplier_id INT REFERENCES suppliers(id),
+        order_date DATE DEFAULT CURRENT_DATE,
+        expected_delivery_date DATE,
+        subtotal NUMERIC(15, 2) DEFAULT 0,
+        tax_amount NUMERIC(15, 2) DEFAULT 0,
+        total_amount NUMERIC(15, 2) DEFAULT 0,
+        status VARCHAR(30) DEFAULT 'HOAN_THANH' CHECK (status IN ('MOI', 'DANG_XU_LY', 'HOAN_THANH', 'HUY')),
+        created_by INT REFERENCES sys_users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS purchase_order_items (
+        id SERIAL PRIMARY KEY,
+        purchase_order_id INT REFERENCES purchase_orders(id) ON DELETE CASCADE,
+        product_id INT REFERENCES products(id),
+        quantity INT NOT NULL CHECK (quantity > 0),
+        unit_price NUMERIC(15, 2) NOT NULL,
+        subtotal NUMERIC(15, 2) NOT NULL
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS receipts_payments (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        voucher_type VARCHAR(10) NOT NULL CHECK (voucher_type IN ('THU', 'CHI')),
+        partner_type VARCHAR(20) NOT NULL CHECK (partner_type IN ('KHACH_HANG', 'NHA_CUNG_CAP', 'KHAC')),
+        partner_id INT,
+        amount NUMERIC(15, 2) NOT NULL CHECK (amount > 0),
+        payment_method VARCHAR(30) DEFAULT 'CHUYEN_KHOAN' CHECK (payment_method IN ('TIEN_MAT', 'CHUYEN_KHOAN')),
+        payment_date DATE DEFAULT CURRENT_DATE,
+        reason VARCHAR(255),
+        created_by INT REFERENCES sys_users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS stock_movements (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        movement_type VARCHAR(30) NOT NULL CHECK (movement_type IN ('NHAP_KHO', 'XUAT_KHO', 'DIEU_CHUYEN', 'KIEM_KE_DIEU_CHINH')),
+        warehouse_id INT REFERENCES warehouses(id),
+        target_warehouse_id INT REFERENCES warehouses(id),
+        reference_doc VARCHAR(100),
+        movement_date DATE DEFAULT CURRENT_DATE,
+        created_by INT REFERENCES sys_users(id),
+        notes TEXT,
+        status VARCHAR(30) DEFAULT 'HOAN_THANH' CHECK (status IN ('NHAP_NHAP', 'DANG_XULY', 'HOAN_THANH', 'HUY')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`);
+      await pool.query(`CREATE TABLE IF NOT EXISTS stock_movement_items (
+        id SERIAL PRIMARY KEY,
+        movement_id INT REFERENCES stock_movements(id) ON DELETE CASCADE,
+        product_id INT REFERENCES products(id),
+        batch_id INT REFERENCES batches(id),
+        uom_id INT REFERENCES uom(id),
+        quantity INT NOT NULL CHECK (quantity > 0),
+        unit_cost NUMERIC(15, 2) DEFAULT 0,
+        subtotal_cost NUMERIC(15, 2) DEFAULT 0
+      )`);
+      // Lưu ý: KHÔNG kèm CHECK (quantity >= 0) — migration 3 đã drop constraint
+      // này trên schema hiện hành vì nghiệp vụ xuất kho cho phép tồn âm tạm thời.
+      // Tạo bảng khớp đúng trạng thái CUỐI của schema.sql + migration 3.
+      await pool.query(`CREATE TABLE IF NOT EXISTS stock_balances (
+        id SERIAL PRIMARY KEY,
+        warehouse_id INT REFERENCES warehouses(id) ON DELETE CASCADE,
+        product_id INT REFERENCES products(id) ON DELETE CASCADE,
+        batch_id INT REFERENCES batches(id) ON DELETE SET NULL,
+        quantity INT DEFAULT 0,
+        reserved_quantity INT DEFAULT 0 CHECK (reserved_quantity >= 0),
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT uq_wh_prod_batch UNIQUE(warehouse_id, product_id, batch_id)
+      )`);
+
+      // Backfill cột tách tenant cho các bảng vừa tạo (chỉ hiệu lực khi cột
+      // chưa tồn tại — bảng có sẵn từ schema.sql giữ nguyên).
+      const tenantTables = [
+        'customer_groups', 'customers', 'suppliers', 'batches', 'warehouses',
+        'quotations', 'quotation_items', 'sales_orders', 'sales_order_items',
+        'purchase_orders', 'purchase_order_items', 'receipts_payments',
+        'stock_movements', 'stock_movement_items', 'stock_balances',
+      ];
+      for (const table of tenantTables) {
+        await pool.query(
+          `ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id) DEFAULT 1`
+        );
+      }
+
+      // Index tách tenant cho các truy vấn KPI công nợ/doanh thu.
+      await pool.query('CREATE INDEX IF NOT EXISTS idx_customers_company ON customers(company_id)');
+      await pool.query('CREATE INDEX IF NOT EXISTS idx_suppliers_company ON suppliers(company_id)');
+      await pool.query('CREATE INDEX IF NOT EXISTS idx_quotations_company ON quotations(company_id)');
+      await pool.query('CREATE INDEX IF NOT EXISTS idx_sales_orders_company ON sales_orders(company_id)');
+      await pool.query('CREATE INDEX IF NOT EXISTS idx_purchase_orders_company ON purchase_orders(company_id)');
+      await pool.query('CREATE INDEX IF NOT EXISTS idx_receipts_payments_company ON receipts_payments(company_id)');
+      await pool.query('CREATE INDEX IF NOT EXISTS idx_stock_balances_company ON stock_balances(company_id)');
+    },
+  },
+
+  {
     version: 3,
     name: 'product_images_text_and_indexes',
     up: async () => {
-      await pool.query('ALTER TABLE product_images ALTER COLUMN image_url TYPE TEXT');
-      await pool.query('ALTER TABLE stock_balances DROP CONSTRAINT IF EXISTS stock_balances_quantity_check');
-      await pool.query('CREATE INDEX IF NOT EXISTS idx_product_images_product_display ON product_images(product_id, is_primary DESC, sort_order ASC, id ASC)');
-      await pool.query('CREATE INDEX IF NOT EXISTS idx_stock_movements_date_id ON stock_movements(movement_date DESC, id DESC)');
-      await pool.query('CREATE INDEX IF NOT EXISTS idx_stock_movement_items_movement ON stock_movement_items(movement_id, product_id)');
+      // Các bảng có thể CHƯA TỒN TẠI trên database rất cũ (migration 8 tạo
+      // chúng nhưng chạy SAU migration này). Nếu không kiểm tra, ALTER/CREATE
+      // INDEX sẽ ném lỗi "relation does not exist" làm DỪNG cả chuỗi
+      // migration → migration 8 không bao giờ chạy được và dashboard vẫn
+      // hiển thị "Không tải được dữ liệu".
+      const tableExists = async (table: string): Promise<boolean> => {
+        const r = await pool.query('SELECT to_regclass($1) AS t', ['public.' + table]);
+        return r.rows[0]?.t != null;
+      };
+      if (await tableExists('product_images')) {
+        await pool.query('ALTER TABLE product_images ALTER COLUMN image_url TYPE TEXT');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_product_images_product_display ON product_images(product_id, is_primary DESC, sort_order ASC, id ASC)');
+      }
+      if (await tableExists('stock_balances')) {
+        await pool.query('ALTER TABLE stock_balances DROP CONSTRAINT IF EXISTS stock_balances_quantity_check');
+      }
+      if (await tableExists('stock_movements')) {
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_stock_movements_date_id ON stock_movements(movement_date DESC, id DESC)');
+      }
+      if (await tableExists('stock_movement_items')) {
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_stock_movement_items_movement ON stock_movement_items(movement_id, product_id)');
+      }
     },
   },
   {

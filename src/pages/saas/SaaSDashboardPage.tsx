@@ -62,8 +62,12 @@ export const SaaSDashboardPage: React.FC = () => {
           setSummaryError(res.data?.message || 'No data');
         }
       } catch (err: any) {
-        console.warn('Dashboard summary unavailable:', err?.message);
-        setSummaryError(err?.message || 'Request failed');
+        // surface the server-side reason (e.g. missing table) in the console
+        // so "Không tải được dữ liệu" is diagnosable; the card itself keeps
+        // showing the neutral message to end users.
+        const serverMessage = err?.response?.data?.message;
+        console.warn('Dashboard summary unavailable:', serverMessage || err?.message);
+        setSummaryError(serverMessage || err?.message || 'Request failed');
       } finally {
         setLoading(false);
       }

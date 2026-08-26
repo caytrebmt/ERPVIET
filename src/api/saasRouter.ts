@@ -169,6 +169,10 @@ saasRouter.get('/dashboard/summary', tenantMiddleware, async (req: TenantRequest
       ),
       // ...net of THU/CHI cash vouchers; balances are combined in JS to stay
       // portable across engines (no LEFT JOIN over aggregate subqueries).
+      // CẢ HAI truy vấn đều phải lọc theo tenant: thiếu clause company_id ở
+      // vế NHA_CUNG_CAP sẽ gộp tiền CHI của MỌI doanh nghiệp vào số dư
+      // "Phải trả nhà cung cấp" của tenant hiện tại (đủ điều kiện thì còn
+      // trừ nhầm khoản trả của tenant khác, làm sai số công nợ).
       query(
         `SELECT partner_id, SUM(amount) AS paid
          FROM receipts_payments
@@ -181,7 +185,9 @@ saasRouter.get('/dashboard/summary', tenantMiddleware, async (req: TenantRequest
         `SELECT partner_id, SUM(amount) AS paid
          FROM receipts_payments
          WHERE voucher_type = 'CHI' AND partner_type = 'NHA_CUNG_CAP'
+           AND ($1::int IS NULL OR company_id = $1)
          GROUP BY partner_id`,
+        [companyId],
       ),
     ]);
 
