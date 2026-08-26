@@ -13,7 +13,7 @@ const Header: React.FC = () => {
   const { cart } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { language, toggleLanguage, t } = useLanguage();
-  const { slug, name, companyId } = useShopTenant();
+  const { slug, name, shopPath } = useShopTenant();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -45,9 +45,9 @@ const Header: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchInput.trim()) {
-      navigate(`/?search=${encodeURIComponent(searchInput.trim())}`);
+      navigate(shopPath(`/?search=${encodeURIComponent(searchInput.trim())}`));
     } else {
-      navigate("/");
+      navigate(shopPath("/"));
     }
   };
 
@@ -55,7 +55,7 @@ const Header: React.FC = () => {
     <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
       <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-1 sm:gap-2 md:gap-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <Link to={shopPath("/")} className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <div className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-500 rounded-lg flex items-center justify-center font-bold text-zinc-950 text-base sm:text-lg leading-none shadow-xs">
             {slug !== 'default' ? name.charAt(0).toUpperCase() : 'W'}
           </div>
@@ -108,7 +108,7 @@ const Header: React.FC = () => {
           )}
 
           {/* Cart Icon */}
-          <Link to="/cart" className="relative p-2 text-gray-500 hover:text-gray-950 dark:text-gray-400 dark:hover:text-gray-100 transition-colors">
+          <Link to={shopPath("/cart")} className="relative p-2 text-gray-500 hover:text-gray-950 dark:text-gray-400 dark:hover:text-gray-100 transition-colors">
             <ShoppingCart className="w-6 h-6" />
             <AnimatePresence>
               {cart && cart.item_count > 0 && (
@@ -179,7 +179,7 @@ const Header: React.FC = () => {
                       </Link>
 
                       <Link
-                        to="/orders"
+                        to={shopPath("/orders")}
                         onClick={() => setShowUserDropdown(false)}
                         className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       >
@@ -188,7 +188,7 @@ const Header: React.FC = () => {
                       </Link>
 
                       <Link
-                        to="/account"
+                        to={shopPath("/account")}
                         onClick={() => setShowUserDropdown(false)}
                         className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       >
@@ -215,14 +215,14 @@ const Header: React.FC = () => {
              ) : (
                <div className="flex items-center gap-1.5">
                  <Link
-                   to="/login"
+                   to={shopPath("/login")}
                    className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                  >
                    <LogIn className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                    <span>{t("nav_login", "Đăng nhập")}</span>
                  </Link>
                  <Link
-                   to="/register"
+                   to={shopPath("/register")}
                    className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all"
                  >
                    <UserPlus className="w-3.5 h-3.5" />

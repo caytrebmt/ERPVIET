@@ -5,6 +5,7 @@ import client from "../api/client";
 import { Order } from "../types";
 import { formatPrice, formatDate } from "../utils/format";
 import { useToast } from "../contexts/ToastContext";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { useTranslation } from "react-i18next";
 
 const OrderSuccessPage: React.FC = () => {
@@ -14,6 +15,7 @@ const OrderSuccessPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const { showToast } = useToast();
+  const { shopPath } = useShopTenant();
 
   useEffect(() => {
     async function loadOrderDetails() {
@@ -61,7 +63,7 @@ const OrderSuccessPage: React.FC = () => {
             {t("page_order_success_invalid")} <strong className="text-indigo-600 dark:text-indigo-400">"{code}"</strong>
           </p>
         </p>
-        <Link to="/" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-4">
+        <Link to={shopPath("/")} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-4">
           Quay lại trang chủ
         </Link>
       </div>
@@ -172,13 +174,13 @@ const OrderSuccessPage: React.FC = () => {
       {/* Secondary CTAs */}
       <div className="flex justify-center gap-4 border-t border-gray-200 dark:border-gray-800 pt-6">
         <Link
-          to="/"
+          to={shopPath("/")}
           className="bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-bold px-6 py-2.5 rounded-full shadow-xs transition-colors cursor-pointer"
         >
           Tiếp tục mua sắm
         </Link>
         <Link
-          to="/orders"
+          to={shopPath("/orders")}
           className="border border-indigo-600 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-xs font-bold px-6 py-2.5 rounded-full transition-all cursor-pointer flex items-center gap-1 shadow-xs"
         >
           Quản lý đơn hàng

@@ -304,6 +304,21 @@ const MIGRATIONS: Migration[] = [
       );
     },
   },
+  {
+    version: 7,
+    name: 'web_customers_tenant_scoped_uniqueness',
+    up: async () => {
+      // Tài khoản khách WebShop phải tách theo tenant: cùng một email được
+      // phép tồn tại ở WebShop của các doanh nghiệp khác nhau (khách của shop
+      // A không liên quan shop B). Các UNIQUE toàn cục trên username/email
+      // từ schema ban đầu ngăn điều này và khiến đăng ký ở tenant thứ 2 lỗi.
+      // Tính duy nhất được áp theo tenant bằng index composite.
+      await pool.query('ALTER TABLE web_customers DROP CONSTRAINT IF EXISTS web_customers_username_key');
+      await pool.query('ALTER TABLE web_customers DROP CONSTRAINT IF EXISTS web_customers_email_key');
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_web_customers_company_username_normalized
+        ON web_customers (company_id, LOWER(BTRIM(username)))`);
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

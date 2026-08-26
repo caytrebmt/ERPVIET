@@ -27,22 +27,18 @@ client.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Resolve the storefront tenant on every shop request. This keeps a
-    // tenant-specific WebShop isolated even when the user changes route or
-    // opens the URL in a new tab.
+    // Resolve the storefront tenant on every shop request FROM THE CURRENT
+    // URL ONLY. A tenant slug persisted in localStorage must never override
+    // the address bar: after visiting /shop/tenant-a, the default storefront
+    // at / would otherwise keep sending tenant-a's slug and silently load
+    // tenant A's products, carts and customers (cross-tenant data leak).
     if (!isSaasApi && typeof window !== 'undefined' && !window.location.pathname.startsWith('/saas')) {
+      // One-time cleanup of the legacy persisted tenant hint.
+      try { localStorage.removeItem('shop_tenant'); } catch { /* ignore */ }
+
       const pathMatch = window.location.pathname.match(/^\/shop\/([^/]+)/i);
       const queryTenant = new URLSearchParams(window.location.search).get('tenant');
-      const storedTenant = localStorage.getItem('shop_tenant');
-      let storedSlug = '';
-      if (storedTenant) {
-        try {
-          storedSlug = String(JSON.parse(storedTenant)?.slug || '');
-        } catch {
-          storedSlug = '';
-        }
-      }
-      const tenantSlug = (pathMatch?.[1] || queryTenant || storedSlug || '').trim();
+      const tenantSlug = (pathMatch?.[1] || queryTenant || '').trim();
       if (tenantSlug && tenantSlug !== 'default') {
         config.headers['x-tenant-slug'] = tenantSlug;
       }

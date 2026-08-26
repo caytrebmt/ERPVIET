@@ -113,4 +113,64 @@ describe('security regression guards', () => {
     expect(src).toContain('if (!req.isSuperAdmin && settingsToWrite.api !== undefined)');
     expect(src).toContain('settingsToWrite = { ...settingsToWrite, api: currentSettings.api };');
   });
+
+  // ---------------------------------------------------------------
+  // MULTI-TENANT ISOLATION — webshop storefront & quản lý ngường dùng
+  // ---------------------------------------------------------------
+
+  it('tạo user ERP: super admin BẮT BUỘC chọn tenant, tenant admin bị khóa scope vào tenant của mình', () => {
+    const src = readSource('src/api/saasRouter.ts');
+    // Phân scope qua helper tập trung (unit-tested trong tests/userScope.test.ts)
+    expect(src).toContain('resolveNewUserCompanyId(');
+    // Handler POST /users không còn rơi ngầm vào company của super admin
+    expect(src).not.toContain('const companyId = req.isSuperAdmin ? Number(body.company_id || req.companyId) : req.companyId;');
+    // Gói dịch vụ giới hạn số tài khoản mỗi tenant
+    expect(src).toContain("code: 'MAX_USERS_REACHED'");
+    // Quy tắc scope nằm trong helper thuần
+    const scope = readSource('src/utils/userScope.ts');
+    expect(scope).toContain("code: 'TENANT_REQUIRED'");
+    expect(scope).toContain('companyId: sessionCompanyId');
+  });
+
+  it('danh sách user ERP trả kèm tên doanh nghiệp + hỗ trợ lọc theo tenant (super admin)', () => {
+    const src = readSource('src/api/saasRouter.ts');
+    expect(src).toContain('c.name_vi as company_name');
+    expect(src).toContain('LEFT JOIN companies c ON c.id = u.company_id');
+    expect(src).toContain('req.query.company_id');
+  });
+
+  it('storefront không còn suy ra tenant từ localStorage (chống rò rỉ chéo tenant)', () => {
+    const clientSrc = readSource('src/api/client.ts');
+    // Header x-tenant-slug chỉ đến từ URL hiện tại (/shop/:slug hoặc ?tenant=)
+    expect(clientSrc).not.toContain("localStorage.getItem('shop_tenant')");
+    const ctx = readSource('src/contexts/ShopTenantContext.tsx');
+    expect(ctx).not.toContain("localStorage.setItem('shop_tenant'");
+  });
+
+  it('menu ERP "Xem WebShop" trỏ đúng webshop của tenant (không còn root //)', () => {
+    const sidebar = readSource('src/components/SaaSSidebar.tsx');
+    expect(sidebar).not.toContain("path: '//'");
+    expect(sidebar).toContain('webshop?.url');
+  });
+
+  it('trang Quản lý Doanh nghiệp không còn hardcode URL localhost:3000', () => {
+    const page = readSource('src/pages/saas/SaaSTenantsPage.tsx');
+    expect(page).not.toContain('localhost:3000');
+    expect(page).toContain('webshop_slug');
+  });
+
+  it('tài khoản khách WebShop unique THEO TENANT (không còn UNIQUE toàn cục username/email)', () => {
+    const schema = readSource('schema.sql');
+    const table = schema.match(/CREATE TABLE web_customers \([\s\S]*?\n\);/);
+    expect(table, 'bảng web_customers phải tồn tại').toBeTruthy();
+    // Lỗi từng khiến cùng 1 email không đăng ký được ở WebShop của tenant khác
+    expect(table![0]).not.toContain('username VARCHAR(50) UNIQUE');
+    expect(table![0]).not.toContain('email VARCHAR(100) UNIQUE');
+    expect(schema).toContain('uq_web_customers_company_username_normalized');
+    // Migration gỡ constraint cũ cho DB production đã tồn tại
+    const db = readSource('src/db/index.ts');
+    expect(db).toContain("name: 'web_customers_tenant_scoped_uniqueness'");
+    expect(db).toContain('DROP CONSTRAINT IF EXISTS web_customers_username_key');
+    expect(db).toContain('DROP CONSTRAINT IF EXISTS web_customers_email_key');
+  });
 });

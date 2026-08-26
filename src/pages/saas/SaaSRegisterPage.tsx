@@ -40,6 +40,13 @@ export const SaaSRegisterPage: React.FC = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // After a successful tenant registration the merchant immediately sees
+  // WHERE their own WebShop lives (URL) instead of hunting for it.
+  const [registrationResult, setRegistrationResult] = useState<{
+    webshopUrl?: string;
+    webshopName?: string;
+    companyName?: string;
+  } | null>(null);
 
   const update = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -158,7 +165,13 @@ export const SaaSRegisterPage: React.FC = () => {
           storage.setErpToken(data.data.token);
           if (data.data.user) storage.setErpUser(data.data.user);
         }
-        setTimeout(() => navigate('/saas/login', { replace: true }), 800);
+        const webshopSlug = data.data?.webshop?.slug || data.data?.company?.slug;
+        setRegistrationResult({
+          webshopUrl: data.data?.webshop?.url || (webshopSlug ? `/shop/${webshopSlug}` : undefined),
+          webshopName: data.data?.webshop?.name_vi || data.data?.webshop?.name_en,
+          companyName: data.data?.company?.name_vi || form.name_vi,
+        });
+        setSubmitting(false);
       } else {
         showToast(data.message || t("page_saas_register_failed"), "error");
         setSubmitting(false);
@@ -170,6 +183,68 @@ export const SaaSRegisterPage: React.FC = () => {
   };
 
   const isEn = language === "en";
+
+  // Registration succeeded: show the tenant their own WebShop URL + entry
+  // points (storefront + ERP admin) — this is how a business "opens" its shop.
+  if (registrationResult) {
+    const absoluteWebshopUrl = registrationResult.webshopUrl
+      ? `${window.location.origin}${registrationResult.webshopUrl}`
+      : '';
+    return (
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center relative overflow-hidden font-sans px-4">
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="max-w-lg w-full bg-zinc-900/90 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative z-10 text-center space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+          </div>
+          <h2 className="text-xl font-extrabold text-white">
+            {isEn ? 'Your business is ready!' : 'Doanh nghiệp của bạn đã sẵn sàng!'}
+          </h2>
+          <p className="text-xs text-zinc-400">
+            {isEn
+              ? `${registrationResult.companyName || 'Your company'} now has its own ERP workspace and a private WebShop storefront.`
+              : `${registrationResult.companyName || 'Doanh nghiệp'} đã có không gian ERP riêng và một cửa hàng WebShop riêng.`}
+          </p>
+
+          {registrationResult.webshopUrl && (
+            <div className="bg-zinc-950/70 border border-emerald-800/50 rounded-2xl p-4 space-y-2 text-left">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                {isEn ? 'Your WebShop address' : 'Địa chỉ WebShop của bạn'}
+              </p>
+              <code className="block text-xs font-mono text-emerald-300 break-all select-all">
+                {absoluteWebshopUrl}
+              </code>
+              <p className="text-[10px] text-zinc-500">
+                {isEn
+                  ? 'Share this link with customers — it only shows YOUR products.'
+                  : 'Chia sẻ link này cho khách hàng — cửa hàng chỉ hiển thị sản phẩm của doanh nghiệp bạn.'}
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            {registrationResult.webshopUrl && (
+              <a
+                href={registrationResult.webshopUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-emerald-900/30"
+              >
+                {isEn ? 'Open my WebShop' : 'Mở WebShop của tôi'}
+              </a>
+            )}
+            <button
+              onClick={() => navigate('/saas/login', { replace: true })}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-zinc-700 hover:bg-zinc-800 text-zinc-200 text-xs font-bold rounded-xl transition-all cursor-pointer"
+            >
+              {isEn ? 'Go to ERP admin' : 'Vào trang quản trị ERP'}
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const plans = [
     { value: "trial", labelKey: "saas_register_plan_trial", price: "0₫", color: "border-zinc-700 bg-zinc-900" },

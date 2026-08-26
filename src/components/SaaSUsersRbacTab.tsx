@@ -33,6 +33,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSaaSAuth } from '../contexts/SaaSAuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTranslation } from 'react-i18next';
@@ -58,6 +59,8 @@ export interface SaasUserItem {
   status: 'active' | 'locked';
   createdAt: string;
   password?: string;
+  companyId?: string;
+  companyName?: string;
   customPermissions?: Record<string, boolean>; // Overrides
 }
 
@@ -105,6 +108,13 @@ export const SaaSUsersRbacTab: React.FC = () => {
   const { addToast } = useToast();
   const { language } = useLanguage();
   const { t } = useTranslation();
+  const { erpUser } = useSaaSAuth();
+  // The platform owner sees (and filters) users PER TENANT; a tenant admin
+  // only ever manages the accounts inside his own company.
+  const isSuperAdmin = !!erpUser?.is_super_admin;
+  const [tenantOptions, setTenantOptions] = useState<Array<{ id: number; name: string }>>([]);
+  // '' = chưa chọn; 'all' = mọi tenant (chỉ super admin); otherwise company id
+  const [tenantFilter, setTenantFilter] = useState<string>('all');
 
   // Active view tab: 'users_list' | 'webshop_users' | 'roles_matrix'
   const [subTab, setSubTab] = useState<'users_list' | 'webshop_users' | 'roles_matrix'>('users_list');
@@ -136,11 +146,16 @@ export const SaaSUsersRbacTab: React.FC = () => {
   // Passwords are never cached in localStorage; the API does not expose them.
   const [usersList, setUsersList] = useState<SaasUserItem[]>([]);
 
-  // Load users from the current tenant API.
-  useEffect(() => {
-    client.get('/api/saas/users')
+  // Load ERP user accounts. Tenant admins are scoped server-side to their own
+  // company; the platform owner picks a tenant (or views all, grouped by
+  // tenant) via the ?company_id= filter so businesses never get mixed up.
+  const loadUsers = (companyFilter?: string) => {
+    const query = isSuperAdmin && companyFilter && companyFilter !== 'all'
+      ? `?company_id=${encodeURIComponent(companyFilter)}`
+      : '';
+    client.get(`/api/saas/users${query}`)
       .then((res) => {
-        if (!res.data?.ok) throw new Error(res.data?.message || 'Không tải được người dùng.');
+        if (!res.data?.ok) throw new Error(res.data?.message || 'Không tải được ngường dùng.');
         const items = res.data?.data || [];
         setUsersList(items.map((u: any) => ({
           id: String(u.id), username: u.username, fullName: u.full_name || u.username,
@@ -150,21 +165,44 @@ export const SaaSUsersRbacTab: React.FC = () => {
           roleName: u.role_name_vi || u.role_name_en || 'Nhân Viên',
           status: u.status === 'locked' ? 'locked' : 'active',
           createdAt: u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : '', password: '',
+          companyId: u.company_id != null ? String(u.company_id) : '',
+          companyName: u.company_name || '',
         })));
       })
       .catch((err) => console.warn('Failed to fetch ERP users from backend:', err));
-  }, [language]);
+  };
 
-  // Load departments from the current tenant API.
-  const [allDepartments, setAllDepartments] = useState<Department[]>([]);
   useEffect(() => {
-    client.get('/api/saas/departments')
+    loadUsers(tenantFilter);
+  }, [language, tenantFilter, isSuperAdmin]);
+
+  // Super admin: load the tenant list once for the filter + create-user form.
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    client.get('/api/saas/tenants/list')
+      .then((res) => {
+        if (!res.data?.ok) return;
+        setTenantOptions((res.data.data || []).map((c: any) => ({ id: Number(c.id), name: c.name_vi || c.code || `Tenant #${c.id}` })));
+      })
+      .catch((err) => console.warn('Failed to fetch tenant list for user management:', err));
+  }, [isSuperAdmin]);
+
+  // Departments belong to ONE tenant. When the super admin picks a company in
+  // the user form, departments reload for exactly that company — assigning a
+  // department of tenant A to a user of tenant B is rejected by the API too.
+  const [allDepartments, setAllDepartments] = useState<Department[]>([]);
+  const loadDepartments = (companyId?: string) => {
+    const query = isSuperAdmin && companyId ? `?company_id=${encodeURIComponent(companyId)}` : '';
+    client.get(`/api/saas/departments${query}`)
       .then((res) => {
         if (!res.data?.ok) throw new Error(res.data?.message || 'Không tải được phòng ban.');
         setAllDepartments((res.data.data || []).map((d: any) => ({ id: String(d.id), code: d.code || '', nameVi: d.name_vi || '', nameEn: d.name_en || d.name_vi || '' })));
       })
       .catch((err) => console.warn('Failed to fetch departments:', err));
-  }, []);
+  };
+  useEffect(() => {
+    if (!isSuperAdmin) loadDepartments();
+  }, [isSuperAdmin]);
 
   // Load role names and permissions from the database.
   const [rolesList, setRolesList] = useState<SystemRole[]>([]);
@@ -214,6 +252,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
     roleId: 'sales_rep',
     password: '',
     status: 'active' as 'active' | 'locked',
+    companyId: '' as string, // required when the platform owner creates a user
   });
 
   // New Role Modal State
@@ -351,7 +390,13 @@ export const SaaSUsersRbacTab: React.FC = () => {
   // User Action Handlers
   const handleOpenAddUser = () => {
     setEditingUserId(null);
-    const defaultDept = allDepartments[0];
+    // Super admin: pre-pick the tenant currently selected in the list filter
+    // (still changeable); tenant admins always create inside their own tenant.
+    const presetCompanyId = isSuperAdmin && tenantFilter !== 'all' ? tenantFilter : '';
+    if (isSuperAdmin) {
+      loadDepartments(presetCompanyId || undefined);
+    }
+    const defaultDept = presetCompanyId || !isSuperAdmin ? allDepartments[0] : undefined;
     setUserFormData({
       username: '',
       fullName: '',
@@ -362,6 +407,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
       roleId: 'sales_rep',
       password: '',
       status: 'active',
+      companyId: presetCompanyId,
     });
     setShowModalPassword(false);
     setIsUserModalOpen(true);
@@ -379,6 +425,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
       roleId: user.roleId,
       password: '',
       status: user.status,
+      companyId: user.companyId || '',
     });
     setShowModalPassword(false);
     setIsUserModalOpen(true);
@@ -389,6 +436,16 @@ export const SaaSUsersRbacTab: React.FC = () => {
     if (!userFormData.username || !userFormData.fullName || (!editingUserId && !userFormData.password.trim())) {
       addToast(
         language === 'en' ? 'Please enter username and full name' : 'Vui lòng nhập tên đăng nhập và họ tên',
+        'error'
+      );
+      return;
+    }
+    // The platform owner must explicitly choose which business the new
+    // account belongs to — otherwise the API rightfully rejects it
+    // (TENANT_REQUIRED) to keep every tenant's staff list separated.
+    if (!editingUserId && isSuperAdmin && !userFormData.companyId) {
+      addToast(
+        language === 'en' ? 'Please select the company (tenant) for this user' : 'Vui lòng chọn doanh nghiệp (tenant) cho tài khoản này',
         'error'
       );
       return;
@@ -450,9 +507,13 @@ export const SaaSUsersRbacTab: React.FC = () => {
           department_id: userFormData.departmentId || null,
           status: userFormData.status,
           password: userFormData.password,
+          // Only meaningful for the platform owner; tenant admins are always
+          // scoped to their own company server-side.
+          company_id: userFormData.companyId ? Number(userFormData.companyId) : undefined,
         });
         if (res.data?.ok) {
           const dbUser = res.data.data;
+          const chosenTenant = tenantOptions.find((tn) => String(tn.id) === String(userFormData.companyId));
           const newUser: SaasUserItem = {
             id: String(dbUser.id),
             username: dbUser.username,
@@ -466,6 +527,8 @@ export const SaaSUsersRbacTab: React.FC = () => {
             status: dbUser.status === 'locked' ? 'locked' : 'active',
             password: userFormData.password,
             createdAt: dbUser.created_at ? new Date(dbUser.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+            companyId: dbUser.company_id != null ? String(dbUser.company_id) : (userFormData.companyId || ''),
+            companyName: chosenTenant?.name || '',
           };
           persistUsers([...usersList, newUser]);
           addToast(language === 'en' ? 'Added new user successfully!' : 'Đã thêm tài khoản người dùng mới thành công!', 'success');
@@ -738,6 +801,23 @@ export const SaaSUsersRbacTab: React.FC = () => {
                   </option>
                 ))}
               </select>
+
+              {/* Platform owner: users are always managed PER TENANT. */}
+              {isSuperAdmin && (
+                <select
+                  value={tenantFilter}
+                  onChange={(e) => setTenantFilter(e.target.value)}
+                  className="px-3 py-2 text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-xl text-emerald-800 dark:text-emerald-200 focus:outline-none"
+                  title={language === 'en' ? 'Filter users by company (tenant)' : 'Lọc ngường dùng theo doanh nghiệp (tenant)'}
+                >
+                  <option value="all">{language === 'en' ? 'All Companies' : 'Tất cả doanh nghiệp'}</option>
+                  {tenantOptions.map((tn) => (
+                    <option key={tn.id} value={String(tn.id)}>
+                      {tn.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <button
@@ -756,6 +836,9 @@ export const SaaSUsersRbacTab: React.FC = () => {
                 <thead className="bg-zinc-50 dark:bg-zinc-800/80 border-b border-zinc-200 dark:border-zinc-800 text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   <tr>
                     <th className="py-3.5 px-4">{language === 'en' ? 'User Profile' : 'Họ & Tên / Tài Khoản'}</th>
+                    {isSuperAdmin && (
+                      <th className="py-3.5 px-4">{language === 'en' ? 'Company' : 'Doanh Nghiệp'}</th>
+                    )}
                     <th className="py-3.5 px-4">{language === 'en' ? 'Department' : 'Phòng Ban'}</th>
                     <th className="py-3.5 px-4">{language === 'en' ? 'Assigned Role' : 'Vai Trò RBAC'}</th>
                     <th className="py-3.5 px-4">{language === 'en' ? 'Password' : 'Mật Khẩu (Password)'}</th>
@@ -767,7 +850,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-medium">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-zinc-400">
+                      <td colSpan={isSuperAdmin ? 8 : 7} className="py-8 text-center text-zinc-400">
                         {language === 'en' ? 'No users found matching filter.' : 'Không tìm thấy tài khoản người dùng nào phù hợp.'}
                       </td>
                     </tr>
@@ -798,6 +881,15 @@ export const SaaSUsersRbacTab: React.FC = () => {
                               </div>
                             </div>
                           </td>
+
+                          {isSuperAdmin && (
+                            <td className="py-3.5 px-4">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800/60">
+                                <Building className="w-3.5 h-3.5" />
+                                {u.companyName || (u.companyId ? `Tenant #${u.companyId}` : '—')}
+                              </span>
+                            </td>
+                          )}
 
                           <td className="py-3.5 px-4">
                             <span className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-semibold border border-zinc-200 dark:border-zinc-700">
@@ -1327,6 +1419,40 @@ export const SaaSUsersRbacTab: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Company (tenant) selector — platform owner creating a user
+                  must explicitly choose which business the account belongs to. */}
+              {isSuperAdmin && !editingUserId && (
+                <div>
+                  <label className="block font-bold text-zinc-700 dark:text-zinc-300 mb-1">
+                    {language === 'en' ? 'Company (Tenant)' : 'Doanh Nghiệp (Tenant)'} <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={userFormData.companyId}
+                    onChange={(e) => {
+                      const nextCompanyId = e.target.value;
+                      // Departments are tenant-specific: reload them for the
+                      // newly chosen company and clear the stale selection.
+                      loadDepartments(nextCompanyId || undefined);
+                      setUserFormData({ ...userFormData, companyId: nextCompanyId, departmentId: '', department: '' });
+                    }}
+                    className="w-full px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-xl font-bold text-emerald-900 dark:text-emerald-200 focus:outline-none"
+                    required
+                  >
+                    <option value="">{language === 'en' ? 'Select company for this user' : 'Chọn doanh nghiệp cho tài khoản'}</option>
+                    {tenantOptions.map((tn) => (
+                      <option key={tn.id} value={String(tn.id)}>
+                        {tn.name} (#{tn.id})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    {language === 'en'
+                      ? 'The account is created inside the selected tenant only — never mixed into the platform ERP.'
+                      : 'Tài khoản chỉ được tạo trong tenant đã chọn — không trộn chung vào ERP của nền tảng.'}
+                  </p>
+                </div>
+              )}
 
               {/* Role Select Dropdown */}
               <div>

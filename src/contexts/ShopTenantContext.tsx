@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import client from "../api/client";
 
@@ -7,6 +7,15 @@ interface ShopTenantContextType {
   name: string;
   companyId: number;
   settings: Record<string, any>;
+  /**
+   * URL prefix of the CURRENT storefront ("/shop/<slug>" when the address bar
+   * is on a tenant WebShop, "" on the default/root storefront). Derived from
+   * the URL only — never from localStorage — so two storefronts can never
+   * bleed into each other inside one browser.
+   */
+  pathPrefix: string;
+  /** Build an in-storefront link that keeps the current tenant's URL prefix. */
+  shopPath: (path: string) => string;
 }
 
 const ShopTenantContext = createContext<ShopTenantContextType>({
@@ -14,6 +23,8 @@ const ShopTenantContext = createContext<ShopTenantContextType>({
   name: 'WebShop',
   companyId: 0,
   settings: {},
+  pathPrefix: '',
+  shopPath: (path: string) => path,
 });
 
 function slugFromLocation(pathname: string, search: string): string {
@@ -22,9 +33,15 @@ function slugFromLocation(pathname: string, search: string): string {
   return new URLSearchParams(search).get('tenant') || 'default';
 }
 
+function prefixFromLocation(pathname: string, search: string): string {
+  const slug = slugFromLocation(pathname, search);
+  return slug === 'default' ? '' : `/shop/${slug}`;
+}
+
 export const ShopTenantProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const [tenant, setTenant] = useState<ShopTenantContextType>(() => ({
+  const pathPrefix = prefixFromLocation(location.pathname, location.search);
+  const [tenant, setTenant] = useState<Omit<ShopTenantContextType, 'pathPrefix' | 'shopPath'>>(() => ({
     slug: slugFromLocation(window.location.pathname, window.location.search),
     name: 'WebShop',
     companyId: 0,
@@ -43,14 +60,12 @@ export const ShopTenantProvider: React.FC<{ children: ReactNode }> = ({ children
       .then((response) => {
         const data = response.data?.data;
         if (cancelled || !response.data?.ok || !data) return;
-        const resolved = {
+        setTenant({
           slug: data.slug || requestedSlug,
           name: data.name || 'WebShop',
           companyId: Number(data.companyId) || 0,
           settings: data.settings || {},
-        };
-        setTenant(resolved);
-        localStorage.setItem('shop_tenant', JSON.stringify(resolved));
+        });
       })
       .catch((error) => {
         // A storefront without a resolved tenant must not silently render data
@@ -64,8 +79,20 @@ export const ShopTenantProvider: React.FC<{ children: ReactNode }> = ({ children
     };
   }, [location.pathname, location.search]);
 
+  // Every in-shop link goes through this helper so a customer browsing
+  // /shop/<tenant> never loses the tenant context mid-navigation, while the
+  // default storefront keeps its clean root URLs.
+  const shopPath = useCallback(
+    (path: string) => {
+      if (!pathPrefix) return path;
+      if (!path || path === '/') return pathPrefix;
+      return `${pathPrefix}${path.startsWith('/') ? path : `/${path}`}`;
+    },
+    [pathPrefix],
+  );
+
   return (
-    <ShopTenantContext.Provider value={tenant}>
+    <ShopTenantContext.Provider value={{ ...tenant, pathPrefix, shopPath }}>
       {children}
     </ShopTenantContext.Provider>
   );

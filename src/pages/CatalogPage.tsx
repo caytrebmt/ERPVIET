@@ -58,11 +58,13 @@ const CatalogPage: React.FC = () => {
           const promos = promotionsRes.data?.data?.promotions || promotionsRes.data?.promotions || promotionsRes.data?.data || [];
           setPromotions(Array.isArray(promos) ? promos : []);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error loading catalog data", err);
-        setError(
-          t("catalog_connection_error")
-        );
+        // A 404 from the tenant resolver means this /shop/<slug> storefront
+        // does not exist — show THAT instead of a generic connection error so
+        // a mistyped tenant URL is obvious and never confuses visitors.
+        const serverMessage = err?.response?.data?.message;
+        setError(serverMessage || t("catalog_connection_error"));
       } finally {
         setRefreshing(false);
         setInitialLoading(false);

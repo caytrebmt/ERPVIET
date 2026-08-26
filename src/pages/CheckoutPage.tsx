@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Loader2, CreditCard, Landmark, Check, Tag } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { formatPrice } from "../utils/format";
@@ -14,6 +15,7 @@ const CheckoutPage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const { shopPath } = useShopTenant();
 
   // Form states
   const [customerName, setCustomerName] = useState("");
@@ -46,7 +48,7 @@ const CheckoutPage: React.FC = () => {
       <div className="min-h-[50vh] flex flex-col items-center justify-center text-center p-4">
         <h3 className="font-bold text-gray-700 dark:text-gray-350">Giỏ hàng rỗng</h3>
         <p className="text-xs text-gray-400 mt-1">Không có sản phẩm nào để thanh toán.</p>
-        <Link to="/" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-4">
+        <Link to={shopPath("/")} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-4">
           Quay lại mua sắm
         </Link>
       </div>
@@ -123,7 +125,7 @@ const CheckoutPage: React.FC = () => {
         const orderCode = (res.data.data.order || res.data.data).code;
         showToast(t("page_checkout_order_success"), "success");
         await clearCart();
-        navigate(`/order-success/${orderCode}`);
+        navigate(shopPath(`/order-success/${orderCode}`));
       } else {
         showToast(res.data.message || t("page_checkout_order_failed"), "error");
       }
@@ -138,7 +140,7 @@ const CheckoutPage: React.FC = () => {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">
-        <Link to="/cart" className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-450 transition-colors">
+        <Link to={shopPath("/cart")} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-450 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-xl md:text-2xl font-bold text-gray-850 dark:text-white uppercase">THANH TOÁN ĐƠN HÀNG</h1>

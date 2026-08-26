@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useShopTenant } from "../contexts/ShopTenantContext";
 import { Package, Calendar, Coins, Loader2, FileText, ChevronRight } from "lucide-react";
 import client from "../api/client";
 import { Order } from "../types";
@@ -7,6 +8,7 @@ import { formatPrice, formatDate } from "../utils/format";
 
 const OrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const { shopPath } = useShopTenant();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -100,7 +102,7 @@ const OrdersPage: React.FC = () => {
             Hãy lựa chọn sản phẩm từ hệ thống WebShop và tạo đơn hàng đầu tiên của bạn ngay!
           </p>
           <Link
-            to="/"
+            to={shopPath("/")}
             className="mt-6 bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-bold px-6 py-2.5 rounded-full transition-all inline-block cursor-pointer shadow-xs"
           >
             Bắt đầu mua sắm ngay
@@ -148,7 +150,7 @@ const OrdersPage: React.FC = () => {
                 </div>
                 
                 <Link
-                  to={`/orders/${order.code}`}
+                  to={shopPath(`/orders/${order.code}`)}
                   className="bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-indigo-900 dark:text-indigo-300 hover:text-white dark:hover:text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1 transition-all cursor-pointer shadow-xs"
                 >
                   Chi tiết <ChevronRight className="w-4.5 h-4.5" />
