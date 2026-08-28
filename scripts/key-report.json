@@ -1,0 +1,1531 @@
+{
+  "stats": {
+    "totalKeys": 1403,
+    "avgLen": 30.3,
+    "viSizeKB": 93,
+    "enSizeKB": 89.1
+  },
+  "longAndCalled": [
+    {
+      "key": "saas_web_orders_khong_the_cap_nhat_giao_hang_thanh_cong",
+      "len": 55,
+      "vi": "Không thể cập nhật giao hàng thành công"
+    },
+    {
+      "key": "saas_web_orders_khong_the_cap_nhat_trang_thai",
+      "len": 45,
+      "vi": "Không thể cập nhật trạng thái"
+    },
+    {
+      "key": "saas_web_orders_click_vao_ma_d_n_de_xem_chi_tiet_d_n_hang",
+      "len": 57,
+      "vi": "Click vào mã đơn để xem chi tiết đơn hàng"
+    },
+    {
+      "key": "saas_web_orders_xem_chi_tiet_d_n_hang_web",
+      "len": 41,
+      "vi": "Xem Chi Tiết Đơn Hàng Web"
+    },
+    {
+      "key": "saas_web_orders_duyet_d_n_va_tu_dong_lap_phieu_xuat_kho_erp",
+      "len": 59,
+      "vi": "Duyệt đơn và tự động lập phiếu xuất kho ERP"
+    },
+    {
+      "key": "saas_web_orders_da_dong_goi_ban_giao_shipper",
+      "len": 44,
+      "vi": "Đã đóng gói & Bàn giao Shipper"
+    },
+    {
+      "key": "saas_web_orders_ban_giao_hang_cho_d_n_vi_van_chuyen_shipper",
+      "len": 59,
+      "vi": "Bàn giao hàng cho đơn vị vận chuyển Shipper"
+    },
+    {
+      "key": "saas_web_orders_cap_nhat_tien_do_dong_goi_van_chuyen_shipper",
+      "len": 60,
+      "vi": "Cập nhật Tiến độ Đóng gói & Vận chuyển Shipper"
+    },
+    {
+      "key": "saas_web_orders_tim_ma_d_n_web_ten_khach_hang_so_dien_thoai",
+      "len": 59,
+      "vi": "Tìm mã đơn WEB-..., tên khách hàng, số điện thoại..."
+    },
+    {
+      "key": "saas_web_orders_tong_tien_cac_d_n_da_chot",
+      "len": 41,
+      "vi": "Tổng tiền các đơn đã chốt"
+    },
+    {
+      "key": "saas_web_orders_chi_tiet_d_n_hang_khach_d_t_online",
+      "len": 50,
+      "vi": "Chi Tiết Đơn Hàng Khách Đặt Online"
+    },
+    {
+      "key": "saas_web_orders_thong_tin_ng_oi_nhan_hang",
+      "len": 41,
+      "vi": "Thông Tin Người Nhận Hàng"
+    },
+    {
+      "key": "saas_web_orders_ban_giao_shipper_van_chuyen",
+      "len": 43,
+      "vi": "Bàn giao Shipper Vận Chuyển"
+    },
+    {
+      "key": "saas_web_orders_trang_thai_erp_van_chuyen",
+      "len": 41,
+      "vi": "Trạng Thái ERP & Vận Chuyển:"
+    },
+    {
+      "key": "saas_web_orders_ghi_chu_van_d_n_thong_tin_shipper",
+      "len": 49,
+      "vi": "Ghi Chú Vận Đơn / Thông Tin Shipper:"
+    },
+    {
+      "key": "saas_web_orders_khach_hang_dat_hang_truc_tuyen",
+      "len": 46,
+      "vi": "Khách hàng đặt hàng trực tuyến"
+    },
+    {
+      "key": "saas_web_orders_can_bam_duyet_pxk_de_xuat_hang",
+      "len": 46,
+      "vi": "Cần bấm \"Duyệt & PXK\" để xuất hàng"
+    },
+    {
+      "key": "saas_web_orders_da_dua_vao_so_xuat_kho_erp",
+      "len": 42,
+      "vi": "Đã đưa vào sổ xuất kho ERP"
+    },
+    {
+      "key": "saas_web_orders_danh_sach_mat_hang_dat_mua",
+      "len": 42,
+      "vi": "Danh Sách Mặt Hàng Đặt Mua"
+    },
+    {
+      "key": "saas_web_orders_duyet_tao_phieu_xuat_kho_erp",
+      "len": 44,
+      "vi": "Duyệt & Tạo Phiếu Xuất Kho ERP"
+    },
+    {
+      "key": "saas_web_orders_xac_nhan_giao_thanh_cong_chuyen_trang_thai_sang_hoan_tat_finish",
+      "len": 79,
+      "vi": "Xác nhận giao hàng thành công -> kết thúc"
+    },
+    {
+      "key": "saas_web_orders_vi_du_da_dong_goi_xong_giao_cho_shipper_nguyen_v_n_a_ghn_ghn998822",
+      "len": 82,
+      "vi": "ví dụ:đã đóng gói giao cho shipper"
+    },
+    {
+      "key": "saas_web_orders_quan_ly_d_n_hang_webshop_e_commerce_sync",
+      "len": 56,
+      "vi": "Quản lý đơn hàng"
+    },
+    {
+      "key": "saas_web_orders_khong_the_duyet_don_hang_webshop",
+      "len": 48,
+      "vi": "Không thể duyệt đơn"
+    },
+    {
+      "key": "saas_web_orders_dong_bo_d_n_hang_truc_tiep_t_gian_hang_webshop_online_duyet_d_n_va_tu_dong_sinh_phieu_xuat_kho_px_vao_erp",
+      "len": 121,
+      "vi": "Đồng bộ đơn hàng web để tạo phiếu xuất kho"
+    },
+    {
+      "key": "saas_web_orders_dang_van_chuyen_in_transit",
+      "len": 42,
+      "vi": "Đang vận chuyển"
+    },
+    {
+      "key": "saas_web_orders_da_duyet_d_n_order_code_va_tu_dong_chuyen_thanh_phieu_xuat_kho_pxcode",
+      "len": 85,
+      "vi": "Đã phê duyệt đơn hàng {order_code} và tự động tạo phiếu xuất kho {pxCode}"
+    },
+    {
+      "key": "saas_web_orders_da_cap_nhat_d_n_order_code_giao_hang_thanh_cong_da_chuyen_trang_thai_hoan_tat_finish",
+      "len": 100,
+      "vi": "Đã cập nhật đơn hàng {order_code} - giao hàng thành công, trạng thái chuyển sang Hoàn tất / Kết thúc."
+    }
+  ],
+  "longAndOrphan": [
+    {
+      "key": "saas_web_orders_loi_tai_danh_sach_d_n_webshop",
+      "len": 45,
+      "vi": "Lỗi tải danh sách đơn WebShop:"
+    },
+    {
+      "key": "saas_web_orders_da_dong_goi_hoan_tat_ban_giao_cho_shipper_ghn_ma_van_d_n_ghn",
+      "len": 76,
+      "vi": "Đã đóng gói hoàn tất & bàn giao cho Shipper GHN. Mã vận đơn: #GHN-"
+    },
+    {
+      "key": "saas_web_orders_da_ban_giao_d_n_vi_van_chuyen_ghn_ma_van_d_n_ghn",
+      "len": 64,
+      "vi": "Đã bàn giao đơn vị vận chuyển GHN. Mã vận đơn: #GHN-"
+    },
+    {
+      "key": "saas_accounting_131_phai_thu_cua_khach_hang",
+      "len": 43,
+      "vi": "131 - Phải thu của khách hàng"
+    },
+    {
+      "key": "saas_accounting_331_phai_tra_cho_ng_oi_ban",
+      "len": 42,
+      "vi": "331 - Phải trả cho người bán"
+    },
+    {
+      "key": "saas_accounting_1331_thue_gtgt_d_oc_khau_tr",
+      "len": 43,
+      "vi": "1331 - Thuế GTGT được khấu trừ"
+    },
+    {
+      "key": "saas_accounting_tim_ma_chung_t_dien_giai_but_toan",
+      "len": 49,
+      "vi": "Tìm mã chứng từ, diễn giải bút toán..."
+    },
+    {
+      "key": "saas_accounting_tim_ma_tai_khoan_ten_tai_khoan",
+      "len": 46,
+      "vi": "Tìm mã tài khoản, tên tài khoản..."
+    },
+    {
+      "key": "saas_accounting_tk_thue_gtgt_dau_vao_khau_tr",
+      "len": 44,
+      "vi": "TK Thuế GTGT Đầu Vào Khấu Trừ"
+    },
+    {
+      "key": "saas_accounting_tk_thue_gtgt_dau_ra_phai_nop",
+      "len": 44,
+      "vi": "TK Thuế GTGT Đầu Ra Phải Nộp"
+    },
+    {
+      "key": "saas_accounting_cau_hinh_anh_xa_dinh_khoan",
+      "len": 42,
+      "vi": "Cấu Hình Ánh Xạ Định Khoản"
+    },
+    {
+      "key": "saas_accounting_kiem_tra_suc_khoe_ke_toan",
+      "len": 41,
+      "vi": "Kiểm Tra Sức Khỏe Kế Toán"
+    },
+    {
+      "key": "saas_accounting_cau_hinh_anh_xa_tai_khoan_tu_dong",
+      "len": 49,
+      "vi": "Cấu Hình Ánh Xạ Tài Khoản Tự Động"
+    },
+    {
+      "key": "saas_accounting_thiet_lap_cac_tk_ke_toan_ngam_dinh_khi_tao_phieu_nhap_kho_phieu_xuat_kho_ban_hang_thu_chi_tien_no",
+      "len": 113,
+      "vi": "Thiết lập các TK kế toán ngầm định khi tạo Phiếu Nhập kho, Phiếu Xuất kho, Bán hàng & Thu/Chi tiền nợ."
+    },
+    {
+      "key": "saas_accounting_l_u_cau_hinh_hach_toan_tu_dong",
+      "len": 46,
+      "vi": "Lưu Cấu Hình Hạch Toán Tự Động"
+    },
+    {
+      "key": "saas_accounting_he_thong_tu_dong_kiem_tra_tinh_can_doi_giua_so_cai_ke_toan_vs_so_kho_thuc_te_va_so_chi_tiet_cong_no_kh_ncc",
+      "len": 122,
+      "vi": "Hệ thống tự động kiểm tra tính cân đối giữa Sổ cái Kế toán vs Sổ Kho Thực tế và Sổ Chi tiết Công nợ KH/NCC."
+    },
+    {
+      "key": "saas_accounting_cong_no_khach_hang_tk_131",
+      "len": 41,
+      "vi": "CÔNG NỢ KHÁCH HÀNG & TK 131"
+    },
+    {
+      "key": "saas_assets_he_thong_may_chu_server_dell_poweredge_r750",
+      "len": 55,
+      "vi": "Hệ Thống Máy Chủ Server Dell PowerEdge R750"
+    },
+    {
+      "key": "saas_assets_xe_tai_cho_hang_hyundai_mighty_2_5_tan",
+      "len": 50,
+      "vi": "Xe Tải Chở Hàng Hyundai Mighty 2.5 Tấn"
+    },
+    {
+      "key": "saas_assets_toa_nha_v_n_phong_kho_bai_trung_tam",
+      "len": 47,
+      "vi": "Tòa Nhà Văn Phòng & Kho Bãi Trung Tâm"
+    },
+    {
+      "key": "saas_categories_units_giay_in_a4_bia_thai_kep_b_om_so_tay_but_viet_cac_loai",
+      "len": 75,
+      "vi": "Giấy in A4, Bìa thái, Kẹp bướm, Sổ tay, Bút viết các loại"
+    },
+    {
+      "key": "saas_categories_units_laptop_may_tinh_khoi_v_n_phong",
+      "len": 52,
+      "vi": "Laptop & Máy Tính Khối Văn Phòng"
+    },
+    {
+      "key": "saas_categories_units_laptop_dell_hp_lenovo_asus_chinh_hang_cho_doanh_nghiep",
+      "len": 76,
+      "vi": "Laptop Dell, HP, Lenovo, ASUS chính hãng cho doanh nghiệp"
+    },
+    {
+      "key": "saas_categories_units_linh_kien_thiet_bi_dien_tu",
+      "len": 48,
+      "vi": "Linh Kiện & Thiết Bị Điện Tử"
+    },
+    {
+      "key": "saas_categories_units_chuot_may_tinh_ban_phim_c_tai_nghe_chuot_khong_day",
+      "len": 72,
+      "vi": "Chuột máy tính, Bàn phím cơ, Tai nghe, Chuột không dây"
+    },
+    {
+      "key": "saas_categories_units_muc_in_phu_kien_may_in",
+      "len": 44,
+      "vi": "Mực In & Phụ Kiện Máy In"
+    },
+    {
+      "key": "saas_categories_units_hop_muc_in_hp_canon_epson_va_linh_kien_thay_the",
+      "len": 69,
+      "vi": "Hộp mực in HP, Canon, Epson và linh kiện thay thế"
+    },
+    {
+      "key": "saas_categories_units_d_n_vi_dem_chiec_cai_tieu_chuan",
+      "len": 53,
+      "vi": "Đơn vị đếm chiếc/cái tiêu chuẩn"
+    },
+    {
+      "key": "saas_categories_units_hop_dong_goi_quy_chuan",
+      "len": 44,
+      "vi": "Hộp đóng gói quy chuẩn"
+    },
+    {
+      "key": "saas_categories_units_d_n_vi_do_khoi_l_ong_hang_hoa",
+      "len": 51,
+      "vi": "Đơn vị đo khối lượng hàng hóa"
+    },
+    {
+      "key": "saas_categories_units_d_n_vi_do_chieu_dai_day_cap_vat_t",
+      "len": 55,
+      "vi": "Đơn vị đo chiều dài dây cáp, vật tư"
+    },
+    {
+      "key": "saas_categories_units_1_ream_giay_in_a4_500_to",
+      "len": 46,
+      "vi": "1 Ream Giấy in A4 = 500 Tờ"
+    },
+    {
+      "key": "saas_categories_units_1_tep_bia_thai_100_to",
+      "len": 43,
+      "vi": "1 Tệp Bìa thái = 100 Tờ"
+    },
+    {
+      "key": "saas_categories_units_1_thung_hang_dong_quy_chuan_24_hop",
+      "len": 56,
+      "vi": "1 Thùng hàng đóng quy chuẩn = 24 Hộp"
+    },
+    {
+      "key": "saas_categories_units_1_kien_giay_xuat_x_ong_10_ream",
+      "len": 52,
+      "vi": "1 Kiện giấy xuất xưởng = 10 Ream"
+    },
+    {
+      "key": "saas_categories_units_1_hop_but_bi_10_cai",
+      "len": 41,
+      "vi": "1 Hộp bút bi = 10 Cái"
+    },
+    {
+      "key": "saas_categories_units_khong_the_tai_du_lieu_danh_muc_t_postgresql",
+      "len": 65,
+      "vi": "Không thể tải dữ liệu danh mục từ PostgreSQL."
+    },
+    {
+      "key": "saas_categories_units_cap_nhat_danh_muc_hang_hoa_thanh_cong",
+      "len": 59,
+      "vi": "Cập nhật danh mục hàng hóa thành công!"
+    },
+    {
+      "key": "saas_categories_units_them_danh_muc_moi_thanh_cong",
+      "len": 50,
+      "vi": "Thêm danh mục mới thành công!"
+    },
+    {
+      "key": "saas_categories_units_cap_nhat_d_n_vi_tinh_thanh_cong",
+      "len": 53,
+      "vi": "Cập nhật đơn vị tính thành công!"
+    },
+    {
+      "key": "saas_categories_units_them_d_n_vi_tinh_moi_thanh_cong",
+      "len": 53,
+      "vi": "Thêm đơn vị tính mới thành công!"
+    },
+    {
+      "key": "saas_categories_units_cho_phep_le_thap_phan",
+      "len": 43,
+      "vi": "Cho Phép Lẻ / Thập Phân"
+    },
+    {
+      "key": "saas_categories_units_ban_co_ch_c_muon_xoa_ty_le_quy_doi_nay",
+      "len": 60,
+      "vi": "Bạn có chắc muốn xóa tỷ lệ quy đổi này?"
+    },
+    {
+      "key": "saas_categories_units_da_xoa_ty_le_quy_doi_uom",
+      "len": 46,
+      "vi": "Đã xóa tỷ lệ quy đổi UOM"
+    },
+    {
+      "key": "saas_categories_units_thiet_lap_danh_muc_phan_loai_vat_t_quy_chuan_d_n_vi_tinh_va_bang_quy_doi_dvt_linh_hoat_2_ngon_ngu",
+      "len": 119,
+      "vi": "Thiết lập danh mục phân loại vật tư, quy chuẩn đơn vị tính và bảng quy đổi ĐVT linh hoạt 2 ngôn ngữ."
+    },
+    {
+      "key": "saas_categories_units_them_d_n_vi_tinh_moi",
+      "len": 42,
+      "vi": "Thêm đơn vị tính mới"
+    },
+    {
+      "key": "saas_categories_units_them_quy_doi_uom_moi",
+      "len": 42,
+      "vi": "Thêm quy đổi UOM mới"
+    },
+    {
+      "key": "saas_categories_units_tim_ten_nhom_hang_ma_danh_muc",
+      "len": 51,
+      "vi": "Tìm tên nhóm hàng, mã danh mục..."
+    },
+    {
+      "key": "saas_categories_units_tim_d_n_vi_tinh_dien_giai",
+      "len": 47,
+      "vi": "Tìm đơn vị tính, diễn giải..."
+    },
+    {
+      "key": "saas_categories_units_tim_d_n_vi_quy_doi_ghi_chu",
+      "len": 48,
+      "vi": "Tìm đơn vị quy đổi, ghi chú..."
+    },
+    {
+      "key": "saas_categories_units_chinh_sua_nhom_hang",
+      "len": 41,
+      "vi": "Chỉnh Sửa Nhóm Hàng"
+    },
+    {
+      "key": "saas_categories_units_tao_nhom_danh_muc_moi",
+      "len": 43,
+      "vi": "Tạo Nhóm Danh Mục Mới"
+    },
+    {
+      "key": "saas_categories_units_giay_in_a4_bia_thai_kep_b_om_so_tay",
+      "len": 57,
+      "vi": "Giấy in A4, Bìa thái, Kẹp bướm, Sổ tay..."
+    },
+    {
+      "key": "saas_categories_units_chinh_sua_d_n_vi_tinh",
+      "len": 43,
+      "vi": "Chỉnh Sửa Đơn Vị Tính"
+    },
+    {
+      "key": "saas_categories_units_them_d_n_vi_tinh_moi_1",
+      "len": 44,
+      "vi": "Thêm Đơn Vị Tính Mới"
+    },
+    {
+      "key": "saas_categories_units_dong_goi_24_lon_thung",
+      "len": 43,
+      "vi": "Đóng gói 24 lon/thùng"
+    },
+    {
+      "key": "saas_categories_units_them_cong_thuc_quy_doi_uom_moi_thanh_cong",
+      "len": 63,
+      "vi": "Thêm công thức quy đổi UOM mới thành công!"
+    },
+    {
+      "key": "saas_categories_units_1_thung_hang_quy_chuan_24_hop",
+      "len": 51,
+      "vi": "1 Thùng hàng quy chuẩn = 24 Hộp"
+    },
+    {
+      "key": "saas_categories_units_l_u_ty_le_quy_doi_uom",
+      "len": 43,
+      "vi": "Lưu Tỷ Lệ Quy Đổi UOM"
+    },
+    {
+      "key": "saas_categories_units_multi_language_names_ten_2_ngon_ngu",
+      "len": 57,
+      "vi": "Multi-language Names / Tên 2 Ngôn Ngữ"
+    },
+    {
+      "key": "saas_categories_units_multi_language_description_mo_ta_2_ngon_ngu",
+      "len": 65,
+      "vi": "Multi-language Description / Mô tả 2 Ngôn Ngữ"
+    },
+    {
+      "key": "saas_categories_units_multi_language_description_mo_ta_dvt",
+      "len": 58,
+      "vi": "Multi-language Description / Mô tả ĐVT"
+    },
+    {
+      "key": "saas_categories_units_dien_giai_tieng_viet",
+      "len": 42,
+      "vi": "🇻🇳 Diễn giải tiếng Việt"
+    },
+    {
+      "key": "saas_categories_units_multi_language_notes_ghi_chu_2_ngon_ngu",
+      "len": 61,
+      "vi": "Multi-language Notes / Ghi chú 2 Ngôn Ngữ"
+    },
+    {
+      "key": "saas_c_r_m_vi_du_cong_ty_tnhh_th_ng_mai_abc",
+      "len": 43,
+      "vi": "Ví dụ: Công ty TNHH Thương Mại ABC"
+    },
+    {
+      "key": "saas_customers_vui_long_nhap_mat_khau_webshop_moi_hop_le",
+      "len": 56,
+      "vi": "Vui lòng nhập mật khẩu WebShop mới hợp lệ"
+    },
+    {
+      "key": "saas_customers_cap_nhat_ho_s_khach_hang_webshop_thanh_cong",
+      "len": 58,
+      "vi": "Cập nhật hồ sơ khách hàng WebShop thành công!"
+    },
+    {
+      "key": "saas_customers_them_ho_s_khach_hang_webshop_moi_thanh_cong",
+      "len": 58,
+      "vi": "Thêm hồ sơ khách hàng WebShop mới thành công!"
+    },
+    {
+      "key": "saas_customers_cap_lai_reset_mat_khau_webshop",
+      "len": 45,
+      "vi": "Cấp lại / Reset mật khẩu WebShop"
+    },
+    {
+      "key": "saas_customers_tim_ten_khach_hang_sdt_ma_so_thue",
+      "len": 48,
+      "vi": "Tìm tên khách hàng, SĐT, mã số thuế..."
+    },
+    {
+      "key": "saas_customers_chinh_sua_ho_s_mat_khau_khach_hang",
+      "len": 49,
+      "vi": "Chỉnh Sửa Hồ Sơ & Mật Khẩu Khách Hàng"
+    },
+    {
+      "key": "saas_customers_cap_lai_reset_mat_khau_webshop_1",
+      "len": 47,
+      "vi": "Cấp Lại / Reset Mật Khẩu WebShop"
+    },
+    {
+      "key": "saas_dashboard_he_thong_tu_dong_dong_bo_kho_ke_toan_hoa_d_n_vat_va_cong_no",
+      "len": 74,
+      "vi": "Hệ thống tự động đồng bộ kho, kế toán, hóa đơn VAT và công nợ."
+    },
+    {
+      "key": "saas_dashboard_canh_bao_san_pham_s_p_het_hang",
+      "len": 45,
+      "vi": "Cảnh Báo Sản Phẩm Sắp Hết Hàng"
+    },
+    {
+      "key": "saas_dashboard_san_pham_co_ton_kho_d_oi_dinh_muc_toi_thieu_can_bo_sung_phieu_nhap_ngay",
+      "len": 86,
+      "vi": "Sản phẩm có tồn kho dưới định mức tối thiểu cần bổ sung phiếu nhập ngay."
+    },
+    {
+      "key": "saas_dashboard_tim_kiem_ma_sku_ho_c_ten_san_pham_canh_bao",
+      "len": 57,
+      "vi": "Tìm kiếm mã SKU hoặc tên sản phẩm cảnh báo..."
+    },
+    {
+      "key": "saas_debt_vd_thu_no_chuyen_khoan_vcb_1123",
+      "len": 41,
+      "vi": "VD: Thu nợ chuyển khoản VCB-1123..."
+    },
+    {
+      "key": "saas_debt_phan_tich_tuoi_no_han_thanh_toan",
+      "len": 42,
+      "vi": "Phân Tích Tuổi Nợ & Hạn Thanh Toán"
+    },
+    {
+      "key": "saas_debt_bao_cao_phan_tich_tuoi_no_khach_hang_ncc",
+      "len": 50,
+      "vi": "Báo Cáo Phân Tích Tuổi Nợ Khách Hàng & NCC"
+    },
+    {
+      "key": "saas_debt_ghi_chu_ma_chung_t_chuyen_khoan",
+      "len": 41,
+      "vi": "Ghi Chú / Mã Chứng Từ Chuyển Khoản"
+    },
+    {
+      "key": "saas_inventory_chuot_khong_day_logitech_m235",
+      "len": 44,
+      "vi": "Chuột không dây Logitech M235"
+    },
+    {
+      "key": "saas_inventory_bao_cao_kiem_ke_dinh_gia_ton_kho",
+      "len": 47,
+      "vi": "Báo Cáo Kiểm Kê & Định Giá Tồn Kho"
+    },
+    {
+      "key": "saas_inventory_so_lieu_tong_hop_ton_kho_thuc_te_ton_kho_tam_giu_va_tong_gia_tri_tai_san_l_u_kho_theo_ph_ng_phap_binh_quan",
+      "len": 121,
+      "vi": "Số liệu tổng hợp tồn kho thực tế, tồn kho tạm giữ và tổng giá trị tài sản lưu kho theo phương pháp bình quân."
+    },
+    {
+      "key": "saas_products_khong_the_tai_file_hinh_anh",
+      "len": 41,
+      "vi": "Không thể tải file hình ảnh"
+    },
+    {
+      "key": "saas_products_khong_the_nen_tai_len_file_hinh_anh",
+      "len": 49,
+      "vi": "Không thể nén/tải lên file hình ảnh"
+    },
+    {
+      "key": "saas_products_da_xoa_hinh_anh_khoi_danh_sach_san_pham",
+      "len": 53,
+      "vi": "Đã xóa hình ảnh khỏi danh sách sản phẩm"
+    },
+    {
+      "key": "saas_products_da_chon_hinh_anh_lam_anh_dai_dien_chinh",
+      "len": 53,
+      "vi": "Đã chọn hình ảnh làm ảnh đại diện chính!"
+    },
+    {
+      "key": "saas_products_khong_the_l_u_san_pham_vao_postgresql",
+      "len": 51,
+      "vi": "Không thể lưu sản phẩm vào PostgreSQL."
+    },
+    {
+      "key": "saas_products_bam_de_xem_chi_tiet_th_vien_anh",
+      "len": 45,
+      "vi": "Bấm để xem chi tiết & thư viện ảnh"
+    },
+    {
+      "key": "saas_products_dong_bo_toan_bo_danh_muc_san_pham_2_ngon_ngu_bang_gia_va_ton_kho_thoi_gian_thuc_giua_erp_va_webshop",
+      "len": 113,
+      "vi": "Đồng bộ toàn bộ danh mục sản phẩm 2 ngôn ngữ, bảng giá và tồn kho thời gian thực giữa ERP và WebShop."
+    },
+    {
+      "key": "saas_products_tim_kiem_ma_sku_ten_hang_hoa_th_ng_hieu",
+      "len": 53,
+      "vi": "Tìm kiếm mã SKU, tên hàng hóa, thương hiệu..."
+    },
+    {
+      "key": "saas_products_chinh_sua_thong_tin_hang_hoa",
+      "len": 42,
+      "vi": "Chỉnh Sửa Thông Tin Hàng Hóa"
+    },
+    {
+      "key": "saas_products_nhap_gioi_thieu_chi_tiet_san_pham",
+      "len": 47,
+      "vi": "Nhập giới thiệu chi tiết sản phẩm..."
+    },
+    {
+      "key": "saas_products_linh_hoat_cho_phep_ban_tr_oc_xuat_am_kho_khi_ch_a_kip_nhap_kho",
+      "len": 76,
+      "vi": "Linh hoạt: Cho phép bán trước / xuất âm kho khi chưa kịp nhập kho"
+    },
+    {
+      "key": "saas_purchasing_vui_long_dien_ly_do_va_danh_muc_vat_t",
+      "len": 53,
+      "vi": "Vui lòng điền lý do và danh mục vật tư"
+    },
+    {
+      "key": "saas_purchasing_tong_cong_ty_giay_bao_bi_double_a_viet_nam",
+      "len": 58,
+      "vi": "Tổng Công Ty Giấy & Bao Bì Double A Việt Nam"
+    },
+    {
+      "key": "saas_purchasing_doi_moi_100_neu_co_loi_t_nha_san_xuat",
+      "len": 53,
+      "vi": "Đổi mới 100% nếu có lỗi từ nhà sản xuất"
+    },
+    {
+      "key": "saas_purchasing_chiet_khau_2_mua_so_l_ong_lon",
+      "len": 45,
+      "vi": "Chiết khấu 2% mua số lượng lớn"
+    },
+    {
+      "key": "saas_purchasing_nha_phan_phoi_linh_kien_may_tinh_spc",
+      "len": 52,
+      "vi": "Nhà Phân Phối Linh Kiện Máy Tính SPC"
+    },
+    {
+      "key": "saas_purchasing_bao_hanh_chinh_hang_12_36_thang",
+      "len": 47,
+      "vi": "Bảo hành chính hãng 12-36 tháng"
+    },
+    {
+      "key": "saas_purchasing_ho_tro_giao_hang_mien_phi_trong_ngay",
+      "len": 52,
+      "vi": "Hỗ trợ giao hàng miễn phí trong ngày"
+    },
+    {
+      "key": "saas_purchasing_da_chon_nha_cung_cap_th_ng_thau_cho_rfq",
+      "len": 55,
+      "vi": "Đã chọn Nhà Cung Cấp thắng thầu cho RFQ!"
+    },
+    {
+      "key": "saas_purchasing_vui_long_chon_bao_gia_nha_cung_cap_tr_oc",
+      "len": 56,
+      "vi": "Vui lòng chọn báo giá Nhà Cung Cấp trước"
+    },
+    {
+      "key": "saas_purchasing_thanh_toan_100_khi_nhan_du_hang",
+      "len": 47,
+      "vi": "Thanh toán 100% khi nhận đủ hàng"
+    },
+    {
+      "key": "saas_purchasing_xem_chi_tiet_d_n_mua_hang",
+      "len": 41,
+      "vi": "Xem chi tiết đơn mua hàng"
+    },
+    {
+      "key": "saas_purchasing_tu_dong_dien_du_lieu_po_vao_phieu_nhap_kho",
+      "len": 58,
+      "vi": "Tự động điền dữ liệu PO vào Phiếu Nhập Kho"
+    },
+    {
+      "key": "saas_purchasing_vi_du_bo_sung_100_ream_giay_a4_phuc_vu_in_an_hoa_d_n_chung_t_q3",
+      "len": 79,
+      "vi": "Ví dụ: Bổ sung 100 ream giấy A4 phục vụ in ấn hóa đơn chứng từ Q3..."
+    },
+    {
+      "key": "saas_purchasing_phieu_yeu_cau_vat_t_t_cac_phong_ban_cho_ban_giam_doc_ho_c_tr_ong_phong_mua_hang_phe_duyet",
+      "len": 105,
+      "vi": "Phiếu yêu cầu vật tư từ các phòng ban, chờ Ban Giám Đốc hoặc Trưởng Phòng Mua Hàng phê duyệt."
+    },
+    {
+      "key": "saas_purchasing_gui_danh_muc_vat_t_chao_gia_toi_nhieu_nha_cung_cap_so_sanh_bao_gia_canh_tranh_de_chon_nha_thau_toi_u_nhat",
+      "len": 121,
+      "vi": "Gửi danh mục vật tư chào giá tới nhiều Nhà Cung Cấp, so sánh báo giá cạnh tranh để chọn Nhà Thầu tối ưu nhất."
+    },
+    {
+      "key": "saas_purchasing_bang_so_sanh_bao_gia_t_cac_nha_cung_cap",
+      "len": 55,
+      "vi": "Bảng So Sánh Báo Giá Từ Các Nhà Cung Cấp:"
+    },
+    {
+      "key": "saas_quotations_bao_gia_co_hieu_luc_trong_30_ngay_da_bao_gom_chi_phi_van_chuyen",
+      "len": 79,
+      "vi": "Báo giá có hiệu lực trong 30 ngày. Đã bao gồm chi phí vận chuyển."
+    },
+    {
+      "key": "saas_quotations_bao_gia_da_bao_gom_phi_dong_goi_bao_hanh_12_thang",
+      "len": 65,
+      "vi": "Báo giá đã bao gồm phí đóng gói & bảo hành 12 tháng."
+    },
+    {
+      "key": "saas_quotations_bao_gia_phai_co_it_nhat_1_san_pham",
+      "len": 50,
+      "vi": "Báo giá phải có ít nhất 1 sản phẩm!"
+    },
+    {
+      "key": "saas_quotations_vui_long_them_san_pham_vao_bao_gia",
+      "len": 50,
+      "vi": "Vui lòng thêm sản phẩm vào báo giá!"
+    },
+    {
+      "key": "saas_quotations_click_vao_so_bao_gia_de_xem_chi_tiet_in",
+      "len": 55,
+      "vi": "Click vào số báo giá để xem chi tiết / in"
+    },
+    {
+      "key": "saas_quotations_xem_ban_in_bao_gia_chuan_erp",
+      "len": 44,
+      "vi": "Xem bản in Báo giá chuẩn ERP"
+    },
+    {
+      "key": "saas_quotations_chuyen_bao_gia_thanh_phieu_xuat_kho_ban_hang",
+      "len": 60,
+      "vi": "Chuyển báo giá thành Phiếu Xuất Kho Bán Hàng"
+    },
+    {
+      "key": "saas_quotations_tim_so_bao_gia_ten_khach_hang",
+      "len": 45,
+      "vi": "Tìm số báo giá, tên khách hàng..."
+    },
+    {
+      "key": "saas_quotations_soan_bao_gia_th_ng_mai_moi",
+      "len": 42,
+      "vi": "Soạn Báo Giá Thương Mại Mới"
+    },
+    {
+      "key": "saas_quotations_ghi_chu_dieu_khoan_thanh_toan_bao_hanh_giao_hang",
+      "len": 64,
+      "vi": "Ghi chú điều khoản thanh toán, bảo hành, giao hàng..."
+    },
+    {
+      "key": "saas_quotations_lap_bao_gia_th_ng_mai_tu_dong_tinh_vat_thoi_han_hieu_luc_chuyen_truc_tiep_thanh_phieu_xuat_kho_in_ban_mem_pdf",
+      "len": 125,
+      "vi": "Lập báo giá thương mại, tự động tính VAT, thời hạn hiệu lực, chuyển trực tiếp thành Phiếu Xuất Kho & in bản mềm PDF."
+    },
+    {
+      "key": "saas_register_123_nguyen_v_n_linh_q_7_tp_hcm",
+      "len": 44,
+      "vi": "123 Nguyễn Văn Linh, Q.7, TP.HCM"
+    },
+    {
+      "key": "saas_reports_bao_cao_tai_chinh_tong_hop_kinh_doanh",
+      "len": 50,
+      "vi": "Báo Cáo Tài Chính & Tổng Hợp Kinh Doanh"
+    },
+    {
+      "key": "saas_reports_bao_cao_ket_qua_hoat_dong_kinh_doanh",
+      "len": 49,
+      "vi": "BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH"
+    },
+    {
+      "key": "saas_reports_m_u_so_b02_dn_theo_thong_t_ke_toan_doanh_nghiep",
+      "len": 60,
+      "vi": "Mẫu số B02-DN theo Thông tư Kế toán doanh nghiệp"
+    },
+    {
+      "key": "saas_reports_1_doanh_thu_ban_hang_va_cung_cap_dich_vu",
+      "len": 53,
+      "vi": "1. Doanh thu bán hàng và cung cấp dịch vụ"
+    },
+    {
+      "key": "saas_reports_4_chi_phi_quan_ly_doanh_nghiep_ban_hang",
+      "len": 52,
+      "vi": "4. Chi phí quản lý doanh nghiệp & bán hàng"
+    },
+    {
+      "key": "saas_reports_5_loi_nhuan_thuan_tr_oc_thue",
+      "len": 41,
+      "vi": "5. Lợi nhuận thuần trước thuế"
+    },
+    {
+      "key": "saas_reports_1_tien_va_cac_khoan_t_ng_d_ng_tien",
+      "len": 47,
+      "vi": "1. Tiền và các khoản tương đương tiền"
+    },
+    {
+      "key": "saas_reports_2_phai_thu_ng_n_han_cua_khach_hang",
+      "len": 47,
+      "vi": "2. Phải thu ngắn hạn của khách hàng"
+    },
+    {
+      "key": "saas_reports_2_thue_va_cac_khoan_phai_nop_nha_n_oc",
+      "len": 50,
+      "vi": "2. Thuế và các khoản phải nộp Nhà nước"
+    },
+    {
+      "key": "saas_reports_3_von_chu_so_huu_loi_nhuan_giu_lai",
+      "len": 47,
+      "vi": "3. Vốn chủ sở hữu & Lợi nhuận giữ lại"
+    },
+    {
+      "key": "saas_settings_cong_ty_co_phan_erp_viet_enterprise",
+      "len": 49,
+      "vi": "CÔNG TY CỔ PHẦN ERP-VIET ENTERPRISE"
+    },
+    {
+      "key": "saas_settings_toa_nha_keangnam_landmark_72_d_ong_pham_hung_cau_giay_ha_noi",
+      "len": 74,
+      "vi": "Tòa nhà Keangnam Landmark 72, Đường Phạm Hùng, Cầu Giấy, Hà Nội"
+    },
+    {
+      "key": "saas_settings_cam_n_quy_khach_hang_da_tin_t_ong_hop_tac_cung_erp_viet",
+      "len": 69,
+      "vi": "Cảm ơn Quý khách hàng đã tin tưởng hợp tác cùng ERP-VIET"
+    },
+    {
+      "key": "saas_settings_da_l_u_thong_tin_doanh_nghiep_m_u_in_pdf_thanh_cong",
+      "len": 65,
+      "vi": "Đã lưu thông tin doanh nghiệp & mẫu in PDF thành công!"
+    },
+    {
+      "key": "saas_settings_ket_noi_thanh_cong_server_latency_24ms_status_200_ok",
+      "len": 66,
+      "vi": "Kết nối thành công! Server latency: 24ms - Status 200 OK"
+    },
+    {
+      "key": "saas_settings_ban_co_ch_c_ch_n_muon_khoi_phuc_lai_cau_hinh_m_c_dinh_ban_dau_khong",
+      "len": 81,
+      "vi": "Bạn có chắc chắn muốn khôi phục lại cấu hình mặc định ban đầu không?"
+    },
+    {
+      "key": "saas_settings_cai_d_t_he_thong_cau_hinh_doanh_nghiep",
+      "len": 52,
+      "vi": "Cài Đặt Hệ Thống & Cấu Hình Doanh Nghiệp"
+    },
+    {
+      "key": "saas_settings_quan_ly_toan_bo_cau_hinh_thong_tin_doanh_nghiep_bang_menu_db_phan_quyen_m_u_in_pdf_quy_trinh_kho_api_backend",
+      "len": 122,
+      "vi": "Quản lý toàn bộ cấu hình thông tin doanh nghiệp, bảng menu DB, phân quyền, mẫu in PDF, quy trình kho & API backend."
+    },
+    {
+      "key": "saas_settings_vi_du_bao_cao_doanh_thu_theo_vung",
+      "len": 47,
+      "vi": "Ví dụ: Báo Cáo Doanh Thu Theo Vùng"
+    },
+    {
+      "key": "saas_settings_tai_khoan_ngan_hang_thu_h_ong_qr_thanh_toan",
+      "len": 57,
+      "vi": "Tài Khoản Ngân Hàng Thụ Hưởng & QR Thanh Toán"
+    },
+    {
+      "key": "saas_settings_loi_cam_n_ghi_chu_chan_trang_m_u_in",
+      "len": 49,
+      "vi": "Lời Cảm Ơn / Ghi Chú Chân Trang Mẫu In"
+    },
+    {
+      "key": "saas_settings_quan_ly_danh_muc_cac_menu_chuc_n_ng_trong_he_thong_saas_bat_t_t_menu_truc_tiep_tren_giao_dien_ng_oi_dung",
+      "len": 118,
+      "vi": "Quản lý danh mục các menu chức năng trong hệ thống SaaS, bật/tắt menu trực tiếp trên giao diện người dùng."
+    },
+    {
+      "key": "saas_settings_ph_ng_phap_tinh_gia_von_hang_ton_kho",
+      "len": 50,
+      "vi": "Phương Pháp Tính Giá Vốn Hàng Tồn Kho"
+    },
+    {
+      "key": "saas_settings_gia_von_tu_dong_tinh_lai_ngay_khi_phat_sinh_phieu_nhap_kho_moi",
+      "len": 76,
+      "vi": "Giá vốn tự động tính lại ngay khi phát sinh phiếu nhập kho mới."
+    },
+    {
+      "key": "saas_settings_tu_dong_sinh_ma_chung_t_kem_theo_ngay",
+      "len": 51,
+      "vi": "Tự Động Sinh Mã Chứng Từ Kèm Theo Ngày"
+    },
+    {
+      "key": "saas_settings_quy_t_c_sinh_ma_tu_dong_cho_d_n_hang_phieu_xuat_phieu_nhap_bao_gia",
+      "len": 80,
+      "vi": "Quy tắc sinh mã tự động cho Đơn hàng, Phiếu xuất, Phiếu nhập, Báo giá..."
+    },
+    {
+      "key": "saas_settings_cau_hinh_tien_to_quy_t_c_sinh_ma_chung_t",
+      "len": 54,
+      "vi": "Cấu Hình Tiền Tố & Quy Tắc Sinh Mã Chứng Từ"
+    },
+    {
+      "key": "saas_settings_dinh_dang_ngay_thang_trong_ma",
+      "len": 43,
+      "vi": "Định Dạng Ngày Tháng Trong Mã"
+    },
+    {
+      "key": "saas_settings_m_u_ma_chung_t_se_sinh_ra_theo_cau_hinh",
+      "len": 53,
+      "vi": "Mẫu mã chứng từ sẽ sinh ra theo cấu hình:"
+    },
+    {
+      "key": "saas_settings_cau_hinh_api_gateway_authorization_header",
+      "len": 55,
+      "vi": "Cấu Hình API Gateway & Authorization Header"
+    },
+    {
+      "key": "saas_settings_se_tu_dong_noi_chuoi_url_nay",
+      "len": 42,
+      "vi": "sẽ tự động nối chuỗi URL này."
+    },
+    {
+      "key": "saas_settings_cau_hinh_canh_bao_kenh_thong_bao_tu_dong",
+      "len": 54,
+      "vi": "Cấu Hình Cảnh Báo & Kênh Thông Báo Tự Động"
+    },
+    {
+      "key": "saas_settings_canh_bao_hang_ton_kho_d_oi_dinh_muc",
+      "len": 49,
+      "vi": "Cảnh Báo Hàng Tồn Kho Dưới Định Mức"
+    },
+    {
+      "key": "saas_settings_gui_thong_bao_tren_thanh_topbar_khi_so_l_ong_san_pham_cham_ng_ong_ton_toi_thieu",
+      "len": 93,
+      "vi": "Gửi thông báo trên thanh topbar khi số lượng sản phẩm chạm ngưỡng tồn tối thiểu."
+    },
+    {
+      "key": "saas_settings_canh_bao_cong_no_khach_hang_qua_han",
+      "len": 49,
+      "vi": "Cảnh Báo Công Nợ Khách Hàng Quá Hạn"
+    },
+    {
+      "key": "saas_settings_canh_bao_lech_kho_sau_khi_kiem_ke",
+      "len": 47,
+      "vi": "Cảnh Báo Lệch Kho Sau Khi Kiểm Kê"
+    },
+    {
+      "key": "saas_settings_tu_dong_tao_phieu_thong_bao_khi_phat_hien_chenh_lech_giua_kho_so_sach_va_kiem_ke_thuc_te",
+      "len": 102,
+      "vi": "Tự động tạo phiếu thông báo khi phát hiện chênh lệch giữa kho sổ sách và kiểm kê thực tế."
+    },
+    {
+      "key": "saas_settings_tai_ve_file_sao_l_u_toan_bo_cau_hinh_erp",
+      "len": 54,
+      "vi": "Tải Về File Sao Lưu Toàn Bộ Cấu Hình ERP"
+    },
+    {
+      "key": "saas_settings_file_bao_gom_chung_t_menu_active_chinh_sach_thue_cau_hinh_api",
+      "len": 75,
+      "vi": "File bao gồm chứng từ, menu active, chính sách thuế & cấu hình API."
+    },
+    {
+      "key": "saas_stock_in_phieu_nhap_kho_phai_co_it_nhat_1_m_t_hang",
+      "len": 55,
+      "vi": "Phiếu nhập kho phải có ít nhất 1 mặt hàng!"
+    },
+    {
+      "key": "saas_stock_in_vui_long_them_it_nhat_1_hang_hoa_vao_phieu_nhap",
+      "len": 61,
+      "vi": "Vui lòng thêm ít nhất 1 hàng hóa vào phiếu nhập!"
+    },
+    {
+      "key": "saas_stock_in_tim_ma_phieu_nhap_so_po_ten_nha_cung_cap",
+      "len": 54,
+      "vi": "Tìm mã phiếu nhập, số PO, tên nhà cung cấp..."
+    },
+    {
+      "key": "saas_stock_in_lap_phieu_nhap_kho_mua_hang_moi",
+      "len": 45,
+      "vi": "Lập Phiếu Nhập Kho Mua Hàng Mới"
+    },
+    {
+      "key": "saas_stock_in_mo_ta_hoa_d_n_mua_hang_phieu_nhap_vat_t",
+      "len": 53,
+      "vi": "Mô tả hóa đơn mua hàng, phiếu nhập vật tư..."
+    },
+    {
+      "key": "saas_stock_in_go_ten_ho_c_sku_de_tim_nhanh",
+      "len": 42,
+      "vi": "Gõ tên hoặc SKU để tìm nhanh..."
+    },
+    {
+      "key": "saas_stock_in_xac_nhan_nhap_kho_l_u_lo_hang",
+      "len": 43,
+      "vi": "Xác Nhận Nhập Kho & Lưu Lô Hàng"
+    },
+    {
+      "key": "saas_stock_in_chon_po_co_san_de_tu_dong_dien_nha_cung_cap_hoa_d_n_va_danh_muc_hang_mua",
+      "len": 86,
+      "vi": "Chọn PO có sẵn để tự động điền Nhà Cung Cấp, Hóa Đơn và Danh Mục Hàng Mua."
+    },
+    {
+      "key": "saas_stock_in_so_hoa_d_n_mua_hang_ky_hieu",
+      "len": 41,
+      "vi": "Số Hóa Đơn Mua Hàng & Ký Hiệu"
+    },
+    {
+      "key": "saas_stock_in_dien_giai_dien_dien_nhap_kho",
+      "len": 42,
+      "vi": "Diễn Giải / Diễn Diễn Nhập Kho"
+    },
+    {
+      "key": "saas_stock_in_phieu_nhap_hoan_thanh_se_t_ng_ton_kho_t_ng_ung_tai_kho_tiep_nhan",
+      "len": 78,
+      "vi": "• Phiếu nhập hoàn thành sẽ tăng tồn kho tương ứng tại kho tiếp nhận."
+    },
+    {
+      "key": "saas_stock_in_thue_vat_dau_vao_se_d_oc_tong_hop_tu_dong_vao_bang_phan_bo_thue",
+      "len": 77,
+      "vi": "• Thuế VAT đầu vào sẽ được tổng hợp tự động vào bảng phân bổ thuế."
+    },
+    {
+      "key": "saas_stock_out_loi_dong_bo_erp_status_sang_server",
+      "len": 49,
+      "vi": "Lỗi đồng bộ ERP Status sang Server:"
+    },
+    {
+      "key": "saas_stock_out_phieu_xuat_kho_phai_co_it_nhat_1_m_t_hang",
+      "len": 56,
+      "vi": "Phiếu xuất kho phải có ít nhất 1 mặt hàng!"
+    },
+    {
+      "key": "saas_stock_out_vui_long_them_it_nhat_1_hang_hoa_vao_phieu_xuat",
+      "len": 62,
+      "vi": "Vui lòng thêm ít nhất 1 hàng hóa vào phiếu xuất!"
+    },
+    {
+      "key": "saas_stock_out_click_vao_ma_phieu_de_xem_chi_tiet_in_chung_t",
+      "len": 60,
+      "vi": "Click vào mã phiếu để xem chi tiết / in chứng từ"
+    },
+    {
+      "key": "saas_stock_out_in_phieu_xuat_kho_chuan_erp",
+      "len": 42,
+      "vi": "In Phiếu Xuất Kho chuẩn ERP"
+    },
+    {
+      "key": "saas_stock_out_tim_ma_phieu_xuat_ten_khach_hang",
+      "len": 47,
+      "vi": "Tìm mã phiếu xuất, tên khách hàng..."
+    },
+    {
+      "key": "saas_stock_out_tim_ma_d_n_web_web_ten_khach_hang",
+      "len": 48,
+      "vi": "Tìm mã đơn web WEB-..., tên khách hàng..."
+    },
+    {
+      "key": "saas_stock_out_giao_nhan_hang_hoa_day_du_nguyen_tem_bao_hanh",
+      "len": 60,
+      "vi": "Giao nhận hàng hóa đầy đủ nguyên tem bảo hành."
+    },
+    {
+      "key": "saas_stock_out_tao_phieu_xuat_kho_ban_hang_moi",
+      "len": 46,
+      "vi": "Tạo Phiếu Xuất Kho Bán Hàng Mới"
+    },
+    {
+      "key": "saas_stock_out_tim_khach_hang_theo_ten_sdt",
+      "len": 42,
+      "vi": "Tìm khách hàng theo tên, SĐT..."
+    },
+    {
+      "key": "saas_stock_out_mo_ta_ly_do_xuat_kho_dia_diem_giao",
+      "len": 49,
+      "vi": "Mô tả lý do xuất kho, địa điểm giao..."
+    },
+    {
+      "key": "saas_stock_out_xac_nhan_xuat_kho_l_u_phieu",
+      "len": 42,
+      "vi": "Xác Nhận Xuất Kho & Lưu Phiếu"
+    },
+    {
+      "key": "saas_stock_out_nghiep_vu_lap_phieu_xuat_kho_ban_hang_dong_bo_d_n_webshop_tu_dong_tinh_vat_quy_doi_dvt_va_in_chung_t",
+      "len": 115,
+      "vi": "Nghiệp vụ lập phiếu xuất kho bán hàng, đồng bộ đơn WebShop, tự động tính VAT, quy đổi ĐVT và in chứng từ."
+    },
+    {
+      "key": "saas_stock_out_dien_giai_ghi_chu_xuat_kho",
+      "len": 41,
+      "vi": "Diễn Giải / Ghi Chú Xuất Kho"
+    },
+    {
+      "key": "saas_stock_out_xac_nhan_phieu_se_tu_dong_tr_so_l_ong_ton_kho_t_ng_ung",
+      "len": 69,
+      "vi": "• Xác nhận phiếu sẽ tự động trừ số lượng tồn kho tương ứng."
+    },
+    {
+      "key": "saas_stock_out_hoa_d_n_vat_se_d_oc_ghi_nhan_vao_so_bao_cao_vat_dau_ra",
+      "len": 69,
+      "vi": "• Hóa đơn VAT sẽ được ghi nhận vào sổ báo cáo VAT đầu ra."
+    },
+    {
+      "key": "saas_stocktaking_kiem_ke_kho_dieu_chinh_so_lieu_tu_dong",
+      "len": 55,
+      "vi": "Kiểm kê kho & điều chỉnh số liệu tự động"
+    },
+    {
+      "key": "saas_stocktaking_tim_ma_phieu_kiem_ten_kho_ng_oi_kiem",
+      "len": 53,
+      "vi": "Tìm mã phiếu kiểm, tên kho, người kiểm..."
+    },
+    {
+      "key": "saas_stocktaking_vd_kiem_ke_dinh_ky_dot_cuoi_thang",
+      "len": 50,
+      "vi": "VD: Kiểm kê định kỳ đợt cuối tháng..."
+    },
+    {
+      "key": "saas_stocktaking_bang_chi_tiet_ton_so_sach_ton_thuc_te",
+      "len": 54,
+      "vi": "Bảng Chi Tiết Tồn Sổ Sách & Tồn Thực Tế"
+    },
+    {
+      "key": "saas_stocktaking_he_thong_se_tu_dong_tao_phieu_dieu_chinh_t_ng_giam_ton_kho_t_ng_ung_voi_so_l_ong_chenh_lech_thuc_te",
+      "len": 116,
+      "vi": "Hệ thống sẽ tự động tạo phiếu điều chỉnh tăng/giảm tồn kho tương ứng với số lượng chênh lệch thực tế."
+    },
+    {
+      "key": "saas_suppliers_cap_nhat_nha_cung_cap_thanh_cong",
+      "len": 47,
+      "vi": "Cập nhật nhà cung cấp thành công!"
+    },
+    {
+      "key": "saas_suppliers_them_nha_cung_cap_moi_thanh_cong",
+      "len": 47,
+      "vi": "Thêm nhà cung cấp mới thành công!"
+    },
+    {
+      "key": "saas_suppliers_tim_ten_nha_cung_cap_ma_ncc_sdt",
+      "len": 46,
+      "vi": "Tìm tên nhà cung cấp, mã NCC, SĐT..."
+    },
+    {
+      "key": "saas_suppliers_nhap_ten_doanh_nghiep_nha_cung_cap",
+      "len": 49,
+      "vi": "Nhập tên doanh nghiệp / nhà cung cấp"
+    },
+    {
+      "key": "saas_suppliers_kcn_sai_dong_long_bien_ha_noi",
+      "len": 44,
+      "vi": "KCN Sài Đồng, Long Biên, Hà Nội"
+    },
+    {
+      "key": "saas_suppliers_quan_ly_thong_tin_dau_moi_nhap_hang_cong_no_phai_tra_va_danh_gia_nha_cung_ung",
+      "len": 92,
+      "vi": "Quản lý thông tin đầu mối nhập hàng, công nợ phải trả và đánh giá nhà cung ứng."
+    },
+    {
+      "key": "saas_suppliers_dia_chi_v_n_phong_kho_hang",
+      "len": 41,
+      "vi": "Địa Chỉ Văn Phòng / Kho Hàng"
+    },
+    {
+      "key": "saas_tenants_khong_the_tai_danh_sach_doanh_nghiep",
+      "len": 49,
+      "vi": "Không thể tải danh sách doanh nghiệp"
+    },
+    {
+      "key": "saas_tenants_da_kich_hoat_lai_doanh_nghiep",
+      "len": 42,
+      "vi": "Đã kích hoạt lại doanh nghiệp"
+    },
+    {
+      "key": "saas_tenants_quan_ly_doanh_nghiep_d_ng_ky_goi_dich_vu_trang_thai_thue_bao_va_phan_quyen_truy_cap",
+      "len": 96,
+      "vi": "Quản lý doanh nghiệp đăng ký, gói dịch vụ, trạng thái thuê bao và phân quyền truy cập"
+    },
+    {
+      "key": "saas_v_a_t_so_tien_thue_gtgt_phai_nop_ngan_sach_nha_n_oc",
+      "len": 56,
+      "vi": "Số tiền thuế GTGT phải nộp Ngân sách Nhà nước"
+    },
+    {
+      "key": "saas_v_a_t_so_tien_thue_gtgt_con_d_oc_khau_tr_chuyen_ky_sau",
+      "len": 59,
+      "vi": "Số tiền thuế GTGT còn được khấu trừ chuyển kỳ sau"
+    },
+    {
+      "key": "saas_v_a_t_tim_ma_hoa_d_n_ten_doi_tac_ma_so_thue",
+      "len": 48,
+      "vi": "Tìm mã hóa đơn, tên đối tác, mã số thuế..."
+    },
+    {
+      "key": "saas_v_a_t_thue_gtgt_d_oc_khau_tr_t_hoa_d_n_nhap_kho_mua_vao",
+      "len": 60,
+      "vi": "Thuế GTGT được khấu trừ từ hóa đơn nhập kho mua vào"
+    },
+    {
+      "key": "saas_v_a_t_0_so_tien_thue_gtgt_phai_nop_ngan_sach_nha_n_oc_so_tien_thue_gtgt_con_d_oc_khau_tr_chuyen_ky_sau",
+      "len": 107,
+      "vi": "= 0 ? 'Số tiền thuế GTGT phải nộp Ngân sách Nhà nước' : 'Số tiền thuế GTGT còn được khấu trừ chuyển kỳ sau'}"
+    },
+    {
+      "key": "saas_warehouses_cap_nhat_dia_diem_kho_bai_thanh_cong",
+      "len": 52,
+      "vi": "Cập nhật địa điểm kho bãi thành công!"
+    },
+    {
+      "key": "saas_warehouses_them_dia_diem_kho_bai_moi_thanh_cong",
+      "len": 52,
+      "vi": "Thêm địa điểm kho bãi mới thành công!"
+    },
+    {
+      "key": "saas_warehouses_cap_nhat_so_d_ton_kho_dau_ky_thanh_cong",
+      "len": 55,
+      "vi": "Cập nhật số dư tồn kho đầu kỳ thành công!"
+    },
+    {
+      "key": "saas_warehouses_khai_bao_ton_kho_dau_ky_thanh_cong",
+      "len": 50,
+      "vi": "Khai báo tồn kho đầu kỳ thành công!"
+    },
+    {
+      "key": "saas_warehouses_tim_ten_kho_ma_kho_thu_kho",
+      "len": 42,
+      "vi": "Tìm tên kho, mã kho, thủ kho..."
+    },
+    {
+      "key": "saas_warehouses_tim_ten_san_pham_ma_sku_dau_ky",
+      "len": 46,
+      "vi": "Tìm tên sản phẩm, mã SKU đầu kỳ..."
+    },
+    {
+      "key": "saas_warehouses_khai_bao_dia_diem_kho_moi",
+      "len": 41,
+      "vi": "Khai Báo Địa Điểm Kho Mới"
+    },
+    {
+      "key": "saas_warehouses_vd_kho_hai_phong_cang_dinh_vu",
+      "len": 45,
+      "vi": "VD: Kho Hải Phòng - Cảng Đình Vũ"
+    },
+    {
+      "key": "saas_warehouses_nhap_dia_chi_van_hanh_kho",
+      "len": 41,
+      "vi": "Nhập địa chỉ vận hành kho"
+    },
+    {
+      "key": "saas_warehouses_khai_bao_d_l_ong_ton_kho_dau_ky",
+      "len": 47,
+      "vi": "Khai Báo Dư Lượng Tồn Kho Đầu Kỳ"
+    },
+    {
+      "key": "saas_warehouses_nhap_ten_m_t_hang_ton_kho",
+      "len": 41,
+      "vi": "Nhập tên mặt hàng tồn kho"
+    },
+    {
+      "key": "saas_warehouses_quan_ly_kho_bai_so_d_dau_ky",
+      "len": 43,
+      "vi": "Quản Lý Kho Bãi & Số Dư Đầu Kỳ"
+    },
+    {
+      "key": "saas_warehouses_khai_bao_danh_sach_dia_diem_kho_bai_phan_bo_thu_kho_phu_trach_va_cap_nhat_ton_kho_dau_ky",
+      "len": 104,
+      "vi": "Khai báo danh sách địa điểm kho bãi, phân bổ thủ kho phụ trách và cập nhật tồn kho đầu kỳ."
+    }
+  ],
+  "duplicates": [
+    {
+      "value": "Cài Đặt Hệ Thống",
+      "canonical": "layout_settings",
+      "keys": [
+        "layout_settings",
+        "sidebar_system_settings"
+      ]
+    },
+    {
+      "value": "Chỉnh sửa thông tin",
+      "canonical": "saas_customers_chinh_sua_thong_tin",
+      "keys": [
+        "saas_customers_chinh_sua_thong_tin",
+        "suppliers_edit_info"
+      ]
+    },
+    {
+      "value": "Thao Tác",
+      "canonical": "saas_debt_thao_tac",
+      "keys": [
+        "saas_debt_thao_tac",
+        "suppliers_col_actions"
+      ]
+    },
+    {
+      "value": "Hủy Bỏ",
+      "canonical": "saas_products_huy_bo",
+      "keys": [
+        "saas_products_huy_bo",
+        "suppliers_cancel"
+      ]
+    },
+    {
+      "value": "Tên Nhà Cung Cấp *",
+      "canonical": "saas_purchasing_ten_nha_cung_cap",
+      "keys": [
+        "saas_purchasing_ten_nha_cung_cap",
+        "suppliers_label_name"
+      ]
+    },
+    {
+      "value": "Nguyễn Văn A",
+      "canonical": "saas_register_nguyen_v_n_a",
+      "keys": [
+        "saas_register_nguyen_v_n_a",
+        "suppliers_ph_contact"
+      ]
+    },
+    {
+      "value": "Nợ Phải Trả",
+      "canonical": "saas_reports_no_phai_tra",
+      "keys": [
+        "saas_reports_no_phai_tra",
+        "suppliers_col_debt"
+      ]
+    },
+    {
+      "value": "Cập nhật nhà cung cấp thành công!",
+      "canonical": "saas_suppliers_cap_nhat_nha_cung_cap_thanh_cong",
+      "keys": [
+        "saas_suppliers_cap_nhat_nha_cung_cap_thanh_cong",
+        "suppliers_toast_updated"
+      ]
+    },
+    {
+      "value": "Trưởng phòng kinh doanh",
+      "canonical": "saas_suppliers_tr_ong_phong_kinh_doanh",
+      "keys": [
+        "saas_suppliers_tr_ong_phong_kinh_doanh",
+        "suppliers_default_contact"
+      ]
+    },
+    {
+      "value": "Hà Nội",
+      "canonical": "saas_suppliers_ha_noi",
+      "keys": [
+        "saas_suppliers_ha_noi",
+        "suppliers_default_address"
+      ]
+    },
+    {
+      "value": "Thêm nhà cung cấp mới thành công!",
+      "canonical": "saas_suppliers_them_nha_cung_cap_moi_thanh_cong",
+      "keys": [
+        "saas_suppliers_them_nha_cung_cap_moi_thanh_cong",
+        "suppliers_toast_added"
+      ]
+    },
+    {
+      "value": "Mã NCC",
+      "canonical": "saas_suppliers_ma_ncc",
+      "keys": [
+        "saas_suppliers_ma_ncc",
+        "suppliers_col_code"
+      ]
+    },
+    {
+      "value": "Tên Nhà Cung Cấp",
+      "canonical": "saas_suppliers_ten_nha_cung_cap",
+      "keys": [
+        "saas_suppliers_ten_nha_cung_cap",
+        "suppliers_col_name"
+      ]
+    },
+    {
+      "value": "Người Liên Hệ",
+      "canonical": "saas_suppliers_ng_oi_lien_he",
+      "keys": [
+        "saas_suppliers_ng_oi_lien_he",
+        "suppliers_col_contact",
+        "suppliers_label_contact"
+      ]
+    },
+    {
+      "value": "Số Điện Thoại / Email",
+      "canonical": "saas_suppliers_so_dien_thoai_email",
+      "keys": [
+        "saas_suppliers_so_dien_thoai_email",
+        "suppliers_col_phone_email"
+      ]
+    },
+    {
+      "value": "Địa Chỉ Kho",
+      "canonical": "saas_suppliers_dia_chi_kho",
+      "keys": [
+        "saas_suppliers_dia_chi_kho",
+        "suppliers_col_address"
+      ]
+    },
+    {
+      "value": "Xóa nhà cung cấp",
+      "canonical": "saas_suppliers_xoa_nha_cung_cap",
+      "keys": [
+        "saas_suppliers_xoa_nha_cung_cap",
+        "suppliers_delete"
+      ]
+    },
+    {
+      "value": "Tìm tên nhà cung cấp, mã NCC, SĐT...",
+      "canonical": "saas_suppliers_tim_ten_nha_cung_cap_ma_ncc_sdt",
+      "keys": [
+        "saas_suppliers_tim_ten_nha_cung_cap_ma_ncc_sdt",
+        "suppliers_search_placeholder"
+      ]
+    },
+    {
+      "value": "Chỉnh Sửa Nhà Cung Cấp",
+      "canonical": "saas_suppliers_chinh_sua_nha_cung_cap",
+      "keys": [
+        "saas_suppliers_chinh_sua_nha_cung_cap",
+        "suppliers_modal_edit"
+      ]
+    },
+    {
+      "value": "Thêm Nhà Cung Cấp Mới",
+      "canonical": "saas_suppliers_them_nha_cung_cap_moi",
+      "keys": [
+        "saas_suppliers_them_nha_cung_cap_moi",
+        "suppliers_modal_add"
+      ]
+    },
+    {
+      "value": "Nhập tên doanh nghiệp / nhà cung cấp",
+      "canonical": "saas_suppliers_nhap_ten_doanh_nghiep_nha_cung_cap",
+      "keys": [
+        "saas_suppliers_nhap_ten_doanh_nghiep_nha_cung_cap",
+        "suppliers_ph_name"
+      ]
+    },
+    {
+      "value": "KCN Sài Đồng, Long Biên, Hà Nội",
+      "canonical": "saas_suppliers_kcn_sai_dong_long_bien_ha_noi",
+      "keys": [
+        "saas_suppliers_kcn_sai_dong_long_bien_ha_noi",
+        "suppliers_ph_address"
+      ]
+    },
+    {
+      "value": "Cập Nhật Nhà Cung Cấp",
+      "canonical": "saas_suppliers_cap_nhat_nha_cung_cap",
+      "keys": [
+        "saas_suppliers_cap_nhat_nha_cung_cap",
+        "suppliers_update"
+      ]
+    },
+    {
+      "value": "Lưu Nhà Cung Cấp",
+      "canonical": "saas_suppliers_l_u_nha_cung_cap",
+      "keys": [
+        "saas_suppliers_l_u_nha_cung_cap",
+        "suppliers_save"
+      ]
+    },
+    {
+      "value": "Quản lý thông tin đầu mối nhập hàng, công nợ phải trả và đánh giá nhà cung ứng.",
+      "canonical": "saas_suppliers_quan_ly_thong_tin_dau_moi_nhap_hang_cong_no_phai_tra_va_danh_gia_nha_cung_ung",
+      "keys": [
+        "saas_suppliers_quan_ly_thong_tin_dau_moi_nhap_hang_cong_no_phai_tra_va_danh_gia_nha_cung_ung",
+        "suppliers_page_subtitle"
+      ]
+    },
+    {
+      "value": "Thêm nhà cung cấp",
+      "canonical": "saas_suppliers_them_nha_cung_cap",
+      "keys": [
+        "saas_suppliers_them_nha_cung_cap",
+        "suppliers_add_button"
+      ]
+    },
+    {
+      "value": "Số Điện Thoại",
+      "canonical": "saas_suppliers_so_dien_thoai",
+      "keys": [
+        "saas_suppliers_so_dien_thoai",
+        "suppliers_label_phone"
+      ]
+    },
+    {
+      "value": "Địa Chỉ Văn Phòng / Kho Hàng",
+      "canonical": "saas_suppliers_dia_chi_v_n_phong_kho_hang",
+      "keys": [
+        "saas_suppliers_dia_chi_v_n_phong_kho_hang",
+        "suppliers_label_address"
+      ]
+    },
+    {
+      "value": "Nhà Cung Cấp & Đối Tác",
+      "canonical": "nhà_cung_cấp_&_đối_tác",
+      "keys": [
+        "nhà_cung_cấp_&_đối_tác",
+        "suppliers_page_title"
+      ]
+    }
+  ],
+  "viKeyNames": [
+    {
+      "old": "Điện tử",
+      "new": "category_electronics"
+    },
+    {
+      "old": "Văn phòng phẩm",
+      "new": "category_office_supplies"
+    },
+    {
+      "old": "Thực phẩm",
+      "new": "category_food_grocery"
+    },
+    {
+      "old": "Ô tô - Xe máy",
+      "new": "category_auto_moto"
+    },
+    {
+      "old": "Thời trang",
+      "new": "category_fashion"
+    },
+    {
+      "old": "Gia dụng",
+      "new": "category_home_appliances"
+    },
+    {
+      "old": "quản_lý_đơn_hàng_web",
+      "new": "web_order_management"
+    },
+    {
+      "old": "nhà_cung_cấp_&_đối_tác",
+      "new": "suppliers_partners"
+    }
+  ]
+}
