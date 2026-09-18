@@ -46,11 +46,10 @@ const CheckoutPage: React.FC = () => {
   if (!cart || cart.items.length === 0) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center text-center p-4">
-        <h3 className="font-bold text-gray-700 dark:text-gray-350">Giỏ hàng rỗng</h3>
-        <p className="text-xs text-gray-400 mt-1">Không có sản phẩm nào để thanh toán.</p>
+        <h3 className="font-bold text-gray-700 dark:text-gray-350">{t('gio_hang_rong', 'Giỏ hàng rỗng')}</h3>
+        <p className="text-xs text-gray-400 mt-1">{t('khong_co_san_pham_nao', 'Không có sản phẩm nào để thanh toán.')}</p>
         <Link to={shopPath("/")} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-4">
-          Quay lại mua sắm
-        </Link>
+          {t('quay_lai_mua_sam', 'Quay lại mua sắm')}</Link>
       </div>
     );
   }
@@ -143,7 +142,7 @@ const CheckoutPage: React.FC = () => {
         <Link to={shopPath("/cart")} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-450 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-850 dark:text-white uppercase">THANH TOÁN ĐƠN HÀNG</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-850 dark:text-white uppercase">{t('thanh_toan_don_hang', 'THANH TOÁN ĐƠN HÀNG')}</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -152,13 +151,13 @@ const CheckoutPage: React.FC = () => {
           {/* Customer profile address form */}
           <form onSubmit={handlePlaceOrder} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-xl shadow-xs flex flex-col gap-4 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-xs border-b border-gray-100 dark:border-gray-800 pb-3 uppercase tracking-wider">
-              1. THÔNG TIN GIAO HÀNG
+              {t('checkout_step_1_shipping_info', '1. THÔNG TIN GIAO HÀNG')}
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                  Họ tên người nhận <span className="text-red-500">*</span>
+                  {t('ho_ten_nguoi_nhan', 'Họ tên người nhận')}<span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -177,7 +176,7 @@ const CheckoutPage: React.FC = () => {
                 <input
                   type="tel"
                   required
-                  placeholder="Ví dụ: 0909123456"
+                  placeholder={t('vi_du_0909123456', 'Ví dụ: 0909123456')}
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -186,10 +185,10 @@ const CheckoutPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Địa chỉ Email</label>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">{t('dia_chi_email', 'Địa chỉ Email')}</label>
               <input
                 type="email"
-                placeholder="Ví dụ: customer@example.com (không bắt buộc)"
+                placeholder={t('vi_du_customer_example_com', 'Ví dụ: customer@example.com (không bắt buộc)')}
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
                 className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -198,12 +197,12 @@ const CheckoutPage: React.FC = () => {
 
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                Địa chỉ giao nhận hàng <span className="text-red-500">*</span>
+                {t('dia_chi_giao_nhan_hang', 'Địa chỉ giao nhận hàng')}<span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
-                placeholder="Số nhà, tên đường, phường/xã, quận/huyện, thành phố..."
+                placeholder={t('so_nha_ten_duong_phuong', 'Số nhà, tên đường, phường/xã, quận/huyện, thành phố...')}
                 value={shippingAddress}
                 onChange={(e) => setShippingAddress(e.target.value)}
                 className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -211,9 +210,9 @@ const CheckoutPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Ghi chú giao hàng</label>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">{t('ghi_chu_giao_hang', 'Ghi chú giao hàng')}</label>
               <textarea
-                placeholder="Ghi chú thêm về thời gian giao nhận, lời nhắn cho shipper..."
+                placeholder={t('ghi_chu_them_ve_thoi', 'Ghi chú thêm về thời gian giao nhận, lời nhắn cho shipper...')}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 rows={2}
@@ -225,7 +224,7 @@ const CheckoutPage: React.FC = () => {
           {/* Payment Method Selector */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-xs flex flex-col gap-4 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-xs border-b border-gray-100 dark:border-gray-800 pb-3 uppercase tracking-wider">
-              2. PHƯƠNG THỨC THANH TOÁN
+              {t('checkout_step_2_payment_method', '2. PHƯƠNG THỨC THANH TOÁN')}
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -240,7 +239,7 @@ const CheckoutPage: React.FC = () => {
                 }`}
               >
                 <CreditCard className="w-6 h-6 text-indigo-600" />
-                <span className="text-xs">COD (Thanh toán khi nhận)</span>
+                <span className="text-xs">{t('cod_thanh_toan_khi_nhan', 'COD (Thanh toán khi nhận)')}</span>
               </button>
 
               {/* VietQR */}
@@ -254,7 +253,7 @@ const CheckoutPage: React.FC = () => {
                 }`}
               >
                 <div className="w-6 h-6 bg-indigo-600 text-white rounded-md flex items-center justify-center font-bold text-[10px]">QR</div>
-                <span className="text-xs">Chuyển khoản VietQR hỏa tốc</span>
+                <span className="text-xs">{t('chuyen_khoan_vietqr_hoa_toc', 'Chuyển khoản VietQR hỏa tốc')}</span>
               </button>
 
               {/* Bank Transfer */}
@@ -268,31 +267,29 @@ const CheckoutPage: React.FC = () => {
                 }`}
               >
                 <Landmark className="w-6 h-6 text-indigo-600" />
-                <span className="text-xs">Chuyển khoản Ngân hàng</span>
+                <span className="text-xs">{t('chuyen_khoan_ngan_hang', 'Chuyển khoản Ngân hàng')}</span>
               </button>
             </div>
 
             {/* Sub-note for payment method */}
             {paymentMethod === "COD" && (
               <p className="text-[11px] text-gray-400 bg-gray-50 dark:bg-gray-850 rounded-lg p-3">
-                Quý khách sẽ thanh toán bằng tiền mặt trực tiếp cho nhân viên giao hàng sau khi kiểm tra nhận đủ sản phẩm.
-              </p>
+                {t('quy_khach_se_thanh_toan', 'Quý khách sẽ thanh toán bằng tiền mặt trực tiếp cho nhân viên giao hàng sau khi kiểm tra nhận đủ sản phẩm.')}</p>
             )}
 
             {paymentMethod === "VIETQR" && (
               <div className="text-[11px] text-indigo-800 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg p-3 leading-relaxed flex flex-col gap-1 border border-indigo-100 dark:border-indigo-900/40">
-                <span className="font-bold">Chuyển khoản thông minh qua VietQR:</span>
-                Mã QR chuyển khoản cá nhân hóa chứa chính xác số tiền cần trả và nội dung chuyển khoản sẽ được hiển thị ngay sau khi đặt hàng thành công để bạn quét thanh toán cực nhanh.
-              </div>
+                <span className="font-bold">{t('chuyen_khoan_thong_minh_qua', 'Chuyển khoản thông minh qua VietQR:')}</span>
+                {t('ma_qr_chuyen_khoan_ca', 'Mã QR chuyển khoản cá nhân hóa chứa chính xác số tiền cần trả và nội dung chuyển khoản sẽ được hiển thị ngay sau khi đặt hàng thành công để bạn quét thanh toán cực nhanh.')}</div>
             )}
 
             {paymentMethod === "BANK" && (
               <div className="text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-850 rounded-lg p-3 flex flex-col gap-1.5 border border-gray-150 dark:border-gray-800">
-                <span className="font-bold text-gray-700 dark:text-gray-300">Thông tin tài khoản thụ hưởng:</span>
-                <p className="m-0">Ngân hàng: <strong className="text-gray-800 dark:text-gray-200">Vietcombank (VCB)</strong></p>
-                <p className="m-0">Số tài khoản: <strong className="text-gray-800 dark:text-gray-200">0071 000 123456</strong></p>
-                <p className="m-0">Chủ tài khoản: <strong className="text-gray-800 dark:text-gray-200">CONG TY CONG NGHE ERP VIET</strong></p>
-                <p className="m-0">Nội dung chuyển khoản: <strong className="text-indigo-600 dark:text-indigo-400">Mã đơn hàng của bạn (ví dụ: WEB-260716-0001)</strong></p>
+                <span className="font-bold text-gray-700 dark:text-gray-300">{t('thong_tin_tai_khoan_thu', 'Thông tin tài khoản thụ hưởng:')}</span>
+                <p className="m-0">{t('ngan_hang', 'Ngân hàng:')}<strong className="text-gray-800 dark:text-gray-200">{t('vietcombank_vcb', 'Vietcombank (VCB)')}</strong></p>
+                <p className="m-0">{t('so_tai_khoan', 'Số tài khoản:')}<strong className="text-gray-800 dark:text-gray-200">0071 000 123456</strong></p>
+                <p className="m-0">{t('chu_tai_khoan', 'Chủ tài khoản:')}<strong className="text-gray-800 dark:text-gray-200">{t('cong_ty_cong_nghe_erp', 'CONG TY CONG NGHE ERP VIET')}</strong></p>
+                <p className="m-0">{t('noi_dung_chuyen_khoan', 'Nội dung chuyển khoản:')}<strong className="text-indigo-600 dark:text-indigo-400">{t('ma_don_hang_cua_ban', 'Mã đơn hàng của bạn (ví dụ: WEB-260716-0001)')}</strong></p>
               </div>
             )}
           </div>
@@ -302,8 +299,7 @@ const CheckoutPage: React.FC = () => {
         <div className="lg:col-span-5 flex flex-col gap-6">
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-xs flex flex-col gap-4 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-xs border-b border-gray-100 dark:border-gray-800 pb-3 uppercase tracking-wider">
-              TÓM TẮT ĐƠN HÀNG
-            </h3>
+              {t('tom_tat_don_hang', 'TÓM TẮT ĐƠN HÀNG')}</h3>
 
             {/* Items list summary */}
             <div className="max-h-56 overflow-y-auto pr-1 flex flex-col gap-3 border-b border-gray-200 dark:border-gray-850 pb-4">
@@ -315,7 +311,7 @@ const CheckoutPage: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <h5 className="font-semibold text-gray-800 dark:text-gray-200 truncate">{item.name}</h5>
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
-                      Số lượng: <strong className="text-gray-700 dark:text-gray-300">{item.quantity}</strong> × {formatPrice(item.unit_price || 0)}
+                      {t('so_luong', 'Số lượng:')}<strong className="text-gray-700 dark:text-gray-300">{item.quantity}</strong> × {formatPrice(item.unit_price || 0)}
                     </p>
                   </div>
                   <span className="font-bold text-gray-900 dark:text-white shrink-0">{formatPrice(item.amount || 0)}</span>
@@ -328,7 +324,7 @@ const CheckoutPage: React.FC = () => {
               <form onSubmit={handleApplyPromo} className="flex gap-2 border-b border-gray-100 dark:border-gray-800 pb-4">
                 <input
                   type="text"
-                  placeholder="Nhập mã ưu đãi (KM10, FREESHIP...)"
+                  placeholder={t('nhap_ma_uu_dai_km10', 'Nhập mã ưu đãi (KM10, FREESHIP...)')}
                   value={promoCodeInput}
                   onChange={(e) => setPromoCodeInput(e.target.value)}
                   className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs focus:outline-none flex-1 font-mono uppercase text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -354,29 +350,28 @@ const CheckoutPage: React.FC = () => {
                   onClick={handleRemovePromo}
                   className="text-[10px] font-bold text-red-600 hover:underline cursor-pointer"
                 >
-                  Gỡ bỏ
-                </button>
+                  {t('go_bo', 'Gỡ bỏ')}</button>
               </div>
             )}
 
             {/* Total panel calculations */}
             <div className="flex flex-col gap-2.5 text-xs text-gray-600 dark:text-gray-400">
               <div className="flex justify-between">
-                <span>Cộng tạm tính (Subtotal):</span>
+                <span>{t('cong_tam_tinh_subtotal', 'Cộng tạm tính (Subtotal):')}</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-200">{formatPrice(cart.subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Vận chuyển (Shipping):</span>
+                <span>{t('van_chuyen_shipping', 'Vận chuyển (Shipping):')}</span>
                 <span className="text-green-600 font-semibold">{t('saas_tenants_mien_phi', 'Miễn phí')}</span>
               </div>
               {appliedPromo && (
                 <div className="flex justify-between text-green-600 font-semibold">
-                  <span>Khuyến mãi ({appliedPromo.code}):</span>
+                  <span>{t('khuyen_mai', 'Khuyến mãi (')}{appliedPromo.code}):</span>
                   <span>-{formatPrice(appliedPromo.discount)}</span>
                 </div>
               )}
               <div className="border-t border-gray-100 dark:border-gray-800 pt-3 flex justify-between items-baseline">
-                <span className="text-sm font-bold text-gray-900 dark:text-white">Tổng tiền phải trả:</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{t('tong_tien_phai_tra', 'Tổng tiền phải trả:')}</span>
                 <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">
                   {formatPrice(finalTotal)}
                 </span>
@@ -392,13 +387,11 @@ const CheckoutPage: React.FC = () => {
               {submitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Đang lập đơn hàng...
-                </>
+                  {t('dang_lap_don_hang', 'Đang lập đơn hàng...')}</>
               ) : (
                 <>
                   <Check className="w-5 h-5" />
-                  Xác nhận Đặt hàng (ERPACC)
-                </>
+                  {t('xac_nhan_dat_hang_erpacc', 'Xác nhận Đặt hàng (ERPACC)')}</>
               )}
             </button>
           </div>

@@ -66,6 +66,16 @@ export interface WebOrder {
   items: WebOrderItem[];
 }
 
+
+const ERP_SUCCESS_STATUS_KEYWORDS = ['thành công', 'hoàn thành', 'giao hàng thành công'] as const;
+const ERP_CANCELLED_STATUS_KEYWORDS = ['hủy'] as const;
+const ERP_PROCESSING_STATUS_KEYWORDS = ['duyệt', 'vận chuyển', 'đóng gói'] as const;
+const ERP_PENDING_STATUS_KEYWORDS = ['Chờ'] as const;
+const ERP_APPROVED_STATUS_KEYWORDS = ['Đã duyệt'] as const;
+const ERP_SHIPPED_STATUS_KEYWORDS = ['Đóng gói', 'vận chuyển'] as const;
+const statusIncludesAny = (status: string | undefined, keywords: readonly string[]) =>
+  keywords.some((keyword) => String(status || '').includes(keyword));
+
 export const SaaSWebOrdersPage: React.FC = () => {
   const { t } = useTranslation();
   const { addToast } = useToast();
@@ -93,7 +103,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
         setOrders([]);
       }
     } catch (err) {
-      console.warn('Lỗi tải danh sách đơn WebShop:', err);
+      console.warn('WebShop orders loading failed:', err);
       setOrders([]);
     } finally {
       setLoading(false);
@@ -163,11 +173,11 @@ export const SaaSWebOrdersPage: React.FC = () => {
     const lower = (editingStatus.erpStatus || '').toLowerCase();
     let targetStatus = selectedOrder.status;
 
-    if (lower.includes('thành công') || lower.includes('hoàn thành') || lower.includes('giao hàng thành công')) {
+    if (statusIncludesAny(lower, ERP_SUCCESS_STATUS_KEYWORDS)) {
       targetStatus = 'completed';
-    } else if (lower.includes('hủy')) {
+    } else if (statusIncludesAny(lower, ERP_CANCELLED_STATUS_KEYWORDS)) {
       targetStatus = 'cancelled';
-    } else if (lower.includes('duyệt') || lower.includes('pxk') || lower.includes('shipper') || lower.includes('vận chuyển') || lower.includes('đóng gói')) {
+    } else if (lower.includes('pxk') || lower.includes('shipper') || statusIncludesAny(lower, ERP_PROCESSING_STATUS_KEYWORDS)) {
       targetStatus = 'processing';
     }
 
@@ -194,18 +204,18 @@ export const SaaSWebOrdersPage: React.FC = () => {
   // Filter logic
   let filtered = filterByDateRange(orders, dateFilter);
   if (activeTab === 'pending') {
-    filtered = filtered.filter((o) => (o.erp_status.includes('Chờ') || o.status === 'new') && o.status !== 'completed' && o.status !== 'cancelled');
+    filtered = filtered.filter((o) => (statusIncludesAny(o.erp_status, ERP_PENDING_STATUS_KEYWORDS) || o.status === 'new') && o.status !== 'completed' && o.status !== 'cancelled');
   } else if (activeTab === 'approved') {
-    filtered = filtered.filter((o) => (o.erp_status.includes('PXK') || o.status === 'processing') && o.status !== 'completed' && !o.erp_status.includes('thành công'));
+    filtered = filtered.filter((o) => (o.erp_status.includes('PXK') || o.status === 'processing') && o.status !== 'completed' && !statusIncludesAny(o.erp_status, ERP_SUCCESS_STATUS_KEYWORDS));
   } else if (activeTab === 'completed') {
-    filtered = filtered.filter((o) => o.status === 'completed' || o.erp_status.includes('Hoàn thành') || o.erp_status.includes('thành công'));
+    filtered = filtered.filter((o) => o.status === 'completed' || statusIncludesAny(o.erp_status, ERP_SUCCESS_STATUS_KEYWORDS));
   } else if (activeTab === 'cancelled') {
-    filtered = filtered.filter((o) => o.status === 'cancelled' || o.erp_status.includes('hủy'));
+    filtered = filtered.filter((o) => o.status === 'cancelled' || statusIncludesAny(o.erp_status, ERP_CANCELLED_STATUS_KEYWORDS));
   }
 
   // Summary Metrics
   const totalCount = orders.length;
-  const pendingCount = orders.filter((o) => o.erp_status.includes('Chờ') || o.status === 'new').length;
+  const pendingCount = orders.filter((o) => statusIncludesAny(o.erp_status, ERP_PENDING_STATUS_KEYWORDS) || o.status === 'new').length;
   const approvedCount = orders.filter((o) => o.erp_status.includes('PXK')).length;
   const totalRevenue = orders
     .filter((o) => o.status !== 'cancelled')
@@ -274,7 +284,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
               </div>
             ))}
             {items.length > 2 && (
-              <p className="text-[10px] text-zinc-400 italic">+ {items.length - 2} sản phẩm khác...</p>
+              <p className="text-[10px] text-zinc-400 italic">+ {items.length - 2} {t('san_pham_khac', 'sản phẩm khác...')}</p>
             )}
           </div>
         );
@@ -303,9 +313,9 @@ export const SaaSWebOrdersPage: React.FC = () => {
       header: t('saas_web_orders_trang_thai_erp'),
       cell: (info) => {
         const val = (info.getValue() as string) || 'Mới';
-        const isApproved = val.includes('PXK') || val.includes('Đã duyệt');
-        const isPending = val.includes('Chờ');
-        const isCancelled = val.includes('hủy') || val.includes('Hủy');
+        const isApproved = val.includes('PXK') || statusIncludesAny(val, ERP_APPROVED_STATUS_KEYWORDS);
+        const isPending = statusIncludesAny(val, ERP_PENDING_STATUS_KEYWORDS);
+        const isCancelled = statusIncludesAny(val.toLowerCase(), ERP_CANCELLED_STATUS_KEYWORDS);
 
         return (
           <span
@@ -337,10 +347,10 @@ export const SaaSWebOrdersPage: React.FC = () => {
       cell: ({ row }) => {
         const order = row.original;
         const erpStatus = order.erp_status || '';
-        const isPending = erpStatus.includes('Chờ') || order.status === 'new';
-        const isApprovedPXK = erpStatus.includes('PXK') || erpStatus.includes('Đã duyệt');
-        const isShipped = erpStatus.includes('Đóng gói') || erpStatus.includes('Shipper') || erpStatus.includes('vận chuyển');
-        const isCompleted = erpStatus.includes('thành công') || order.status === 'completed';
+        const isPending = statusIncludesAny(erpStatus, ERP_PENDING_STATUS_KEYWORDS) || order.status === 'new';
+        const isApprovedPXK = erpStatus.includes('PXK') || statusIncludesAny(erpStatus, ERP_APPROVED_STATUS_KEYWORDS);
+        const isShipped = erpStatus.includes('Shipper') || statusIncludesAny(erpStatus, ERP_SHIPPED_STATUS_KEYWORDS);
+        const isCompleted = statusIncludesAny(erpStatus, ERP_SUCCESS_STATUS_KEYWORDS) || order.status === 'completed';
 
         return (
           <div className="flex items-center gap-1.5">
@@ -580,12 +590,12 @@ export const SaaSWebOrdersPage: React.FC = () => {
                    <User className="h-4 w-4 text-amber-500" /> {t('saas_web_orders_thong_tin_ng_oi_nhan_hang')}
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-zinc-700 dark:text-zinc-300">
-                  <p>Họ tên: <strong className="text-zinc-900 dark:text-zinc-100">{selectedOrder.customerName}</strong></p>
-                  <p>Số điện thoại: <strong className="text-zinc-900 dark:text-zinc-100">{selectedOrder.customerPhone}</strong></p>
-                  <p className="col-span-2">Email: <strong>                   {selectedOrder.customerEmail || t('saas_web_orders_ch_a_cung_cap')}</strong></p>
-                  <p className="col-span-2">Địa chỉ giao: <strong>{selectedOrder.shippingAddress}</strong></p>
-                  <p className="col-span-2">Phương thức thanh toán: <strong className="text-indigo-600">{selectedOrder.paymentMethod}</strong></p>
-                  {selectedOrder.note && <p className="col-span-2 text-amber-600 font-medium">Ghi chú: "{selectedOrder.note}"</p>}
+                  <p>{t('ho_ten', 'Họ tên:')}<strong className="text-zinc-900 dark:text-zinc-100">{selectedOrder.customerName}</strong></p>
+                  <p>{t('so_dien_thoai', 'Số điện thoại:')}<strong className="text-zinc-900 dark:text-zinc-100">{selectedOrder.customerPhone}</strong></p>
+                  <p className="col-span-2">{t('email', 'Email:')}<strong>                   {selectedOrder.customerEmail || t('saas_web_orders_ch_a_cung_cap')}</strong></p>
+                  <p className="col-span-2">{t('dia_chi_giao', 'Địa chỉ giao:')}<strong>{selectedOrder.shippingAddress}</strong></p>
+                  <p className="col-span-2">{t('phuong_thuc_thanh_toan', 'Phương thức thanh toán:')}<strong className="text-indigo-600">{selectedOrder.paymentMethod}</strong></p>
+                  {selectedOrder.note && <p className="col-span-2 text-amber-600 font-medium">{t('ghi_chu', 'Ghi chú: "')}{selectedOrder.note}"</p>}
                 </div>
               </div>
 
@@ -596,9 +606,9 @@ export const SaaSWebOrdersPage: React.FC = () => {
                   <table className="w-full text-xs text-left">
                     <thead className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold">
                       <tr>
-                        <th className="p-2.5">STT</th>
+                        <th className="p-2.5">{t('stt', 'STT')}</th>
                         <th className="p-2.5">{t('saas_web_orders_ten_san_pham')}</th>
-                        <th className="p-2.5 text-center">SKU</th>
+                        <th className="p-2.5 text-center">{t('sku_3', 'SKU')}</th>
                         <th className="p-2.5 text-right">{t('saas_web_orders_d_n_gia')}</th>
                         <th className="p-2.5 text-center">SL</th>
                         <th className="p-2.5 text-right">{t('saas_web_orders_thanh_tien')}</th>
@@ -637,7 +647,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                   <span className="text-amber-500">{selectedOrder.total_amount?.toLocaleString('vi-VN')} đ</span>
                 </div>
                 <p className="text-[11px] text-zinc-500 italic mt-1">
-                  Bằng chữ: {readVietnameseNumber(selectedOrder.total_amount || 0)}
+                  {t('bang_chu', 'Bằng chữ:')}{readVietnameseNumber(selectedOrder.total_amount || 0)}
                 </p>
               </div>
             </div>
@@ -650,7 +660,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
                    {t('saas_web_orders_dong')}
               </button>
 
-              {(selectedOrder.erp_status.includes('Chờ') || selectedOrder.status === 'new') && (
+              {(statusIncludesAny(selectedOrder.erp_status, ERP_PENDING_STATUS_KEYWORDS) || selectedOrder.status === 'new') && (
                 <button
                   onClick={async () => {
                     await handleApproveAndCreatePXK(selectedOrder);
@@ -662,10 +672,10 @@ export const SaaSWebOrdersPage: React.FC = () => {
                 </button>
               )}
 
-              {(selectedOrder.erp_status.includes('PXK') || selectedOrder.erp_status.includes('Đã duyệt')) &&
-                !selectedOrder.erp_status.includes('Đóng gói') &&
+              {(selectedOrder.erp_status.includes('PXK') || statusIncludesAny(selectedOrder.erp_status, ERP_APPROVED_STATUS_KEYWORDS)) &&
+                !statusIncludesAny(selectedOrder.erp_status, ['Đóng gói']) &&
                 !selectedOrder.erp_status.includes('Shipper') &&
-                !selectedOrder.erp_status.includes('thành công') && (
+                !statusIncludesAny(selectedOrder.erp_status, ERP_SUCCESS_STATUS_KEYWORDS) && (
                   <button
                     onClick={() => {
                       setDetailModalOpen(false);
@@ -682,8 +692,8 @@ export const SaaSWebOrdersPage: React.FC = () => {
                 )}
 
               {selectedOrder.status !== 'completed' &&
-                !selectedOrder.erp_status.includes('thành công') &&
-                (selectedOrder.erp_status.includes('PXK') || selectedOrder.erp_status.includes('Đã duyệt') || selectedOrder.erp_status.includes('Shipper') || selectedOrder.status === 'processing') && (
+                !statusIncludesAny(selectedOrder.erp_status, ERP_SUCCESS_STATUS_KEYWORDS) &&
+                (selectedOrder.erp_status.includes('PXK') || statusIncludesAny(selectedOrder.erp_status, ERP_APPROVED_STATUS_KEYWORDS) || selectedOrder.erp_status.includes('Shipper') || selectedOrder.status === 'processing') && (
                   <button
                     onClick={() => handleMarkDelivered(selectedOrder)}
                     className="px-4 py-2 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5 shadow-xs cursor-pointer"
@@ -729,9 +739,8 @@ export const SaaSWebOrdersPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <Truck className="h-4 w-4 text-emerald-500" /> Cập Nhật Tiến Độ Vận Chuyển & Đóng Gói
-                </h3>
-                <p className="text-[11px] text-zinc-500 font-mono mt-0.5">Đơn: {selectedOrder.code}</p>
+                  <Truck className="h-4 w-4 text-emerald-500" /> {t('cap_nhat_tien_do_van', 'Cập Nhật Tiến Độ Vận Chuyển & Đóng Gói')}</h3>
+                <p className="text-[11px] text-zinc-500 font-mono mt-0.5">{t('don', 'Đơn:')}{selectedOrder.code}</p>
               </div>
               <button
                 onClick={() => setStatusModalOpen(false)}
@@ -751,8 +760,8 @@ export const SaaSWebOrdersPage: React.FC = () => {
                   onChange={(e) => setEditingStatus({ ...editingStatus, erpStatus: e.target.value })}
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-semibold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
-                <option value="Chờ duyệt ERP">{t('saas_web_orders_cho_duyet_erp')} (Mới tạo)</option>
-                <option value="Đã duyệt - Đã tạo PXK">{t('saas_web_orders_da_duyet_da_tao_pxk')} (Đã lập Phiếu Xuất Kho)</option>
+                <option value="Chờ duyệt ERP">{t('saas_web_orders_cho_duyet_erp')} {t('moi_tao', '(Mới tạo)')}</option>
+                <option value="Đã duyệt - Đã tạo PXK">{t('saas_web_orders_da_duyet_da_tao_pxk')} {t('da_lap_phieu_xuat_kho', '(Đã lập Phiếu Xuất Kho)')}</option>
                 <option value="Đã đóng gói & Bàn giao Shipper">{t('saas_web_orders_da_dong_goi_ban_giao_shipper')}</option>
                 <option value="Đang vận chuyển (In Transit)">{t('saas_web_orders_dang_van_chuyen_in_transit')}</option>
                 <option value="Giao hàng thành công">{t('saas_web_orders_giao_hang_thanh_cong')} ({t('saas_web_orders_hoan_thanh')})</option>

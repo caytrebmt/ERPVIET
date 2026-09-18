@@ -5,8 +5,10 @@ import { Package, Calendar, Coins, Loader2, FileText, ChevronRight } from "lucid
 import client from "../api/client";
 import { Order } from "../types";
 import { formatPrice, formatDate } from "../utils/format";
+import { useTranslation } from 'react-i18next';
 
 const OrdersPage: React.FC = () => {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<Order[]>([]);
   const { shopPath } = useShopTenant();
   const [loading, setLoading] = useState(true);
@@ -74,7 +76,7 @@ const OrdersPage: React.FC = () => {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-2" />
-        <p className="text-xs text-gray-500 dark:text-gray-400">Đang tải lịch sử đơn hàng của bạn...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{t('dang_tai_lich_su_don', 'Đang tải lịch sử đơn hàng của bạn...')}</p>
       </div>
     );
   }
@@ -85,11 +87,9 @@ const OrdersPage: React.FC = () => {
     <div className="flex flex-col gap-6">
       <div className="border-b border-gray-150 dark:border-gray-800 pb-3 flex justify-between items-center">
         <h1 className="text-xl md:text-2xl font-bold text-gray-850 dark:text-white flex items-center gap-2 uppercase">
-          LỊCH SỬ ĐƠN HÀNG
-          {!isEmpty && (
+          {t('lich_su_don_hang', 'LỊCH SỬ ĐƠN HÀNG')}{!isEmpty && (
             <span className="text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-850 dark:text-indigo-300 px-2.5 py-0.5 rounded-full">
-              {orders.length} đơn hàng
-            </span>
+              {orders.length} {t('don_hang', 'đơn hàng')}</span>
           )}
         </h1>
       </div>
@@ -97,16 +97,14 @@ const OrdersPage: React.FC = () => {
       {isEmpty ? (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 py-16 px-4 text-center shadow-xs transition-colors duration-200">
           <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <h4 className="font-semibold text-gray-750 dark:text-gray-200 text-base">Bạn chưa mua đơn hàng nào</h4>
+          <h4 className="font-semibold text-gray-750 dark:text-gray-200 text-base">{t('ban_chua_mua_don_hang', 'Bạn chưa mua đơn hàng nào')}</h4>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs mx-auto">
-            Hãy lựa chọn sản phẩm từ hệ thống WebShop và tạo đơn hàng đầu tiên của bạn ngay!
-          </p>
+            {t('hay_lua_chon_san_pham', 'Hãy lựa chọn sản phẩm từ hệ thống WebShop và tạo đơn hàng đầu tiên của bạn ngay!')}</p>
           <Link
             to={shopPath("/")}
             className="mt-6 bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-bold px-6 py-2.5 rounded-full transition-all inline-block cursor-pointer shadow-xs"
           >
-            Bắt đầu mua sắm ngay
-          </Link>
+            {t('bat_dau_mua_sam_ngay', 'Bắt đầu mua sắm ngay')}</Link>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -131,13 +129,13 @@ const OrdersPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5 mt-2.5 text-[11px] text-gray-500 dark:text-gray-400">
                     <span className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 shrink-0" /> Ngày mua: <strong className="text-gray-700 dark:text-gray-200">{formatDate(order.createdAt)}</strong>
+                      <Calendar className="w-4 h-4 shrink-0" /> {t('ngay_mua', 'Ngày mua:')}<strong className="text-gray-700 dark:text-gray-200">{formatDate(order.createdAt)}</strong>
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <Coins className="w-4 h-4 shrink-0" /> Thanh toán: <strong className="text-gray-700 dark:text-gray-200 uppercase">{order.paymentMethod}</strong>
+                      <Coins className="w-4 h-4 shrink-0" /> {t('thanh_toan', 'Thanh toán:')}<strong className="text-gray-700 dark:text-gray-200 uppercase">{order.paymentMethod}</strong>
                     </span>
                     <span className="md:col-span-2 truncate">
-                      Sản phẩm: <span className="font-semibold text-gray-700 dark:text-gray-200">{order.items.map(item => `${item.name} (x${item.quantity})`).join(", ")}</span>
+                      {t('san_pham', 'Sản phẩm:')}<span className="font-semibold text-gray-700 dark:text-gray-200">{order.items.map(item => `${item.name} (x${item.quantity})`).join(", ")}</span>
                     </span>
                   </div>
                 </div>
@@ -145,7 +143,7 @@ const OrdersPage: React.FC = () => {
 
               <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center border-t md:border-t-0 border-gray-50 dark:border-gray-800 pt-3 md:pt-0 gap-3">
                 <div className="text-left md:text-right">
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold uppercase leading-none m-0">Tổng thanh toán</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold uppercase leading-none m-0">{t('tong_thanh_toan', 'Tổng thanh toán')}</p>
                   <p className="text-base font-extrabold text-indigo-600 dark:text-indigo-450 mt-1 mb-0">{formatPrice(order.total_amount)}</p>
                 </div>
                 
@@ -153,7 +151,7 @@ const OrdersPage: React.FC = () => {
                   to={shopPath(`/orders/${order.code}`)}
                   className="bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-indigo-900 dark:text-indigo-300 hover:text-white dark:hover:text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1 transition-all cursor-pointer shadow-xs"
                 >
-                  Chi tiết <ChevronRight className="w-4.5 h-4.5" />
+                  {t('chi_tiet', 'Chi tiết')}<ChevronRight className="w-4.5 h-4.5" />
                 </Link>
               </div>
             </div>

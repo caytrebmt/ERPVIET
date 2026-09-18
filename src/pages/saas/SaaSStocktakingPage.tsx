@@ -4,6 +4,7 @@ import { ClipboardList, Plus, CheckCircle2, AlertTriangle, Warehouse, Save, Arro
 import { DataTable } from '../../components/DataTable';
 import { StatusBadge } from '../../components/StatusBadge';
 import client from '../../api/client';
+import { useTranslation } from 'react-i18next';
 
 interface StocktakingItem {
   id: number;
@@ -29,6 +30,7 @@ interface ProductStocktakingRow {
 }
 
 export const SaaSStocktakingPage: React.FC = () => {
+  const { t } = useTranslation();
   const [stocktakings, setStocktakings] = useState<StocktakingItem[]>([]);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -107,7 +109,7 @@ export const SaaSStocktakingPage: React.FC = () => {
   const columns: ColumnDef<StocktakingItem>[] = [
     {
       accessorKey: 'code',
-      header: 'Mã Phiếu Kiểm',
+      header: t('saas_stocktaking_ma_phieu_kiem', 'Mã Phiếu Kiểm'),
       cell: (info) => (
         <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-xs border border-amber-200 dark:border-amber-800">
           {info.getValue() as string}
@@ -116,11 +118,11 @@ export const SaaSStocktakingPage: React.FC = () => {
     },
     {
       accessorKey: 'date',
-      header: 'Ngày Kiểm Kho',
+      header: t('saas_stocktaking_ngay_kiem_kho', 'Ngày Kiểm Kho'),
     },
     {
       accessorKey: 'warehouseName',
-      header: 'Kho Bãi Kiểm Ke',
+      header: t('saas_stocktaking_kho_bai_kiem_ke', 'Kho Bãi Kiểm Ke'),
       cell: (info) => (
         <div className="flex items-center gap-1.5 font-bold text-zinc-900 dark:text-zinc-100">
           <Warehouse className="h-4 w-4 text-amber-500 shrink-0" />
@@ -130,16 +132,16 @@ export const SaaSStocktakingPage: React.FC = () => {
     },
     {
       accessorKey: 'creator',
-      header: 'Người Lập Phiếu',
+      header: t('saas_stocktaking_ng_oi_lap_phieu', 'Người Lập Phiếu'),
     },
     {
       accessorKey: 'totalProducts',
-      header: 'Số Mã Kiểm',
+      header: t('saas_stocktaking_so_ma_kiem', 'Số Mã Kiểm'),
       cell: (info) => `${info.getValue() as number} SKU`,
     },
     {
       accessorKey: 'totalDiffQty',
-      header: 'Lệch Số Lượng',
+      header: t('saas_stocktaking_lech_so_l_ong', 'Lệch Số Lượng'),
       cell: (info) => {
         const qty = info.getValue() as number;
         return (
@@ -155,7 +157,7 @@ export const SaaSStocktakingPage: React.FC = () => {
     },
     {
       accessorKey: 'totalDiffValue',
-      header: 'Giá Trị Lệch (VNĐ)',
+      header: t('gia_tri_lech_vnd', 'Giá Trị Lệch (VNĐ)'),
       cell: (info) => {
         const val = info.getValue() as number;
         return (
@@ -171,7 +173,7 @@ export const SaaSStocktakingPage: React.FC = () => {
     },
     {
       accessorKey: 'status',
-      header: 'Trạng Thái',
+      header: t('status', 'Trạng Thái'),
       cell: (info) => <StatusBadge status={info.getValue() as string} />,
     },
   ];
@@ -182,26 +184,23 @@ export const SaaSStocktakingPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <ClipboardList className="h-6 w-6 text-amber-500" /> Kiểm Kê Kho & Điều Chỉnh Tồn Kho
-          </h2>
+            <ClipboardList className="h-6 w-6 text-amber-500" /> {t('kiem_ke_kho_dieu_chinh', 'Kiểm Kê Kho & Điều Chỉnh Tồn Kho')}</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            So sánh tồn kho sổ sách vs tồn kho thực tế, xử lý chênh lệch thừa/thiếu và cập nhật kho tự động (`/app/templates/inventory/stocktaking`).
-          </p>
+            {t('so_sanh_ton_kho_so', 'So sánh tồn kho sổ sách vs tồn kho thực tế, xử lý chênh lệch thừa/thiếu và cập nhật kho tự động (`/app/templates/inventory/stocktaking`).')}</p>
         </div>
 
         <button
           onClick={openCreateStocktaking}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all"
         >
-          <Plus className="h-4 w-4" /> Tạo Phiếu Kiểm Kê Mới
-        </button>
+          <Plus className="h-4 w-4" /> {t('saas_stocktaking_tao_phieu_kiem_ke_moi', 'Tạo Phiếu Kiểm Kê Mới')}</button>
       </div>
 
-      {loading && <p className="text-xs text-zinc-500">Đang tải phiếu kiểm kê từ PostgreSQL...</p>}
+      {loading && <p className="text-xs text-zinc-500">{t('dang_tai_phieu_kiem_ke', 'Đang tải phiếu kiểm kê từ PostgreSQL...')}</p>}
       {loadError && <p className="text-xs text-red-600">{loadError}</p>}
 
       {/* Main Table */}
-      <DataTable columns={columns} data={stocktakings} searchPlaceholder="Tìm mã phiếu kiểm, tên kho, người kiểm..." />
+      <DataTable columns={columns} data={stocktakings} searchPlaceholder={t('tim_ma_phieu_kiem_ten', 'Tìm mã phiếu kiểm, tên kho, người kiểm...')} />
 
       {/* Create / Execute Stocktaking Modal */}
       {showCreateModal && (
@@ -209,30 +208,29 @@ export const SaaSStocktakingPage: React.FC = () => {
           <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-4xl w-full p-6 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 pb-3">
               <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <ClipboardList className="h-5 w-5 text-amber-500" /> Lập Phiếu Kiểm Kê Kho & Cân Chỉnh
-              </h3>
+                <ClipboardList className="h-5 w-5 text-amber-500" /> {t('lap_phieu_kiem_ke_kho', 'Lập Phiếu Kiểm Kê Kho & Cân Chỉnh')}</h3>
             </div>
 
             <form onSubmit={handleSaveStocktaking} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Kho Kiểm Ke *</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_stocktaking_kho_kiem_ke', 'Kho Kiểm Ke *')}</label>
                   <select
                     value={selectedWarehouse}
                     onChange={(e) => setSelectedWarehouse(e.target.value)}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 font-medium"
                   >
-                    <option value="">Chọn kho</option>
+                    <option value="">{t('chon_kho', 'Chọn kho')}</option>
                     {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name_vi}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Ghi Chú Kiểm Kê</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_stocktaking_ghi_chu_kiem_ke', 'Ghi Chú Kiểm Kê')}</label>
                   <input
                     type="text"
                     value={stockNote}
                     onChange={(e) => setStockNote(e.target.value)}
-                    placeholder="VD: Kiểm kê định kỳ đợt cuối tháng..."
+                    placeholder={t('vd_kiem_ke_dinh_ky', 'VD: Kiểm kê định kỳ đợt cuối tháng...')}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -241,18 +239,17 @@ export const SaaSStocktakingPage: React.FC = () => {
               {/* Product Checking Table */}
               <div className="space-y-2">
                 <h4 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
-                  Bảng Chi Tiết Tồn Sổ Sách & Tồn Thực Tế
-                </h4>
+                  {t('bang_chi_tiet_ton_so', 'Bảng Chi Tiết Tồn Sổ Sách & Tồn Thực Tế')}</h4>
                 <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold">
                       <tr>
-                        <th className="p-3">Mã SKU</th>
-                        <th className="p-3">Tên Sản Phẩm</th>
-                        <th className="p-3 text-center">Tồn Sổ Sách</th>
-                        <th className="p-3 text-center">Tồn Thực Tế</th>
-                        <th className="p-3 text-center">Chênh Lệch</th>
-                        <th className="p-3 text-right">Giá Trị Chênh Lệch</th>
+                        <th className="p-3">{t('saas_reports_ma_sku', 'Mã SKU')}</th>
+                        <th className="p-3">{t('dashboard_product_name', 'Tên Sản Phẩm')}</th>
+                        <th className="p-3 text-center">{t('saas_stocktaking_ton_so_sach', 'Tồn Sổ Sách')}</th>
+                        <th className="p-3 text-center">{t('saas_stocktaking_ton_thuc_te', 'Tồn Thực Tế')}</th>
+                        <th className="p-3 text-center">{t('saas_stocktaking_chenh_lech', 'Chênh Lệch')}</th>
+                        <th className="p-3 text-right">{t('saas_stocktaking_gia_tri_chenh_lech', 'Giá Trị Chênh Lệch')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -304,8 +301,7 @@ export const SaaSStocktakingPage: React.FC = () => {
               <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>
-                  Hệ thống sẽ tự động tạo phiếu điều chỉnh tăng/giảm tồn kho tương ứng với số lượng chênh lệch thực tế.
-                </span>
+                  {t('he_thong_se_tu_dong', 'Hệ thống sẽ tự động tạo phiếu điều chỉnh tăng/giảm tồn kho tương ứng với số lượng chênh lệch thực tế.')}</span>
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
@@ -314,14 +310,12 @@ export const SaaSStocktakingPage: React.FC = () => {
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
                 >
-                  Hủy Bỏ
-                </button>
+                  {t('cancel', 'Hủy Bỏ')}</button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg shadow-xs flex items-center gap-2"
                 >
-                  <Save className="h-4 w-4" /> Hoàn Tất Kiểm Kê & Điều Chỉnh Kho
-                </button>
+                  <Save className="h-4 w-4" /> {t('hoan_tat_kiem_ke_dieu', 'Hoàn Tất Kiểm Kê & Điều Chỉnh Kho')}</button>
               </div>
             </form>
           </div>

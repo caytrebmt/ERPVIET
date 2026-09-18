@@ -339,7 +339,7 @@ export const SaaSRegisterPage: React.FC = () => {
                     type="email"
                     value={form.email}
                     onChange={(e) => update("email", e.target.value)}
-                    placeholder="info@company.vn"
+                    placeholder={t('info_company_vn', 'info@company.vn')}
                     className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-zinc-100 placeholder-zinc-600"
                   />
                 </div>

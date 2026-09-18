@@ -60,13 +60,13 @@ export const SaaSAuditLogsPage: React.FC = () => {
 
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4"><div className="relative w-full sm:w-96"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('audit_search_placeholder')} className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm" /></div></div>
       {error && <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700"><AlertCircle className="h-4 w-4" />{error}</div>}
-      {loading && <div className="flex items-center gap-2 text-xs text-zinc-500"><Loader2 className="h-4 w-4 animate-spin" /> Đang tải nhật ký thật từ PostgreSQL...</div>}
+      {loading && <div className="flex items-center gap-2 text-xs text-zinc-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('dang_tai_nhat_ky_that', 'Đang tải nhật ký thật từ PostgreSQL...')}</div>}
 
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
         <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 uppercase text-xs"><tr><th className="px-4 py-3">{t('audit_user')}</th><th className="px-4 py-3">{t('audit_action')}</th><th className="px-4 py-3">{t('audit_target')}</th><th className="px-4 py-3">{t('audit_ip')}</th><th className="px-4 py-3">{t('audit_status')}</th><th className="px-4 py-3">{t('audit_timestamp')}</th></tr></thead><tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
           {filteredLogs.map((item) => <tr key={item.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40"><td className="px-4 py-3.5 font-medium"><span className="inline-flex items-center gap-2"><User className="h-4 w-4 text-zinc-400" />{item.user_name}</span></td><td className="px-4 py-3.5 font-mono text-xs font-semibold text-amber-600">{t(`audit_action_${item.action}`, item.action)}</td><td className="px-4 py-3.5 text-xs"><span className="font-semibold">{t(`audit_entity_${item.entity_name}`, item.entity_name)}</span>{item.entity_id ? ` (${item.entity_id})` : ''}</td><td className="px-4 py-3.5 text-xs font-mono text-zinc-500">{item.ip_address || '—'}</td><td className="px-4 py-3.5"><span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">{item.status}</span></td><td className="px-4 py-3.5 text-xs text-zinc-500"><Clock className="inline h-3.5 w-3.5 mr-1" />{item.created_at}</td></tr>)}
         </tbody></table></div>
-        {!loading && filteredLogs.length === 0 && <p className="px-4 py-10 text-center text-xs text-zinc-500">Chưa có nhật ký phù hợp.</p>}
+        {!loading && filteredLogs.length === 0 && <p className="px-4 py-10 text-center text-xs text-zinc-500">{t('chua_co_nhat_ky_phu', 'Chưa có nhật ký phù hợp.')}</p>}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Printer, X, Building2, CheckCircle2 } from 'lucide-react';
 import { readVietnameseNumber } from '../utils/format';
+import { useTranslation } from 'react-i18next';
 
 export type PrintDocType = 'stock_out' | 'stock_in' | 'quotation' | 'receipt' | 'payment';
 
@@ -44,6 +45,7 @@ export const SaaSPrintModal: React.FC<SaaSPrintModalProps> = ({
   grandTotal = totalAmount,
   notes,
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   const handlePrint = () => {
@@ -71,10 +73,9 @@ export const SaaSPrintModal: React.FC<SaaSPrintModalProps> = ({
         {/* Action Header - Hidden during actual browser printing */}
         <div className="flex items-center justify-between border-b border-zinc-200 p-3 sm:p-4 print:hidden shrink-0 bg-white">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-sm text-zinc-800">Xem Trước Mẫu In Chuẩn ERP Doanh Nghiệp</span>
+            <span className="font-bold text-sm text-zinc-800">{t('xem_truoc_mau_in_chuan', 'Xem Trước Mẫu In Chuẩn ERP Doanh Nghiệp')}</span>
             <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
-              /app/templates/print/
-            </span>
+              {t('app_templates_print', '/app/templates/print/')}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -82,8 +83,7 @@ export const SaaSPrintModal: React.FC<SaaSPrintModalProps> = ({
               onClick={handlePrint}
               className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-lg text-xs flex items-center gap-2 shadow-xs"
             >
-              <Printer className="h-4 w-4" /> In / Tải PDF (Ctrl + P)
-            </button>
+              <Printer className="h-4 w-4" /> {t('in_tai_pdf_ctrl_p', 'In / Tải PDF (Ctrl + P)')}</button>
             <button
               onClick={onClose}
               className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500 transition-colors"
@@ -103,43 +103,42 @@ export const SaaSPrintModal: React.FC<SaaSPrintModalProps> = ({
                   <Building2 className="h-5 w-5" />
                 </div>
                 <h1 className="text-base font-extrabold text-zinc-900 uppercase tracking-tight">
-                  CÔNG TY TNHH ERP-VIỆT ENTERPRISE
-                </h1>
+                  {t('cong_ty_tnhh_erp_viet', 'CÔNG TY TNHH ERP-VIỆT ENTERPRISE')}</h1>
               </div>
-              <p className="text-xs text-zinc-600">Địa chỉ: Lô CN2, KCN Sài Đồng, Q. Long Biên, Hà Nội</p>
-              <p className="text-xs text-zinc-600">Điện thoại: 024.3888.9999 | MST: 0108889999</p>
+              <p className="text-xs text-zinc-600">{t('dia_chi_lo_cn2_kcn', 'Địa chỉ: Lô CN2, KCN Sài Đồng, Q. Long Biên, Hà Nội')}</p>
+              <p className="text-xs text-zinc-600">{t('dien_thoai_024_3888_9999', 'Điện thoại: 024.3888.9999 | MST: 0108889999')}</p>
             </div>
 
             <div className="text-right">
               <p className="font-mono text-xs font-extrabold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 inline-block">
-                Số: {docCode}
+                {t('print_modal_number_label', 'Số:')} {docCode}
               </p>
-              <p className="text-xs text-zinc-500 mt-1">Ngày lập: {docDate}</p>
+              <p className="text-xs text-zinc-500 mt-1">{t('ngay_lap', 'Ngày lập:')}{docDate}</p>
             </div>
           </div>
 
           {/* Document Title */}
           <div className="text-center space-y-1">
             <h2 className="text-xl font-black text-zinc-900 uppercase tracking-wide">{getDocTitle()}</h2>
-            <p className="text-xs italic text-zinc-500">Mẫu chứng từ ban hành theo Thông tư Kế toán 200/2014/TT-BTC</p>
+            <p className="text-xs italic text-zinc-500">{t('mau_chung_tu_ban_hanh', 'Mẫu chứng từ ban hành theo Thông tư Kế toán 200/2014/TT-BTC')}</p>
           </div>
 
           {/* Partner & Order Info */}
           <div className="grid grid-cols-2 gap-4 text-xs bg-zinc-50 p-4 rounded-xl border border-zinc-200">
             <div className="space-y-1">
               <p>
-                <strong className="text-zinc-700">Đơn vị / Đối tác:</strong> {partnerName}
+                <strong className="text-zinc-700">{t('don_vi_doi_tac', 'Đơn vị / Đối tác:')}</strong> {partnerName}
               </p>
               <p>
-                <strong className="text-zinc-700">Địa chỉ giao nhận:</strong> {partnerAddress}
+                <strong className="text-zinc-700">{t('dia_chi_giao_nhan', 'Địa chỉ giao nhận:')}</strong> {partnerAddress}
               </p>
             </div>
             <div className="space-y-1">
               <p>
-                <strong className="text-zinc-700">Điện thoại liên hệ:</strong> {partnerPhone}
+                <strong className="text-zinc-700">{t('dien_thoai_lien_he', 'Điện thoại liên hệ:')}</strong> {partnerPhone}
               </p>
               <p>
-                <strong className="text-zinc-700">Ghi chú / Lý do:</strong> {notes || 'Không có ghi chú thêm'}
+                <strong className="text-zinc-700">{t('ghi_chu_ly_do', 'Ghi chú / Lý do:')}</strong> {notes || 'Không có ghi chú thêm'}
               </p>
             </div>
           </div>
@@ -149,13 +148,13 @@ export const SaaSPrintModal: React.FC<SaaSPrintModalProps> = ({
             <table className="w-full text-left">
               <thead className="bg-zinc-100 border-b border-zinc-300 font-bold text-zinc-800">
                 <tr>
-                  <th className="p-2.5 text-center w-10">STT</th>
-                  <th className="p-2.5">Mã Hàng (SKU)</th>
-                  <th className="p-2.5">Tên Hàng Hóa / Vật Tư</th>
-                  <th className="p-2.5 text-center">ĐVT</th>
-                  <th className="p-2.5 text-center">Số Lượng</th>
-                  <th className="p-2.5 text-right">Đơn Giá</th>
-                  <th className="p-2.5 text-right">Thành Tiền</th>
+                  <th className="p-2.5 text-center w-10">{t('stt', 'STT')}</th>
+                  <th className="p-2.5">{t('ma_hang_sku', 'Mã Hàng (SKU)')}</th>
+                  <th className="p-2.5">{t('ten_hang_hoa_vat_tu', 'Tên Hàng Hóa / Vật Tư')}</th>
+                  <th className="p-2.5 text-center">{t('dvt_uom', 'ĐVT')}</th>
+                  <th className="p-2.5 text-center">{t('saas_stock_in_so_l_ong', 'Số Lượng')}</th>
+                  <th className="p-2.5 text-right">{t('saas_web_orders_d_n_gia', 'Đơn Giá')}</th>
+                  <th className="p-2.5 text-right">{t('saas_stock_in_thanh_tien', 'Thành Tiền')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200">
@@ -180,51 +179,51 @@ export const SaaSPrintModal: React.FC<SaaSPrintModalProps> = ({
           <div className="flex flex-col items-end gap-2 text-xs">
             <div className="w-64 space-y-1.5 p-3 bg-zinc-50 rounded-xl border border-zinc-200">
               <div className="flex justify-between text-zinc-600">
-                <span>Cộng tiền hàng:</span>
+                <span>{t('cong_tien_hang', 'Cộng tiền hàng:')}</span>
                 <span className="font-semibold">{totalAmount.toLocaleString('vi-VN')} đ</span>
               </div>
               {taxAmount > 0 && (
                 <div className="flex justify-between text-zinc-600">
-                  <span>Thuế GTGT (VAT):</span>
+                  <span>{t('thue_gtgt_vat', 'Thuế GTGT (VAT):')}</span>
                   <span className="font-semibold">{taxAmount.toLocaleString('vi-VN')} đ</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-black text-zinc-900 border-t pt-1.5 border-zinc-300">
-                <span>TỔNG CỘNG:</span>
+                <span>{t('tong_cong', 'TỔNG CỘNG:')}</span>
                 <span className="text-amber-700">{grandTotal.toLocaleString('vi-VN')} đ</span>
               </div>
             </div>
 
             <div className="w-full text-right text-xs italic bg-amber-50/70 p-2.5 rounded-lg border border-amber-200 text-zinc-800 font-medium">
-              <strong>Số tiền bằng chữ:</strong> {readVietnameseNumber(grandTotal)}
+              <strong>{t('so_tien_bang_chu', 'Số tiền bằng chữ:')}</strong> {readVietnameseNumber(grandTotal)}
             </div>
           </div>
 
           {/* Signatures Block */}
           <div className="grid grid-cols-4 gap-4 text-center text-xs pt-6">
             <div>
-              <p className="font-bold text-zinc-800">Người Lập Phiếu</p>
-              <p className="text-[10px] text-zinc-500 italic">(Ký, họ tên)</p>
+              <p className="font-bold text-zinc-800">{t('saas_stocktaking_ng_oi_lap_phieu', 'Người Lập Phiếu')}</p>
+              <p className="text-[10px] text-zinc-500 italic">{t('ky_ho_ten', '(Ký, họ tên)')}</p>
               <div className="h-16"></div>
-              <p className="font-semibold">Nguyễn Văn Khoa</p>
+              <p className="font-semibold">{t('nguyen_van_khoa', 'Nguyễn Văn Khoa')}</p>
             </div>
             <div>
-              <p className="font-bold text-zinc-800">Người Giao Hàng</p>
-              <p className="text-[10px] text-zinc-500 italic">(Ký, họ tên)</p>
+              <p className="font-bold text-zinc-800">{t('nguoi_giao_hang', 'Người Giao Hàng')}</p>
+              <p className="text-[10px] text-zinc-500 italic">{t('ky_ho_ten', '(Ký, họ tên)')}</p>
               <div className="h-16"></div>
-              <p className="font-semibold">Trần Văn Nam</p>
+              <p className="font-semibold">{t('tran_van_nam', 'Trần Văn Nam')}</p>
             </div>
             <div>
-              <p className="font-bold text-zinc-800">Thủ Kho Phụ Trách</p>
-              <p className="text-[10px] text-zinc-500 italic">(Ký, họ tên)</p>
+              <p className="font-bold text-zinc-800">{t('saas_warehouses_thu_kho_phu_trach', 'Thủ Kho Phụ Trách')}</p>
+              <p className="text-[10px] text-zinc-500 italic">{t('ky_ho_ten', '(Ký, họ tên)')}</p>
               <div className="h-16"></div>
-              <p className="font-semibold">Lê Minh Tuấn</p>
+              <p className="font-semibold">{t('le_minh_tuan', 'Lê Minh Tuấn')}</p>
             </div>
             <div>
-              <p className="font-bold text-zinc-800">Kế Toán / Thủ Trưởng</p>
-              <p className="text-[10px] text-zinc-500 italic">(Ký, đóng dấu)</p>
+              <p className="font-bold text-zinc-800">{t('ke_toan_thu_truong', 'Kế Toán / Thủ Trưởng')}</p>
+              <p className="text-[10px] text-zinc-500 italic">{t('ky_dong_dau', '(Ký, đóng dấu)')}</p>
               <div className="h-16"></div>
-              <p className="font-semibold">Đã xác nhận</p>
+              <p className="font-semibold">{t('saas_stock_out_da_xac_nhan', 'Đã xác nhận')}</p>
             </div>
           </div>
         </div>

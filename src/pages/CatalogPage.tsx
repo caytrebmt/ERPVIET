@@ -243,7 +243,7 @@ const CatalogPage: React.FC = () => {
 
             <nav
               className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1 shadow-xs text-sm overflow-x-auto"
-              aria-label="Pagination"
+              aria-label={t('pagination', 'Pagination')}
             >
               <button
                 onClick={() => goToPage(currentPage - 1)}

@@ -4,6 +4,7 @@ import { Truck, Plus, Phone, Mail, MapPin, Edit2, Trash2, X } from 'lucide-react
 import { DataTable } from '../../components/DataTable';
 import { useToast } from '../../contexts/ToastContext';
 import client from '../../api/client';
+import { useTranslation } from 'react-i18next';
 
 interface SupplierItem {
   id: number;
@@ -17,6 +18,7 @@ interface SupplierItem {
 }
 
 export const SaaSSuppliersPage: React.FC = () => {
+  const { t } = useTranslation();
   const { addToast } = useToast();
   const [suppliers, setSuppliers] = useState<SupplierItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,10 +79,10 @@ export const SaaSSuppliersPage: React.FC = () => {
       const payload = { name: formData.name, phone: formData.phone, email: formData.email, address: formData.address };
       if (editingSupplier) {
         await client.put(`/api/saas/suppliers/${editingSupplier.id}`, payload);
-        addToast('Cập nhật nhà cung cấp thành công!', 'success');
+        addToast(t('suppliers_toast_updated', 'Cập nhật nhà cung cấp thành công!'), 'success');
       } else {
         await client.post('/api/saas/suppliers', payload);
-        addToast('Thêm nhà cung cấp mới thành công!', 'success');
+        addToast(t('suppliers_toast_added', 'Thêm nhà cung cấp mới thành công!'), 'success');
       }
       const response = await client.get('/api/saas/suppliers');
       if (response.data?.ok) setSuppliers((response.data.data || []).map((row: any) => ({ id: Number(row.id), code: row.code, name: row.name, contactPerson: row.contact_person || '', phone: row.phone || '', email: row.email || '', address: row.address || '', payableDebt: Number(row.payable_debt) || 0 })));
@@ -102,7 +104,7 @@ export const SaaSSuppliersPage: React.FC = () => {
   const columns: ColumnDef<SupplierItem>[] = [
     {
       accessorKey: 'code',
-      header: 'Mã NCC',
+      header: t('suppliers_col_code', 'Mã NCC'),
       cell: (info) => (
         <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
           {info.getValue() as string}
@@ -111,16 +113,16 @@ export const SaaSSuppliersPage: React.FC = () => {
     },
     {
       accessorKey: 'name',
-      header: 'Tên Nhà Cung Cấp',
+      header: t('suppliers_col_name', 'Tên Nhà Cung Cấp'),
       cell: (info) => <span className="font-bold text-zinc-900 dark:text-zinc-100">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'contactPerson',
-      header: 'Người Liên Hệ',
+      header: t('suppliers_col_contact', 'Người Liên Hệ'),
     },
     {
       accessorKey: 'phone',
-      header: 'Số Điện Thoại / Email',
+      header: t('suppliers_col_phone_email', 'Số Điện Thoại / Email'),
       cell: (info) => (
         <div className="text-xs space-y-0.5">
           <div className="flex items-center gap-1 font-medium text-zinc-800 dark:text-zinc-200">
@@ -136,7 +138,7 @@ export const SaaSSuppliersPage: React.FC = () => {
     },
     {
       accessorKey: 'address',
-      header: 'Địa Chỉ Kho',
+      header: t('suppliers_col_address', 'Địa Chỉ Kho'),
       cell: (info) => (
         <div className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 max-w-xs truncate">
           <MapPin className="h-3 w-3 text-zinc-400 shrink-0" />
@@ -146,7 +148,7 @@ export const SaaSSuppliersPage: React.FC = () => {
     },
     {
       accessorKey: 'payableDebt',
-      header: 'Nợ Phải Trả',
+      header: t('suppliers_col_debt', 'Nợ Phải Trả'),
       cell: (info) => {
         const debt = info.getValue() as number;
         return (
@@ -158,20 +160,20 @@ export const SaaSSuppliersPage: React.FC = () => {
     },
     {
       id: 'actions',
-      header: 'Thao Tác',
+      header: t('actions', 'Thao Tác'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => handleOpenEdit(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-            title="Chỉnh sửa thông tin"
+            title={t('suppliers_edit_info', 'Chỉnh sửa thông tin')}
           >
             <Edit2 className="h-4 w-4 text-amber-500" />
           </button>
           <button
             onClick={() => handleDelete(row.original.id, row.original.name)}
             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors"
-            title="Xóa nhà cung cấp"
+            title={t('suppliers_delete', 'Xóa nhà cung cấp')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -185,22 +187,19 @@ export const SaaSSuppliersPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Truck className="h-6 w-6 text-amber-500" /> Nhà Cung Cấp & Đối Tác
-          </h2>
+            <Truck className="h-6 w-6 text-amber-500" /> {t('suppliers_page_title', 'Nhà Cung Cấp & Đối Tác')}</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Quản lý thông tin đầu mối nhập hàng, công nợ phải trả và đánh giá nhà cung ứng.
-          </p>
+            {t('suppliers_page_subtitle', 'Quản lý thông tin đầu mối nhập hàng, công nợ phải trả và đánh giá nhà cung ứng.')}</p>
         </div>
         <button
           onClick={handleOpenAdd}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all"
         >
-          <Plus className="h-4 w-4" /> Thêm nhà cung cấp
-        </button>
+          <Plus className="h-4 w-4" /> {t('suppliers_add_button', 'Thêm nhà cung cấp')}</button>
       </div>
 
-      {loading && <p className="text-xs text-zinc-500">Đang tải nhà cung cấp từ PostgreSQL...</p>}
-      <DataTable columns={columns} data={suppliers} searchPlaceholder="Tìm tên nhà cung cấp, mã NCC, SĐT..." />
+      {loading && <p className="text-xs text-zinc-500">{t('dang_tai_nha_cung_cap', 'Đang tải nhà cung cấp từ PostgreSQL...')}</p>}
+      <DataTable columns={columns} data={suppliers} searchPlaceholder={t('suppliers_search_placeholder', 'Tìm tên nhà cung cấp, mã NCC, SĐT...')} />
 
       {/* Modal Add/Edit Supplier */}
       {showModal && (
@@ -221,30 +220,30 @@ export const SaaSSuppliersPage: React.FC = () => {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Tên Nhà Cung Cấp *</label>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('suppliers_label_name', 'Tên Nhà Cung Cấp *')}</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Nhập tên doanh nghiệp / nhà cung cấp"
+                  placeholder={t('suppliers_ph_name', 'Nhập tên doanh nghiệp / nhà cung cấp')}
                   className="w-full px-3 py-2 text-sm font-semibold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Người Liên Hệ</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('suppliers_col_contact', 'Người Liên Hệ')}</label>
                   <input
                     type="text"
                     value={formData.contactPerson}
                     onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                    placeholder="Nguyễn Văn A"
+                    placeholder={t('suppliers_ph_contact', 'Nguyễn Văn A')}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Số Điện Thoại</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_register_company_phone', 'Số Điện Thoại')}</label>
                   <input
                     type="text"
                     value={formData.phone}
@@ -257,17 +256,17 @@ export const SaaSSuppliersPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Email NCC</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('email_ncc', 'Email NCC')}</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="contact@supplier.com"
+                    placeholder={t('contact_supplier_com', 'contact@supplier.com')}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Số Dư Nợ Đầu Kỳ (VND)</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('suppliers_label_debt', 'Số Dư Nợ Đầu Kỳ (VND)')}</label>
                   <input
                     type="number"
                     value={formData.payableDebt}
@@ -278,12 +277,12 @@ export const SaaSSuppliersPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Địa Chỉ Văn Phòng / Kho Hàng</label>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('suppliers_label_address', 'Địa Chỉ Văn Phòng / Kho Hàng')}</label>
                 <input
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="KCN Sài Đồng, Long Biên, Hà Nội"
+                  placeholder={t('suppliers_ph_address', 'KCN Sài Đồng, Long Biên, Hà Nội')}
                   className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 />
               </div>
@@ -294,8 +293,7 @@ export const SaaSSuppliersPage: React.FC = () => {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
                 >
-                  Hủy Bỏ
-                </button>
+                  {t('cancel', 'Hủy Bỏ')}</button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg shadow-xs"

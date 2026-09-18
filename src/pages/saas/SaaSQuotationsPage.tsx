@@ -9,6 +9,7 @@ import { SearchableSelect } from '../../components/SearchableSelect';
 import { useToast } from '../../contexts/ToastContext';
 import { generateERPCode } from '../../utils/format';
 import client from '../../api/client';
+import { useTranslation } from 'react-i18next';
 
 interface QuotationLineItem {
   id: string;
@@ -53,6 +54,7 @@ interface CustomerOption {
 }
 
 export const SaaSQuotationsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { addToast } = useToast();
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ preset: 'all', fromDate: '', toDate: '' });
 
@@ -184,7 +186,7 @@ export const SaaSQuotationsPage: React.FC = () => {
   const handleAddLineItem = () => {
     const p = products[0];
     if (!p) {
-      addToast('Chưa có sản phẩm thực trong tenant để thêm vào báo giá.', 'error');
+      addToast(t('chua_co_san_pham_thuc_3', 'Chưa có sản phẩm thực trong tenant để thêm vào báo giá.'), 'error');
       return;
     }
     const newItem: QuotationLineItem = {
@@ -201,7 +203,7 @@ export const SaaSQuotationsPage: React.FC = () => {
 
   const handleRemoveLineItem = (id: string) => {
     if (lineItems.length <= 1) {
-      addToast('Báo giá phải có ít nhất 1 sản phẩm!', 'warning');
+      addToast(t('bao_gia_phai_co_it', 'Báo giá phải có ít nhất 1 sản phẩm!'), 'warning');
       return;
     }
     setLineItems(lineItems.filter((i) => i.id !== id));
@@ -238,9 +240,9 @@ export const SaaSQuotationsPage: React.FC = () => {
 
   const handleSaveQuotation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!lineItems.length) { addToast('Vui lòng thêm sản phẩm vào báo giá!', 'error'); return; }
+    if (!lineItems.length) { addToast(t('vui_long_them_san_pham', 'Vui lòng thêm sản phẩm vào báo giá!'), 'error'); return; }
     const customer = customers.find((item) => item.id === formState.customerId);
-    if (!customer) { addToast('Vui lòng chọn khách hàng thực trong tenant.', 'error'); return; }
+    if (!customer) { addToast(t('vui_long_chon_khach_hang_2', 'Vui lòng chọn khách hàng thực trong tenant.'), 'error'); return; }
     try {
       const payload = {
         code: formState.code, date: formState.date, valid_until: formState.validUntil,
@@ -268,12 +270,12 @@ export const SaaSQuotationsPage: React.FC = () => {
   const columns: ColumnDef<QuotationItem>[] = [
     {
       accessorKey: 'code',
-      header: 'Số Báo Giá',
+      header: t('saas_quotations_so_bao_gia', 'Số Báo Giá'),
       cell: ({ row, getValue }) => (
         <button
           onClick={() => handleOpenPrint(row.original)}
           className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer p-0 bg-transparent inline-flex items-center gap-1"
-          title="Click vào số báo giá để xem chi tiết / in"
+          title={t('click_vao_so_bao_gia', 'Click vào số báo giá để xem chi tiết / in')}
         >
           {getValue() as string}
         </button>
@@ -281,25 +283,25 @@ export const SaaSQuotationsPage: React.FC = () => {
     },
     {
       accessorKey: 'date',
-      header: 'Ngày Lập',
+      header: t('saas_quotations_ngay_lap', 'Ngày Lập'),
     },
     {
       accessorKey: 'validUntil',
-      header: 'Hiệu Lực Đến',
+      header: t('saas_quotations_hieu_luc_den', 'Hiệu Lực Đến'),
     },
     {
       accessorKey: 'customerName',
-      header: 'Khách Hàng Báo Giá',
+      header: t('saas_quotations_khach_hang_bao_gia', 'Khách Hàng Báo Giá'),
       cell: (info) => <span className="font-bold text-zinc-900 dark:text-zinc-100">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'amount',
-      header: 'Tiền Hàng (Trước VAT)',
+      header: t('tien_hang_truoc_vat', 'Tiền Hàng (Trước VAT)'),
       cell: (info) => `${(info.getValue() as number).toLocaleString('vi-VN')} đ`,
     },
     {
       accessorKey: 'totalAmount',
-      header: 'Tổng Giá Trị HĐ',
+      header: t('saas_quotations_tong_gia_tri_hd', 'Tổng Giá Trị HĐ'),
       cell: (info) => (
         <span className="font-bold text-emerald-600 dark:text-emerald-400">
           {(info.getValue() as number).toLocaleString('vi-VN')} đ
@@ -308,25 +310,25 @@ export const SaaSQuotationsPage: React.FC = () => {
     },
     {
       accessorKey: 'status',
-      header: 'Trạng Thái',
+      header: t('status', 'Trạng Thái'),
       cell: (info) => <StatusBadge status={info.getValue() as string} />,
     },
     {
       id: 'actions',
-      header: 'Thao Tác',
+      header: t('actions', 'Thao Tác'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => handleOpenPrint(row.original)}
             className="p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 transition-colors"
-            title="Xem bản in Báo giá chuẩn ERP"
+            title={t('xem_ban_in_bao_gia', 'Xem bản in Báo giá chuẩn ERP')}
           >
             <Printer className="h-4 w-4" />
           </button>
           <button
             onClick={() => handleOpenEdit(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-amber-500 transition-colors"
-            title="Sửa báo giá"
+            title={t('saas_quotations_sua_bao_gia', 'Sửa báo giá')}
           >
             <Edit2 className="h-4 w-4" />
           </button>
@@ -334,15 +336,14 @@ export const SaaSQuotationsPage: React.FC = () => {
             <button
               onClick={() => handleConvertToStockOut(row.original.id)}
               className="px-2.5 py-1 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-zinc-950 rounded-lg shadow-xs transition-colors flex items-center gap-1"
-              title="Chuyển báo giá thành Phiếu Xuất Kho Bán Hàng"
+              title={t('chuyen_bao_gia_thanh_phieu', 'Chuyển báo giá thành Phiếu Xuất Kho Bán Hàng')}
             >
-              <ArrowRightLeft className="h-3.5 w-3.5" /> Xuất Kho
-            </button>
+              <ArrowRightLeft className="h-3.5 w-3.5" /> {t('saas_stock_out_xuat_kho', 'Xuất Kho')}</button>
           )}
           <button
             onClick={() => handleDeleteQuotation(row.original.id, row.original.code)}
             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 transition-colors"
-            title="Xóa báo giá"
+            title={t('saas_quotations_xoa_bao_gia', 'Xóa báo giá')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -358,24 +359,21 @@ export const SaaSQuotationsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <FileSpreadsheet className="h-6 w-6 text-amber-500" /> Báo Giá Commercial & Hóa Đơn Thương Mại (ERP)
-          </h2>
+            <FileSpreadsheet className="h-6 w-6 text-amber-500" /> {t('bao_gia_commercial_hoa_don', 'Báo Giá Commercial & Hóa Đơn Thương Mại (ERP)')}</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Lập báo giá thương mại, tự động tính VAT, thời hạn hiệu lực, chuyển trực tiếp thành Phiếu Xuất Kho & in bản mềm PDF.
-          </p>
+            {t('lap_bao_gia_thuong_mai', 'Lập báo giá thương mại, tự động tính VAT, thời hạn hiệu lực, chuyển trực tiếp thành Phiếu Xuất Kho & in bản mềm PDF.')}</p>
         </div>
 
         <button
           onClick={handleOpenAdd}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all"
         >
-          <Plus className="h-4 w-4" /> Soạn Báo Giá Mới
-        </button>
+          <Plus className="h-4 w-4" /> {t('saas_quotations_soan_bao_gia_moi', 'Soạn Báo Giá Mới')}</button>
       </div>
 
       <SaaSDateFilterBar onFilterChange={(val) => setDateFilter(val)} />
 
-      <DataTable columns={columns} data={filteredQuotations} searchPlaceholder="Tìm số báo giá, tên khách hàng..." />
+      <DataTable columns={columns} data={filteredQuotations} searchPlaceholder={t('tim_so_bao_gia_ten', 'Tìm số báo giá, tên khách hàng...')} />
 
       {/* Print Modal */}
       {selectedQuotation && (
@@ -422,7 +420,7 @@ export const SaaSQuotationsPage: React.FC = () => {
             <form onSubmit={handleSaveQuotation} className="space-y-4 overflow-y-auto pr-1 flex-1 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-zinc-50 dark:bg-zinc-950/60 rounded-xl border border-zinc-200 dark:border-zinc-800">
                 <div>
-                  <label className="block font-semibold mb-1">Số Báo Giá *</label>
+                  <label className="block font-semibold mb-1">{t('saas_quotations_so_bao_gia_1', 'Số Báo Giá *')}</label>
                   <input
                     type="text"
                     required
@@ -432,7 +430,7 @@ export const SaaSQuotationsPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Ngày Lập *</label>
+                  <label className="block font-semibold mb-1">{t('saas_quotations_ngay_lap_1', 'Ngày Lập *')}</label>
                   <input
                     type="date"
                     required
@@ -442,7 +440,7 @@ export const SaaSQuotationsPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Hiệu Lực Đến *</label>
+                  <label className="block font-semibold mb-1">{t('saas_quotations_hieu_luc_den_1', 'Hiệu Lực Đến *')}</label>
                   <input
                     type="date"
                     required
@@ -452,11 +450,11 @@ export const SaaSQuotationsPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Khách Hàng * (Fast Search)</label>
+                  <label className="block font-semibold mb-1">{t('khach_hang_fast_search', 'Khách Hàng * (Fast Search)')}</label>
                   <SearchableSelect
                     value={formState.customerId}
                     onChange={(val) => setFormState({ ...formState, customerId: val })}
-                    placeholder="Tìm khách hàng..."
+                    placeholder={t('saas_quotations_tim_khach_hang', 'Tìm khách hàng...')}
                     options={customers.map((c) => ({
                       value: c.id,
                       label: c.name,
@@ -468,12 +466,12 @@ export const SaaSQuotationsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Điều Khoản / Ghi Chú</label>
+                <label className="block font-semibold mb-1">{t('saas_quotations_dieu_khoan_ghi_chu', 'Điều Khoản / Ghi Chú')}</label>
                 <input
                   type="text"
                   value={formState.notes}
                   onChange={(e) => setFormState({ ...formState, notes: e.target.value })}
-                  placeholder="Ghi chú điều khoản thanh toán, bảo hành, giao hàng..."
+                  placeholder={t('ghi_chu_dieu_khoan_thanh', 'Ghi chú điều khoản thanh toán, bảo hành, giao hàng...')}
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border rounded-lg"
                 />
               </div>
@@ -482,27 +480,25 @@ export const SaaSQuotationsPage: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold flex items-center gap-2">
-                    <Calculator className="h-4 w-4 text-amber-500" /> Chi Tiết Sản Phẩm Báo Giá ({lineItems.length} dòng)
-                  </h4>
+                    <Calculator className="h-4 w-4 text-amber-500" /> {t('chi_tiet_san_pham_bao', 'Chi Tiết Sản Phẩm Báo Giá (')}{lineItems.length} {t('dong', 'dòng)')}</h4>
                   <button
                     type="button"
                     onClick={handleAddLineItem}
                     className="px-3 py-1 font-bold bg-amber-500 hover:bg-amber-600 text-zinc-950 rounded-lg flex items-center gap-1"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Thêm dòng
-                  </button>
+                    <Plus className="h-3.5 w-3.5" /> {t('saas_quotations_them_dong', 'Thêm dòng')}</button>
                 </div>
 
                 <div className="border rounded-xl overflow-x-auto">
                   <table className="w-full text-left">
                     <thead className="bg-zinc-100 dark:bg-zinc-800 font-semibold">
                       <tr>
-                        <th className="p-2 w-10 text-center">STT</th>
-                        <th className="p-2">Sản Phẩm *</th>
-                        <th className="p-2 w-24 text-right">Số Lượng</th>
-                        <th className="p-2 w-20 text-center">ĐVT</th>
-                        <th className="p-2 w-32 text-right">Đơn Giá Báo</th>
-                        <th className="p-2 w-32 text-right">Thành Tiền</th>
+                        <th className="p-2 w-10 text-center">{t('stt', 'STT')}</th>
+                        <th className="p-2">{t('saas_quotations_san_pham', 'Sản Phẩm *')}</th>
+                        <th className="p-2 w-24 text-right">{t('saas_stock_in_so_l_ong', 'Số Lượng')}</th>
+                        <th className="p-2 w-20 text-center">{t('dvt_uom', 'ĐVT')}</th>
+                        <th className="p-2 w-32 text-right">{t('saas_quotations_d_n_gia_bao', 'Đơn Giá Báo')}</th>
+                        <th className="p-2 w-32 text-right">{t('saas_stock_in_thanh_tien', 'Thành Tiền')}</th>
                         <th className="p-2 w-10 text-center"></th>
                       </tr>
                     </thead>
@@ -514,7 +510,7 @@ export const SaaSQuotationsPage: React.FC = () => {
                             <SearchableSelect
                               value={item.productId}
                               onChange={(val) => handleProductChange(item.id, val)}
-                              placeholder="Gõ tên hoặc SKU sản phẩm..."
+                              placeholder={t('saas_quotations_go_ten_ho_c_sku_san_pham', 'Gõ tên hoặc SKU sản phẩm...')}
                               options={products.map((p) => ({
                                 value: p.id,
                                 label: p.name,
@@ -563,7 +559,7 @@ export const SaaSQuotationsPage: React.FC = () => {
               {/* Total Summary */}
               <div className="flex justify-between items-end p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 rounded-xl">
                 <div>
-                  <label className="block font-semibold mb-1">Thuế Suất VAT (%)</label>
+                  <label className="block font-semibold mb-1">{t('thue_suat_vat', 'Thuế Suất VAT (%)')}</label>
                   <select
                     value={formState.vatRate}
                     onChange={(e) => setFormState({ ...formState, vatRate: Number(e.target.value) })}
@@ -578,16 +574,16 @@ export const SaaSQuotationsPage: React.FC = () => {
 
                 <div className="text-right space-y-1">
                   <div className="text-zinc-600 dark:text-zinc-400">
-                    Tiền hàng: <span className="font-mono font-semibold">{calcSubtotal.toLocaleString('vi-VN')} đ</span>
+                    {t('tien_hang', 'Tiền hàng:')}<span className="font-mono font-semibold">{calcSubtotal.toLocaleString('vi-VN')} đ</span>
                   </div>
                   <div className="text-zinc-600 dark:text-zinc-400">
-                    Tiền VAT ({formState.vatRate}%):{' '}
+                    {t('tien_vat', 'Tiền VAT (')}{formState.vatRate}%):{' '}
                     <span className="font-mono font-semibold text-amber-600">
                       +{calcVat.toLocaleString('vi-VN')} đ
                     </span>
                   </div>
                   <div className="text-base font-bold text-emerald-600 pt-1 border-t">
-                    Tổng cộng: {calcTotal.toLocaleString('vi-VN')} đ
+                    {t('tong_cong', 'Tổng cộng:')}{calcTotal.toLocaleString('vi-VN')} đ
                   </div>
                 </div>
               </div>
@@ -598,8 +594,7 @@ export const SaaSQuotationsPage: React.FC = () => {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 font-semibold text-zinc-600 hover:bg-zinc-100 rounded-lg"
                 >
-                  Hủy Bỏ
-                </button>
+                  {t('cancel', 'Hủy Bỏ')}</button>
                 <button
                   type="submit"
                   className="px-5 py-2 font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg"

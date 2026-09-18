@@ -234,7 +234,7 @@ const Header: React.FC = () => {
                  >
                    <Building2 className="w-3.5 h-3.5" />
                    <span className="hidden md:inline">{t("nav_erp_register", "Đăng ký Doanh nghiệp")}</span>
-                   <span className="md:hidden">ERP</span>
+                   <span className="md:hidden">{t('erp', 'ERP')}</span>
                  </Link>
                </div>
              )}

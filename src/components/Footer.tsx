@@ -48,7 +48,7 @@ const Footer: React.FC = () => {
               W
             </div>
             <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white flex items-center uppercase">
-              WebShop <span className="text-indigo-600 dark:text-indigo-400 ml-1"></span>
+              {t('webshop', 'WebShop')}<span className="text-indigo-600 dark:text-indigo-400 ml-1"></span>
             </span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-4">
@@ -71,7 +71,7 @@ const Footer: React.FC = () => {
             </li>
             <li className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              <span>support@erpviet.com</span>
+              <span>{t('support_erpviet_com', 'support@erpviet.com')}</span>
             </li>
           </ul>
         </div>

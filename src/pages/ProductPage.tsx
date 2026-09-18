@@ -123,8 +123,7 @@ const ProductPage: React.FC = () => {
         <PackageOpen className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-2" />
         <h3 className="font-semibold text-gray-700 dark:text-gray-300">{t('page_product_unavailable', 'Sản phẩm không khả dụng')}</h3>
         <Link to={shopPath("/")} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-2">
-          Quay lại trang chủ
-        </Link>
+          {t('quay_lai_trang_chu', 'Quay lại trang chủ')}</Link>
       </div>
     );
   }
@@ -278,14 +277,14 @@ const ProductPage: React.FC = () => {
                 {adding ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                    <span className="hidden sm:inline">Đang thêm...</span>
+                    <span className="hidden sm:inline">{t('dang_them', 'Đang thêm...')}</span>
                     <span className="sm:hidden">...</span>
                   </>
                 ) : (
                   <>
                     <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">Thêm vào giỏ hàng</span>
-                    <span className="sm:hidden">Thêm</span>
+                    <span className="hidden sm:inline">{t('them_vao_gio_hang', 'Thêm vào giỏ hàng')}</span>
+                    <span className="sm:hidden">{t('them', 'Thêm')}</span>
                   </>
                 )}
               </button>
@@ -306,8 +305,7 @@ const ProductPage: React.FC = () => {
                 : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             }`}
           >
-            Mô tả sản phẩm
-            {activeTab === "desc" && (
+            {t('mo_ta_san_pham', 'Mô tả sản phẩm')}{activeTab === "desc" && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full"></span>
             )}
           </button>
@@ -319,8 +317,7 @@ const ProductPage: React.FC = () => {
                 : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             }`}
           >
-            Thông số kỹ thuật
-            {activeTab === "specs" && (
+            {t('thong_so_ky_thuat', 'Thông số kỹ thuật')}{activeTab === "specs" && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full"></span>
             )}
           </button>
@@ -351,7 +348,7 @@ const ProductPage: React.FC = () => {
                     <span className="font-semibold text-gray-800 dark:text-gray-200">{product.sku}</span>
                   </div>
                   <div className="py-2 px-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-150 dark:border-gray-800 flex justify-between">
-                    <span className="text-gray-500">Đơn vị:</span>
+                    <span className="text-gray-500">{t('don_vi', 'Đơn vị:')}</span>
                     <span className="font-semibold text-gray-800 dark:text-gray-200">{product.unit}</span>
                   </div>
                 </div>
@@ -366,8 +363,7 @@ const ProductPage: React.FC = () => {
         <div className="flex flex-col gap-3 mt-1">
           <h2 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5 uppercase tracking-wider">
             <Tag className="w-3.5 h-3.5 text-indigo-600" />
-            SẢN PHẨM LIÊN QUAN
-          </h2>
+            {t('san_pham_lien_quan', 'SẢN PHẨM LIÊN QUAN')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {relatedProducts.map((prod) => (
               <ProductCard key={prod.id} product={prod} />

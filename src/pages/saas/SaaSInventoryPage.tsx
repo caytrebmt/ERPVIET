@@ -3,6 +3,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Boxes, PackageCheck, AlertTriangle } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
 import client from '../../api/client';
+import { useTranslation } from 'react-i18next';
 
 interface InventoryItem {
   id: number;
@@ -20,6 +21,7 @@ interface MovementItem { id: number; code: string; movement_type: string; moveme
 interface XntRow { product_id: number; sku: string; name_vi?: string; unit_vi?: string; cost_price: number; opening_qty: number; in_qty: number; out_qty: number; closing_qty: number; closing_value: number; min_stock: number; }
 
 export const SaaSInventoryPage: React.FC = () => {
+  const { t } = useTranslation();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [movements, setMovements] = useState<MovementItem[]>([]);
@@ -62,7 +64,7 @@ export const SaaSInventoryPage: React.FC = () => {
   const columns: ColumnDef<InventoryItem>[] = [
     {
       accessorKey: 'sku',
-      header: 'Mã SKU',
+      header: t('saas_reports_ma_sku', 'Mã SKU'),
       cell: (info) => (
         <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
           {info.getValue() as string}
@@ -71,31 +73,31 @@ export const SaaSInventoryPage: React.FC = () => {
     },
     {
       accessorKey: 'name',
-      header: 'Tên Hàng Hóa',
+      header: t('saas_inventory_ten_hang_hoa', 'Tên Hàng Hóa'),
       cell: (info) => <span className="font-semibold text-zinc-900 dark:text-zinc-100">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'warehouse',
-      header: 'Kho Hàng',
+      header: t('saas_inventory_kho_hang', 'Kho Hàng'),
     },
     {
       accessorKey: 'stock',
-      header: 'Tồn Kho Thực Tế',
+      header: t('saas_inventory_ton_kho_thuc_te', 'Tồn Kho Thực Tế'),
       cell: (info) => <span className="font-bold text-zinc-900 dark:text-zinc-100">{info.getValue() as number}</span>,
     },
     {
       accessorKey: 'available',
-      header: 'Khả Dụng Bán',
+      header: t('saas_inventory_kha_dung_ban', 'Khả Dụng Bán'),
       cell: (info) => <span className="font-bold text-emerald-600 dark:text-emerald-400">{info.getValue() as number}</span>,
     },
     {
       accessorKey: 'unitCost',
-      header: 'Giá Vốn Bình Quân',
+      header: t('saas_inventory_gia_von_binh_quan', 'Giá Vốn Bình Quân'),
       cell: (info) => `${(info.getValue() as number).toLocaleString('vi-VN')} đ`,
     },
     {
       accessorKey: 'totalValue',
-      header: 'Tổng Giá Trị Tồn Kho',
+      header: t('dashboard_total_inventory', 'Tổng Giá Trị Tồn Kho'),
       cell: (info) => (
         <span className="font-bold text-amber-600 dark:text-amber-400">
           {(info.getValue() as number).toLocaleString('vi-VN')} đ
@@ -109,27 +111,25 @@ export const SaaSInventoryPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Boxes className="h-6 w-6 text-amber-500" /> Báo Cáo Kiểm Kê & Định Giá Tồn Kho
-          </h2>
+            <Boxes className="h-6 w-6 text-amber-500" /> {t('bao_cao_kiem_ke_dinh', 'Báo Cáo Kiểm Kê & Định Giá Tồn Kho')}</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Số liệu tổng hợp tồn kho thực tế, tồn kho tạm giữ và tổng giá trị tài sản lưu kho theo phương pháp bình quân.
-          </p>
+            {t('so_lieu_tong_hop_ton', 'Số liệu tổng hợp tồn kho thực tế, tồn kho tạm giữ và tổng giá trị tài sản lưu kho theo phương pháp bình quân.')}</p>
         </div>
       </div>
 
       {loadError && <p className="text-xs text-red-600">{loadError}</p>}
 
-      <DataTable columns={columns} data={items} searchPlaceholder="Tìm mã SKU, tên hàng hóa..." />
+      <DataTable columns={columns} data={items} searchPlaceholder={t('saas_reports_tim_ma_sku_ten_hang_hoa', 'Tìm mã SKU, tên hàng hóa...')} />
 
       <section className="space-y-4 print:space-y-2">
-        <div className="flex flex-wrap gap-2 items-center"><b className="mr-2">Báo cáo Xuất Nhập Tồn</b>{[['today','Hôm nay'],['week','7 ngày qua'],['month','Tháng này'],['year','Năm nay'],['all','Tất cả']].map(([key,label]) => <button key={key} onClick={() => setPreset(key as any)} className="px-3 py-1 rounded border border-zinc-300 text-sm">{label}</button>)}<button onClick={exportCsv} className="px-3 py-1 rounded bg-emerald-600 text-white text-sm">Xuất CSV</button><button onClick={() => window.print()} className="px-3 py-1 rounded bg-indigo-600 text-white text-sm">In báo cáo</button></div>
+        <div className="flex flex-wrap gap-2 items-center"><b className="mr-2">{t('bao_cao_xuat_nhap_ton', 'Báo cáo Xuất Nhập Tồn')}</b>{[['today','Hôm nay'],['week','7 ngày qua'],['month','Tháng này'],['year','Năm nay'],['all','Tất cả']].map(([key,label]) => <button key={key} onClick={() => setPreset(key as any)} className="px-3 py-1 rounded border border-zinc-300 text-sm">{label}</button>)}<button onClick={exportCsv} className="px-3 py-1 rounded bg-emerald-600 text-white text-sm">{t('xuat_csv', 'Xuất CSV')}</button><button onClick={() => window.print()} className="px-3 py-1 rounded bg-indigo-600 text-white text-sm">{t('in_bao_cao', 'In báo cáo')}</button></div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{[['Tồn đầu kỳ','opening_value'],['Nhập trong kỳ','in_value'],['Xuất trong kỳ','out_value'],['Tồn cuối kỳ','closing_value']].map(([label,key]) => <div key={key} className="p-3 rounded border border-zinc-200 dark:border-zinc-800"><div className="text-xs text-zinc-500">{label}</div><div className="font-bold">{Number(kpi?.[key] || 0).toLocaleString('vi-VN')} đ</div></div>)}</div>
         <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800"><table className="w-full text-sm"><thead className="bg-zinc-50 dark:bg-zinc-900"><tr>{['SKU','Tên hàng','ĐVT','Đơn giá vốn','Tồn đầu','Nhập','Xuất','Tồn cuối','Cảnh báo'].map(h => <th key={h} className="p-3 text-left whitespace-nowrap">{h}</th>)}</tr></thead><tbody>{xntRows.map(r => <tr key={r.product_id} className="border-t border-zinc-100 dark:border-zinc-800"><td className="p-3 font-mono">{r.sku}</td><td className="p-3">{r.name_vi}</td><td className="p-3">{r.unit_vi}</td><td className="p-3">{Number(r.cost_price).toLocaleString('vi-VN')}</td><td className="p-3">{r.opening_qty}</td><td className="p-3 text-emerald-600">+{r.in_qty}</td><td className="p-3 text-rose-600">-{r.out_qty}</td><td className="p-3 font-bold">{r.closing_qty}</td><td className="p-3">{r.closing_qty <= 0 ? 'Hết hàng' : r.closing_qty <= r.min_stock ? 'Dưới định mức' : 'An toàn'}</td></tr>)}</tbody></table></div>
       </section>
 
       <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-        <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3"><div className="font-bold text-zinc-900 dark:text-zinc-100">Nhật ký nhập xuất tồn theo thời gian</div><div className="flex items-center gap-2 text-sm"><input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="rounded border border-zinc-300 px-2 py-1 dark:bg-zinc-900" /><span>đến</span><input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="rounded border border-zinc-300 px-2 py-1 dark:bg-zinc-900" /><button onClick={() => { setFromDate(''); setToDate(''); }} className="rounded border border-zinc-300 px-2 py-1">Tất cả</button></div></div>
-        <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-zinc-50 dark:bg-zinc-900"><tr><th className="p-3 text-left">Thời gian</th><th className="p-3 text-left">Phiếu</th><th className="p-3 text-left">Nghiệp vụ</th><th className="p-3 text-left">Sản phẩm</th><th className="p-3 text-right">SL</th><th className="p-3 text-left">Kho</th></tr></thead><tbody>{movements.map((m) => <tr key={`${m.id}-${m.sku}`} className="border-t border-zinc-100 dark:border-zinc-800"><td className="p-3">{new Date(m.movement_date).toLocaleDateString('vi-VN')}</td><td className="p-3 font-mono">{m.code}</td><td className="p-3">{m.movement_type === 'NHAP_KHO' ? 'Nhập kho' : m.movement_type === 'XUAT_KHO' ? 'Xuất kho' : 'Điều chỉnh'}</td><td className="p-3">{m.sku} — {m.name_vi || m.name_en}</td><td className={`p-3 text-right font-bold ${m.movement_type === 'XUAT_KHO' ? 'text-rose-600' : 'text-emerald-600'}`}>{m.movement_type === 'XUAT_KHO' ? '-' : '+'}{m.quantity}</td><td className="p-3">{m.warehouse_vi || m.warehouse_en}</td></tr>)}</tbody></table></div>
+        <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3"><div className="font-bold text-zinc-900 dark:text-zinc-100">{t('nhat_ky_nhap_xuat_ton', 'Nhật ký nhập xuất tồn theo thời gian')}</div><div className="flex items-center gap-2 text-sm"><input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="rounded border border-zinc-300 px-2 py-1 dark:bg-zinc-900" /><span>{t('datatable_to', 'đến')}</span><input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="rounded border border-zinc-300 px-2 py-1 dark:bg-zinc-900" /><button onClick={() => { setFromDate(''); setToDate(''); }} className="rounded border border-zinc-300 px-2 py-1">{t('date_filter.presets.all', 'Tất cả')}</button></div></div>
+        <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-zinc-50 dark:bg-zinc-900"><tr><th className="p-3 text-left">{t('audit_timestamp', 'Thời gian')}</th><th className="p-3 text-left">{t('phieu', 'Phiếu')}</th><th className="p-3 text-left">{t('nghiep_vu', 'Nghiệp vụ')}</th><th className="p-3 text-left">{t('api_fallback_order_item', 'Sản phẩm')}</th><th className="p-3 text-right">SL</th><th className="p-3 text-left">{t('kho_warehouses', 'Kho')}</th></tr></thead><tbody>{movements.map((m) => <tr key={`${m.id}-${m.sku}`} className="border-t border-zinc-100 dark:border-zinc-800"><td className="p-3">{new Date(m.movement_date).toLocaleDateString('vi-VN')}</td><td className="p-3 font-mono">{m.code}</td><td className="p-3">{m.movement_type === 'NHAP_KHO' ? 'Nhập kho' : m.movement_type === 'XUAT_KHO' ? 'Xuất kho' : 'Điều chỉnh'}</td><td className="p-3">{m.sku} — {m.name_vi || m.name_en}</td><td className={`p-3 text-right font-bold ${m.movement_type === 'XUAT_KHO' ? 'text-rose-600' : 'text-emerald-600'}`}>{m.movement_type === 'XUAT_KHO' ? '-' : '+'}{m.quantity}</td><td className="p-3">{m.warehouse_vi || m.warehouse_en}</td></tr>)}</tbody></table></div>
       </div>
     </div>
   );

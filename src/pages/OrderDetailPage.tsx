@@ -127,19 +127,19 @@ const OrderDetailPage: React.FC = () => {
   const isErpApproved = (): boolean => {
     if (!order?.erp_status) return false;
     const s = order.erp_status.toLowerCase();
-    return s.includes("pxk") || s.includes("duyệt") || s.includes("xuất kho") || s.includes("đóng gói") || s.includes("shipper") || s.includes("vận chuyển") || s.includes("giao") || s.includes("hoàn thành");
+    return s.includes("pxk") || s.includes("shipper") || s.includes("giao") || hasStatusKeyword(s, ERP_APPROVED_STATUS_KEYWORDS);
   };
 
   const isPackingOrShipped = (): boolean => {
     if (!order?.erp_status) return false;
     const s = order.erp_status.toLowerCase();
-    return s.includes("đóng gói") || s.includes("shipper") || s.includes("vận chuyển") || s.includes("giao") || s.includes("hoàn thành") || order.status === "completed";
+    return s.includes("shipper") || s.includes("giao") || hasStatusKeyword(s, ERP_PACKING_OR_SHIPPED_STATUS_KEYWORDS) || order.status === "completed";
   };
 
   const isDelivered = (): boolean => {
     if (!order?.erp_status) return false;
     const s = order.erp_status.toLowerCase();
-    return s.includes("đã giao") || s.includes("hoàn thành") || order.status === "completed";
+    return hasStatusKeyword(s, ERP_DELIVERED_STATUS_KEYWORDS) || order.status === "completed";
   };
 
   const getErpStatusLabel = (): string => {
@@ -151,7 +151,7 @@ const OrderDetailPage: React.FC = () => {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-2" />
-        <p className="text-xs text-gray-500 dark:text-gray-400">Đang truy xuất thông tin chi tiết đơn hàng...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{t('dang_truy_xuat_thong_tin', 'Đang truy xuất thông tin chi tiết đơn hàng...')}</p>
       </div>
     );
   }
@@ -174,10 +174,10 @@ const OrderDetailPage: React.FC = () => {
           </Link>
           <div>
             <h1 className="text-lg md:text-xl font-bold text-gray-850 dark:text-white m-0 uppercase flex items-center gap-2">
-              CHI TIẾT ĐƠN HÀNG <span className="font-mono text-indigo-600 dark:text-indigo-400 font-black text-sm select-all">{order.code}</span>
+              {t('chi_tiet_don_hang', 'CHI TIẾT ĐƠN HÀNG')}<span className="font-mono text-indigo-600 dark:text-indigo-400 font-black text-sm select-all">{order.code}</span>
             </h1>
             <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 m-0 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 shrink-0" /> Ngày tạo: <strong className="dark:text-gray-300">{formatDate(order.createdAt)}</strong>
+              <Calendar className="w-3.5 h-3.5 shrink-0" /> {t('ngay_tao', 'Ngày tạo:')}<strong className="dark:text-gray-300">{formatDate(order.createdAt)}</strong>
             </p>
           </div>
         </div>
@@ -207,8 +207,7 @@ const OrderDetailPage: React.FC = () => {
           {/* Order Items Table */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-xs flex flex-col transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-xs bg-gray-50/70 dark:bg-gray-850/30 p-4 border-b border-gray-100 dark:border-gray-800 uppercase tracking-wider">
-              DANH SÁCH SẢN PHẨM ĐÃ ĐẶT MUA
-            </h3>
+              {t('danh_sach_san_pham_da', 'DANH SÁCH SẢN PHẨM ĐÃ ĐẶT MUA')}</h3>
 
             {/* Headers Desktop */}
             <div className="hidden md:grid grid-cols-12 gap-2 bg-gray-50/30 dark:bg-gray-850/10 px-4 py-2 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase border-b border-gray-50 dark:border-gray-800">
@@ -226,18 +225,18 @@ const OrderDetailPage: React.FC = () => {
                     <h4 className="font-semibold text-gray-800 dark:text-gray-200 m-0 leading-tight">
                       {item.name}
                     </h4>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1 font-mono m-0">SKU: {item.sku}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1 font-mono m-0">{t('sku', 'SKU:')}{item.sku}</p>
                   </div>
                   <div className="col-span-1 md:col-span-2 md:text-center flex justify-between md:block">
-                    <span className="text-gray-400 md:hidden font-medium">Đơn giá:</span>
+                    <span className="text-gray-400 md:hidden font-medium">{t('don_gia', 'Đơn giá:')}</span>
                     <span className="font-semibold text-gray-700 dark:text-gray-300">{formatPrice(item.unit_price)}</span>
                   </div>
                   <div className="col-span-1 md:col-span-2 md:text-center flex justify-between md:block">
-                    <span className="text-gray-400 md:hidden font-medium">Số lượng:</span>
+                    <span className="text-gray-400 md:hidden font-medium">{t('so_luong', 'Số lượng:')}</span>
                     <span className="font-bold text-gray-800 dark:text-gray-200">{item.quantity}</span>
                   </div>
                   <div className="col-span-1 md:col-span-2 flex justify-between md:block text-right">
-                    <span className="text-gray-400 md:hidden font-medium">Tổng tiền:</span>
+                    <span className="text-gray-400 md:hidden font-medium">{t('tong_tien', 'Tổng tiền:')}</span>
                     <span className="font-bold text-gray-900 dark:text-white">{formatPrice(item.amount)}</span>
                   </div>
                 </div>
@@ -248,14 +247,13 @@ const OrderDetailPage: React.FC = () => {
           {/* Logistics Tracking Timeline Information */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-xs flex flex-col gap-4 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-xs border-b border-gray-100 dark:border-gray-800 pb-2.5 uppercase tracking-wider flex items-center gap-1.5">
-              <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> LỘ TRÌNH ĐƠN HÀNG (ERPACC SYNC)
-            </h3>
+              <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> {t('lo_trinh_don_hang_erpacc', 'LỘ TRÌNH ĐƠN HÀNG (ERPACC SYNC)')}</h3>
 
             <div className="flex flex-col gap-4 text-xs pl-3 relative border-l border-gray-100 dark:border-gray-800">
               {/* Point 1 */}
               <div className="relative">
                 <span className={`absolute -left-[17px] top-1.5 w-2 h-2 rounded-full ring-4 ${order.status === "cancelled" ? "bg-red-500 ring-red-100 dark:ring-red-950" : "bg-indigo-600 ring-indigo-50 dark:ring-indigo-950"}`}></span>
-                <p className="font-bold text-gray-850 dark:text-white m-0 leading-tight">Ghi nhận đơn hàng trên WebShop</p>
+                <p className="font-bold text-gray-850 dark:text-white m-0 leading-tight">{t('ghi_nhan_don_hang_tren', 'Ghi nhận đơn hàng trên WebShop')}</p>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 m-0">{t('date_filter.label', 'Thời gian:')}{formatDate(order.createdAt)}</p>
               </div>
 
@@ -264,8 +262,8 @@ const OrderDetailPage: React.FC = () => {
                 <>
                   <div className="relative">
                     <span className={`absolute -left-[17px] top-1.5 w-2 h-2 rounded-full ring-4 ${isErpApproved() ? "bg-indigo-600 ring-indigo-50 dark:ring-indigo-950" : "bg-amber-400 ring-amber-50 dark:ring-amber-950"}`}></span>
-                    <p className={`font-bold m-0 leading-tight ${isErpApproved() ? "text-gray-800 dark:text-gray-200" : "text-amber-600 dark:text-amber-400"}`}>Đồng bộ ERPACC & Duyệt Kho Hàng</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 m-0">Trạng thái ERP: <strong className="text-gray-800 dark:text-gray-200">{getErpStatusLabel()}</strong></p>
+                    <p className={`font-bold m-0 leading-tight ${isErpApproved() ? "text-gray-800 dark:text-gray-200" : "text-amber-600 dark:text-amber-400"}`}>{t('dong_bo_erpacc_duyet_kho', 'Đồng bộ ERPACC & Duyệt Kho Hàng')}</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 m-0">{t('trang_thai_erp', 'Trạng thái ERP:')}<strong className="text-gray-800 dark:text-gray-200">{getErpStatusLabel()}</strong></p>
                     {order.erp_note && (
                       <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 m-0 italic bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg border border-gray-100 dark:border-gray-800">
                         💬 "{order.erp_note}"
@@ -277,13 +275,12 @@ const OrderDetailPage: React.FC = () => {
                   <div className="relative">
                     <span className={`absolute -left-[17px] top-1.5 w-2 h-2 rounded-full ring-4 ${isPackingOrShipped() ? "bg-emerald-600 ring-emerald-50 dark:ring-emerald-950" : isErpApproved() ? "bg-amber-400 ring-amber-50 dark:ring-amber-950" : "bg-gray-300 dark:bg-gray-800 ring-gray-100 dark:ring-gray-900"}`}></span>
                     <p className={`font-bold m-0 leading-tight ${isPackingOrShipped() ? "text-emerald-700 dark:text-emerald-400" : isErpApproved() ? "text-amber-600 dark:text-amber-400" : "text-gray-400 dark:text-gray-550"}`}>
-                      Đóng gói & Bàn giao Shipper
-                    </p>
+                      {t('dong_goi_ban_giao_shipper', 'Đóng gói & Bàn giao Shipper')}</p>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 m-0">
                       {isPackingOrShipped() ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">✓ Đã đóng gói hoàn tất & Đã bàn giao đơn vị vận chuyển</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{t('da_dong_goi_hoan_tat', '✓ Đã đóng gói hoàn tất & Đã bàn giao đơn vị vận chuyển')}</span>
                       ) : isErpApproved() ? (
-                        <span className="text-amber-600 dark:text-amber-400 font-semibold">📦 Đang đóng gói kho & chuẩn bị bàn giao Shipper</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-semibold">{t('dang_dong_goi_kho_chuan', '📦 Đang đóng gói kho & chuẩn bị bàn giao Shipper')}</span>
                       ) : (
                         "Chờ duyệt ERP"
                       )}
@@ -294,11 +291,10 @@ const OrderDetailPage: React.FC = () => {
                   <div className="relative">
                     <span className={`absolute -left-[17px] top-1.5 w-2 h-2 rounded-full ring-4 ${isDelivered() ? "bg-emerald-600 ring-emerald-50 dark:ring-emerald-950" : "bg-gray-300 dark:bg-gray-800 ring-gray-100 dark:ring-gray-900"}`}></span>
                     <p className={`font-bold m-0 leading-tight ${isDelivered() ? "text-emerald-700 dark:text-emerald-400" : "text-gray-400 dark:text-gray-550"}`}>
-                      Giao hàng & Hoàn tất đơn hàng
-                    </p>
+                      {t('giao_hang_hoan_tat_don', 'Giao hàng & Hoàn tất đơn hàng')}</p>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 m-0">
                       {isDelivered() ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">🎉 Đã giao hàng thành công đến địa chỉ người nhận</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{t('da_giao_hang_thanh_cong', '🎉 Đã giao hàng thành công đến địa chỉ người nhận')}</span>
                       ) : (
                         "Chờ đơn vị vận chuyển phát hàng"
                       )}
@@ -308,8 +304,8 @@ const OrderDetailPage: React.FC = () => {
               ) : (
                 <div className="relative">
                   <span className="absolute -left-[17px] top-1.5 w-2 h-2 rounded-full ring-4 bg-red-500 ring-red-100 dark:ring-red-950"></span>
-                  <p className="font-bold text-red-600 dark:text-red-400 m-0 leading-tight">Đơn hàng đã hủy bỏ</p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 m-0">Tồn kho đã được hoàn trả lại hệ thống ERP.</p>
+                  <p className="font-bold text-red-600 dark:text-red-400 m-0 leading-tight">{t('don_hang_da_huy_bo', 'Đơn hàng đã hủy bỏ')}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 m-0">{t('ton_kho_da_duoc_hoan', 'Tồn kho đã được hoàn trả lại hệ thống ERP.')}</p>
                 </div>
               )}
             </div>
@@ -321,22 +317,21 @@ const OrderDetailPage: React.FC = () => {
           {/* Shipping & Payment details */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-xs flex flex-col gap-3.5 text-xs text-gray-600 dark:text-gray-400 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-xs border-b border-gray-100 dark:border-gray-800 pb-2 uppercase tracking-wider">
-              THÔNG TIN GIAO NHẬN
-            </h3>
+              {t('thong_tin_giao_nhan', 'THÔNG TIN GIAO NHẬN')}</h3>
 
             <div className="flex flex-col gap-2.5">
               <p className="m-0 flex items-center gap-1.5">
-                <User className="w-4 h-4 text-gray-400 dark:text-gray-550 shrink-0" /> Họ tên: <strong className="text-gray-800 dark:text-gray-200">{order.customerName}</strong>
+                <User className="w-4 h-4 text-gray-400 dark:text-gray-550 shrink-0" /> {t('ho_ten', 'Họ tên:')}<strong className="text-gray-800 dark:text-gray-200">{order.customerName}</strong>
               </p>
               <p className="m-0 flex items-center gap-1.5">
-                <Phone className="w-4 h-4 text-gray-400 dark:text-gray-550 shrink-0" /> Điện thoại: <strong className="text-gray-800 dark:text-gray-200">{order.customerPhone}</strong>
+                <Phone className="w-4 h-4 text-gray-400 dark:text-gray-550 shrink-0" /> {t('dien_thoai', 'Điện thoại:')}<strong className="text-gray-800 dark:text-gray-200">{order.customerPhone}</strong>
               </p>
               <p className="m-0 flex items-start gap-1.5">
                 <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-550 shrink-0 mt-0.5" /> {t('saas_purchasing_dia_chi', 'Địa chỉ:')}<span className="text-gray-700 dark:text-gray-300 leading-normal">{order.shippingAddress}</span>
               </p>
               {order.note && (
                 <div className="bg-gray-50 dark:bg-gray-850 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800 text-[11px] text-gray-500 italic">
-                  Ghi chú: "{order.note}"
+                  {t('ghi_chu', 'Ghi chú: "')}{order.note}"
                 </div>
               )}
             </div>
@@ -345,21 +340,20 @@ const OrderDetailPage: React.FC = () => {
           {/* Totals panel calculations */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-xs flex flex-col gap-3 text-xs text-gray-600 dark:text-gray-400 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-xs border-b border-gray-100 dark:border-gray-800 pb-2 uppercase tracking-wider">
-              TÍNH TOÁN THANH TOÁN
-            </h3>
+              {t('tinh_toan_thanh_toan', 'TÍNH TOÁN THANH TOÁN')}</h3>
 
             <div className="flex flex-col gap-2.5 text-xs text-gray-600 dark:text-gray-400">
               <div className="flex justify-between">
-                <span>Tạm tính (Subtotal):</span>
+                <span>{t('tam_tinh_subtotal', 'Tạm tính (Subtotal):')}</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-200">{formatPrice(order.subtotal_amount)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Phí vận chuyển:</span>
+                <span>{t('phi_van_chuyen', 'Phí vận chuyển:')}</span>
                 <span className="text-green-600 font-semibold">{t('saas_tenants_mien_phi', 'Miễn phí')}</span>
               </div>
               {order.promo_code && (
                 <div className="flex justify-between text-green-600 font-semibold">
-                  <span>Mã giảm giá ({order.promo_code}):</span>
+                  <span>{t('ma_giam_gia', 'Mã giảm giá (')}{order.promo_code}):</span>
                   <span>-{formatPrice(order.discount_amount)}</span>
                 </div>
               )}
@@ -380,8 +374,7 @@ const OrderDetailPage: React.FC = () => {
                   disabled={submittingAction}
                   className="w-full bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/45 text-red-700 dark:text-red-400 font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-red-200 dark:border-red-900/40"
                 >
-                  <XCircle className="w-4 h-4" /> Hủy bỏ đơn hàng
-                </button>
+                  <XCircle className="w-4 h-4" /> {t('huy_bo_don_hang', 'Hủy bỏ đơn hàng')}</button>
               )}
 
               {/* Reorder button */}
@@ -391,8 +384,7 @@ const OrderDetailPage: React.FC = () => {
                   disabled={submittingAction}
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
                 >
-                  <RefreshCw className="w-4 h-4" /> Mua lại đơn hàng này
-                </button>
+                  <RefreshCw className="w-4 h-4" /> {t('mua_lai_don_hang_nay', 'Mua lại đơn hàng này')}</button>
               )}
             </div>
           </div>
@@ -401,14 +393,13 @@ const OrderDetailPage: React.FC = () => {
           {showVietQr && (
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-xs rounded-xl flex flex-col items-center text-center gap-3 transition-colors duration-200">
               <h3 className="font-bold text-gray-900 dark:text-white text-xs border-b border-gray-100 dark:border-gray-800 pb-2 w-full uppercase tracking-wider">
-                MÃ QUÉT CHUYỂN KHOẢN
-              </h3>
+                {t('ma_quet_chuyen_khoan', 'MÃ QUÉT CHUYỂN KHOẢN')}</h3>
               <div className="relative aspect-square w-full max-w-[160px] border border-gray-150 dark:border-gray-800 p-1.5 rounded-lg bg-white">
-                <img src={vietQrUrl} alt="VietQR Vietcombank" className="w-full h-full object-contain" />
+                <img src={vietQrUrl} alt={t('vietqr_vietcombank', 'VietQR Vietcombank')} className="w-full h-full object-contain" />
               </div>
               <div className="text-[10px] text-gray-400 dark:text-gray-500 leading-normal max-w-[200px]">
-                <p className="m-0 font-bold text-indigo-600 dark:text-indigo-400 mb-0.5">Mã chuyển khoản nhanh VietQR</p>
-                <p className="m-0">Vui lòng quét bằng điện thoại ngân hàng để thanh toán hỏa tốc đơn hàng <strong className="text-gray-800 dark:text-gray-200">{order.code}</strong> số tiền <strong className="text-gray-800 dark:text-gray-200">{formatPrice(order.total_amount)}</strong>.</p>
+                <p className="m-0 font-bold text-indigo-600 dark:text-indigo-400 mb-0.5">{t('ma_chuyen_khoan_nhanh_vietqr', 'Mã chuyển khoản nhanh VietQR')}</p>
+                <p className="m-0">{t('vui_long_quet_bang_dien', 'Vui lòng quét bằng điện thoại ngân hàng để thanh toán hỏa tốc đơn hàng')}<strong className="text-gray-800 dark:text-gray-200">{order.code}</strong> {t('so_tien', 'số tiền')}<strong className="text-gray-800 dark:text-gray-200">{formatPrice(order.total_amount)}</strong>.</p>
               </div>
             </div>
           )}
@@ -417,6 +408,12 @@ const OrderDetailPage: React.FC = () => {
     </div>
   );
 };
+
+
+const ERP_APPROVED_STATUS_KEYWORDS = ['duyệt', 'xuất kho', 'đóng gói', 'vận chuyển', 'hoàn thành'] as const;
+const ERP_PACKING_OR_SHIPPED_STATUS_KEYWORDS = ['đóng gói', 'vận chuyển', 'hoàn thành'] as const;
+const ERP_DELIVERED_STATUS_KEYWORDS = ['đã giao', 'hoàn thành'] as const;
+const hasStatusKeyword = (status: string, keywords: readonly string[]) => keywords.some((keyword) => status.includes(keyword));
 
 export default OrderDetailPage;
 export {};

@@ -79,7 +79,7 @@ const LoginPage: React.FC = () => {
             <input
               type="email"
               required
-              placeholder="customer@example.com"
+              placeholder={t('customer_example_com', 'customer@example.com')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"

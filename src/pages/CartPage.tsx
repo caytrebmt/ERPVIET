@@ -4,8 +4,10 @@ import { Trash2, ShoppingBag, ArrowRight, Loader2, Minus, Plus } from "lucide-re
 import { useCart } from "../contexts/CartContext";
 import { useShopTenant } from "../contexts/ShopTenantContext";
 import { formatPrice } from "../utils/format";
+import { useTranslation } from 'react-i18next';
 
 const CartPage: React.FC = () => {
+  const { t } = useTranslation();
   const { cart, loading, updateQuantity, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
   const { shopPath } = useShopTenant();
@@ -36,7 +38,7 @@ const CartPage: React.FC = () => {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-2" />
-        <p className="text-xs text-gray-500 dark:text-gray-400">Đang tải giỏ hàng của bạn...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{t('dang_tai_gio_hang_cua', 'Đang tải giỏ hàng của bạn...')}</p>
       </div>
     );
   }
@@ -49,16 +51,14 @@ const CartPage: React.FC = () => {
         <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-950/40 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 shadow-xs">
           <ShoppingBag className="w-8 h-8" />
         </div>
-        <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">Giỏ hàng của bạn đang trống</h2>
+        <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">{t('gio_hang_cua_ban_dang', 'Giỏ hàng của bạn đang trống')}</h2>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-sm">
-          Có vẻ như bạn chưa thêm sản phẩm nào vào giỏ hàng. Hãy quay lại trang sản phẩm để chọn những sản phẩm ưng ý nhé!
-        </p>
+          {t('co_ve_nhu_ban_chua', 'Có vẻ như bạn chưa thêm sản phẩm nào vào giỏ hàng. Hãy quay lại trang sản phẩm để chọn những sản phẩm ưng ý nhé!')}</p>
         <Link
           to="/"
           className="mt-6 bg-indigo-600 text-white hover:bg-indigo-700 font-bold text-sm px-6 py-2.5 rounded-full transition-colors inline-block cursor-pointer shadow-xs"
         >
-          Tiếp tục mua sắm
-        </Link>
+          {t('tiep_tuc_mua_sam', 'Tiếp tục mua sắm')}</Link>
       </div>
     );
   }
@@ -67,10 +67,8 @@ const CartPage: React.FC = () => {
     <div className="flex flex-col gap-6">
       <div className="border-b border-gray-150 dark:border-gray-800 pb-3">
         <h1 className="text-xl md:text-2xl font-bold text-gray-850 dark:text-white flex items-center gap-2">
-          GIỎ HÀNG CỦA BẠN
-          <span className="text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-850 dark:text-indigo-300 px-2.5 py-0.5 rounded-full">
-            {cart.item_count} sản phẩm
-          </span>
+          {t('gio_hang_cua_ban', 'GIỎ HÀNG CỦA BẠN')}<span className="text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-850 dark:text-indigo-300 px-2.5 py-0.5 rounded-full">
+            {cart.item_count} {t('api_fallback_order_item', 'sản phẩm')}</span>
         </h1>
       </div>
 
@@ -80,10 +78,10 @@ const CartPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-xs transition-colors duration-200">
             {/* Header row desktop only */}
             <div className="hidden md:grid grid-cols-12 gap-2 bg-gray-50/70 dark:bg-gray-850/30 p-4 text-xs font-bold text-gray-500 border-b border-gray-100 dark:border-gray-800 uppercase tracking-wider">
-              <div className="col-span-6">Sản phẩm</div>
-              <div className="col-span-2 text-center">Đơn giá</div>
-              <div className="col-span-2 text-center">Số lượng</div>
-              <div className="col-span-2 text-right">Tổng tiền</div>
+              <div className="col-span-6">{t('api_fallback_order_item', 'Sản phẩm')}</div>
+              <div className="col-span-2 text-center">{t('saas_web_orders_d_n_gia', 'Đơn giá')}</div>
+              <div className="col-span-2 text-center">{t('saas_stock_in_so_l_ong', 'Số lượng')}</div>
+              <div className="col-span-2 text-right">{t('total_amount', 'Tổng tiền')}</div>
             </div>
 
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -115,26 +113,25 @@ const CartPage: React.FC = () => {
                       <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 truncate">
                         <Link to={shopPath(`/product/${item.slug || item.sku}`)}>{item.name}</Link>
                       </h4>
-                      <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5 uppercase">SKU: {item.sku}</p>
+                      <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5 uppercase">{t('sku', 'SKU:')}{item.sku}</p>
                       {/* mobile only remove */}
                       <button
                         onClick={() => handleRemove(item.id)}
                         className="text-[10px] font-semibold text-red-600 hover:underline flex items-center gap-1 mt-1 md:hidden text-left"
                       >
-                        <Trash2 className="w-3 h-3" /> Xóa
-                      </button>
+                        <Trash2 className="w-3 h-3" /> {t('delete', 'Xóa')}</button>
                     </div>
                   </div>
 
                   {/* Price */}
                   <div className="col-span-1 md:col-span-2 md:text-center flex justify-between md:block text-xs">
-                    <span className="text-gray-400 font-medium md:hidden">Đơn giá:</span>
+                    <span className="text-gray-400 font-medium md:hidden">{t('don_gia', 'Đơn giá:')}</span>
                     <span className="font-semibold text-gray-800 dark:text-gray-200">{formatPrice(item.unit_price || 0)}</span>
                   </div>
 
                   {/* Quantity Counter */}
                   <div className="col-span-1 md:col-span-2 flex justify-between md:justify-center items-center gap-2 text-xs">
-                    <span className="text-gray-400 font-medium md:hidden">Số lượng:</span>
+                    <span className="text-gray-400 font-medium md:hidden">{t('so_luong', 'Số lượng:')}</span>
                     <div className="flex items-center border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-white dark:bg-gray-950">
                       <button
                         onClick={() => handleQtyChange(item.id, item.quantity, -1)}
@@ -156,7 +153,7 @@ const CartPage: React.FC = () => {
 
                   {/* Total amount */}
                   <div className="col-span-1 md:col-span-2 flex justify-between md:block text-right text-xs">
-                    <span className="text-gray-400 font-medium md:hidden">Thành tiền:</span>
+                    <span className="text-gray-400 font-medium md:hidden">{t('thanh_tien', 'Thành tiền:')}</span>
                     <span className="font-bold text-gray-900 dark:text-white">{formatPrice(item.amount || 0)}</span>
                   </div>
 
@@ -164,7 +161,7 @@ const CartPage: React.FC = () => {
                   <button
                     onClick={() => handleRemove(item.id)}
                     className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                    title="Xóa sản phẩm"
+                    title={t('saas_products_xoa_san_pham', 'Xóa sản phẩm')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -176,14 +173,12 @@ const CartPage: React.FC = () => {
           {/* Quick Clear buttons */}
           <div className="flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 shadow-xs transition-colors duration-200">
             <Link to={shopPath("/")} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
-              ← Tiếp tục mua sắm
-            </Link>
+              {t('tiep_tuc_mua_sam_2', '← Tiếp tục mua sắm')}</Link>
             <button
               onClick={clearCart}
               className="text-xs font-semibold text-red-600 hover:underline cursor-pointer"
             >
-              Xóa toàn bộ giỏ hàng
-            </button>
+              {t('xoa_toan_bo_gio_hang', 'Xóa toàn bộ giỏ hàng')}</button>
           </div>
         </div>
 
@@ -191,24 +186,23 @@ const CartPage: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-xs sticky top-20 flex flex-col gap-4 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-xs border-b border-gray-100 dark:border-gray-800 pb-3 uppercase tracking-wider">
-              TỔNG CỘNG ĐƠN HÀNG
-            </h3>
+              {t('tong_cong_don_hang', 'TỔNG CỘNG ĐƠN HÀNG')}</h3>
 
             <div className="flex flex-col gap-2.5 text-xs text-gray-600 dark:text-gray-400">
               <div className="flex justify-between">
-                <span>Số lượng mặt hàng:</span>
+                <span>{t('so_luong_mat_hang', 'Số lượng mặt hàng:')}</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-200">{cart.item_count}</span>
               </div>
               <div className="flex justify-between">
-                <span>Tạm tính (Subtotal):</span>
+                <span>{t('tam_tinh_subtotal', 'Tạm tính (Subtotal):')}</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-200">{formatPrice(cart.subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Phí vận chuyển:</span>
-                <span className="text-green-600 font-semibold">Miễn phí</span>
+                <span>{t('phi_van_chuyen', 'Phí vận chuyển:')}</span>
+                <span className="text-green-600 font-semibold">{t('saas_tenants_mien_phi', 'Miễn phí')}</span>
               </div>
               <div className="border-t border-gray-100 dark:border-gray-800 pt-3 flex justify-between items-baseline">
-                <span className="text-sm font-bold text-gray-900 dark:text-white">Tổng thanh toán:</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{t('saas_stock_out_tong_thanh_toan', 'Tổng thanh toán:')}</span>
                 <span className="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">
                   {formatPrice(cart.total)}
                 </span>
@@ -219,8 +213,7 @@ const CartPage: React.FC = () => {
               onClick={() => navigate(shopPath("/checkout"))}
               className="w-full bg-indigo-600 text-white hover:bg-indigo-700 font-bold rounded-xl py-3 text-sm flex items-center justify-center gap-2 transition-all shadow-xs mt-2 cursor-pointer"
             >
-              Tiến hành thanh toán
-              <ArrowRight className="w-4 h-4" />
+              {t('tien_hanh_thanh_toan', 'Tiến hành thanh toán')}<ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

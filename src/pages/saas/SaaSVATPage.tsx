@@ -62,7 +62,7 @@ export const SaaSVATPage: React.FC = () => {
   const columns: ColumnDef<VatRecordItem>[] = [
     {
       accessorKey: 'code',
-      header: 'Mã Hóa Đơn / Chứng Từ',
+      header: t('saas_v_a_t_ma_hoa_d_n_chung_t', 'Mã Hóa Đơn / Chứng Từ'),
       cell: (info) => (
         <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-xs border border-amber-200 dark:border-amber-800">
           {info.getValue() as string}
@@ -71,26 +71,26 @@ export const SaaSVATPage: React.FC = () => {
     },
     {
       accessorKey: 'date',
-      header: 'Ngày Hóa Đơn',
+      header: t('saas_v_a_t_ngay_hoa_d_n', 'Ngày Hóa Đơn'),
     },
     {
       accessorKey: 'partnerName',
-      header: 'Đối Tác (KH / NCC)',
+      header: t('doi_tac_kh_ncc', 'Đối Tác (KH / NCC)'),
       cell: (info) => (
         <div>
           <p className="font-bold text-zinc-900 dark:text-zinc-100">{info.getValue() as string}</p>
-          <p className="text-[11px] text-zinc-500">MST: {info.row.original.taxCode}</p>
+          <p className="text-[11px] text-zinc-500">{t('mst', 'MST:')}{info.row.original.taxCode}</p>
         </div>
       ),
     },
     {
       accessorKey: 'description',
-      header: 'Diễn Giải Hàng Hóa Dịch Vụ',
+      header: t('saas_v_a_t_dien_giai_hang_hoa_dich_vu', 'Diễn Giải Hàng Hóa Dịch Vụ'),
       cell: (info) => <span className="text-xs text-zinc-600 dark:text-zinc-400 max-w-xs truncate block">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'vatRate',
-      header: 'Thuế Suất GTGT',
+      header: t('saas_v_a_t_thue_suat_gtgt', 'Thuế Suất GTGT'),
       cell: (info) => (
         <span className="font-bold text-blue-600 dark:text-blue-400 text-xs">
           {info.getValue() as number}%
@@ -99,7 +99,7 @@ export const SaaSVATPage: React.FC = () => {
     },
     {
       accessorKey: 'taxableAmount',
-      header: 'Doanh Số Chưa Thuế',
+      header: t('saas_v_a_t_doanh_so_ch_a_thue', 'Doanh Số Chưa Thuế'),
       cell: (info) => (
         <span className="font-semibold text-zinc-900 dark:text-zinc-100">
           {(info.getValue() as number).toLocaleString('vi-VN')} đ
@@ -108,7 +108,7 @@ export const SaaSVATPage: React.FC = () => {
     },
     {
       accessorKey: 'vatAmount',
-      header: 'Tiền Thuế GTGT',
+      header: t('vat_amount', 'Tiền Thuế GTGT'),
       cell: (info) => (
         <span className="font-bold text-amber-600 dark:text-amber-400">
           {(info.getValue() as number).toLocaleString('vi-VN')} đ
@@ -117,7 +117,7 @@ export const SaaSVATPage: React.FC = () => {
     },
     {
       accessorKey: 'totalAmount',
-      header: 'Tổng Tiền Thanh Toán',
+      header: t('saas_v_a_t_tong_tien_thanh_toan', 'Tổng Tiền Thanh Toán'),
       cell: (info) => (
         <span className="font-bold text-emerald-600 dark:text-emerald-400">
           {(info.getValue() as number).toLocaleString('vi-VN')} đ
@@ -132,19 +132,16 @@ export const SaaSVATPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Receipt className="h-6 w-6 text-amber-500" /> Kê Khai & Quản Lý Thuế GTGT (VAT)
-          </h2>
+            <Receipt className="h-6 w-6 text-amber-500" /> {t('ke_khai_quan_ly_thue', 'Kê Khai & Quản Lý Thuế GTGT (VAT)')}</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Bảng kê hóa đơn GTGT hàng hóa bán ra (VAT đầu ra) & mua vào (VAT đầu vào), tính trừ nghĩa vụ thuếGTGT phải nộp (`/app/templates/vat`).
-          </p>
+            {t('bang_ke_hoa_don_gtgt', 'Bảng kê hóa đơn GTGT hàng hóa bán ra (VAT đầu ra) & mua vào (VAT đầu vào), tính trừ nghĩa vụ thuếGTGT phải nộp (`/app/templates/vat`).')}</p>
         </div>
 
         <div className="flex items-center gap-2">
           <button className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-200">
             <Download className="h-4 w-4" /> {t('export_excel', 'Xuất Excel')}</button>
           <button className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold">
-            <FileSpreadsheet className="h-4 w-4" /> Bảng kê Thuế GTGT
-          </button>
+            <FileSpreadsheet className="h-4 w-4" /> {t('bang_ke_thue_gtgt', 'Bảng kê Thuế GTGT')}</button>
         </div>
       </div>
 
@@ -152,24 +149,24 @@ export const SaaSVATPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
           <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-            <span className="flex items-center gap-1"><ArrowUpRight className="h-4 w-4" /> VAT Bán Ra (Đầu Ra)</span>
+            <span className="flex items-center gap-1"><ArrowUpRight className="h-4 w-4" /> {t('vat_ban_ra_dau_ra', 'VAT Bán Ra (Đầu Ra)')}</span>
             <span>TK 3331</span>
           </div>
           <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
             {vatOutputTotal.toLocaleString('vi-VN')} đ
           </p>
-          <p className="text-[11px] text-zinc-500">Thuế GTGT phải nộp phát sinh từ hóa đơn bán ra</p>
+          <p className="text-[11px] text-zinc-500">{t('thue_gtgt_phai_nop_phat', 'Thuế GTGT phải nộp phát sinh từ hóa đơn bán ra')}</p>
         </div>
 
         <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-1">
           <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 text-xs font-bold">
-            <span className="flex items-center gap-1"><ArrowDownLeft className="h-4 w-4" /> VAT Mua Vào (Khấu Trừ)</span>
+            <span className="flex items-center gap-1"><ArrowDownLeft className="h-4 w-4" /> {t('vat_mua_vao_khau_tru', 'VAT Mua Vào (Khấu Trừ)')}</span>
             <span>TK 1331</span>
           </div>
           <p className="text-xl font-bold text-blue-700 dark:text-blue-300">
             {vatInputTotal.toLocaleString('vi-VN')} đ
           </p>
-          <p className="text-[11px] text-zinc-500">Thuế GTGT được khấu trừ từ hóa đơn nhập kho mua vào</p>
+          <p className="text-[11px] text-zinc-500">{t('thue_gtgt_duoc_khau_tru', 'Thuế GTGT được khấu trừ từ hóa đơn nhập kho mua vào')}</p>
         </div>
 
         <div className={`p-4 rounded-xl border space-y-1 ${
@@ -197,16 +194,14 @@ export const SaaSVATPage: React.FC = () => {
               vatType === 'output' ? 'bg-amber-500 text-zinc-950 shadow-xs' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
             }`}
           >
-            <ArrowUpRight className="h-4 w-4" /> Bảng Kê VAT Bán Ra (Đầu Ra)
-          </button>
+            <ArrowUpRight className="h-4 w-4" /> {t('bang_ke_vat_ban_ra', 'Bảng Kê VAT Bán Ra (Đầu Ra)')}</button>
           <button
             onClick={() => setVatType('input')}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
               vatType === 'input' ? 'bg-amber-500 text-zinc-950 shadow-xs' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
             }`}
           >
-            <ArrowDownLeft className="h-4 w-4" /> Bảng Kê VAT Mua Vào (Đầu Vào)
-          </button>
+            <ArrowDownLeft className="h-4 w-4" /> {t('bang_ke_vat_mua_vao', 'Bảng Kê VAT Mua Vào (Đầu Vào)')}</button>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
@@ -219,7 +214,7 @@ export const SaaSVATPage: React.FC = () => {
           >
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
               <option key={m} value={m}>
-                Tháng {m}
+                {t('thang', 'Tháng')}{m}
               </option>
             ))}
           </select>
@@ -235,20 +230,20 @@ export const SaaSVATPage: React.FC = () => {
         </div>
       </div>
 
-      {loading && <p className="text-xs text-zinc-500">Đang tải VAT từ PostgreSQL...</p>}
+      {loading && <p className="text-xs text-zinc-500">{t('dang_tai_vat_tu_postgresql', 'Đang tải VAT từ PostgreSQL...')}</p>}
       {loadError && <p className="text-xs text-red-600">{loadError}</p>}
 
       {/* Main Table */}
-      <DataTable columns={columns} data={filteredRecords} searchPlaceholder="Tìm mã hóa đơn, tên đối tác, mã số thuế..." />
+      <DataTable columns={columns} data={filteredRecords} searchPlaceholder={t('tim_ma_hoa_don_ten', 'Tìm mã hóa đơn, tên đối tác, mã số thuế...')} />
 
       {/* Table Foot Summary */}
       <div className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs font-bold">
         <span className="text-zinc-700 dark:text-zinc-300">
-          TỔNG CỘNG THÁNG {month}/{year} ({vatType === 'output' ? 'BÁN RA' : 'MUA VÀO'}):
+          {t('tong_cong_thang', 'TỔNG CỘNG THÁNG')}{month}/{year} ({vatType === 'output' ? 'BÁN RA' : 'MUA VÀO'}):
         </span>
         <div className="flex items-center gap-6">
-          <span>Doanh số: <strong className="text-zinc-900 dark:text-zinc-100">{totalTaxable.toLocaleString('vi-VN')} đ</strong></span>
-          <span>Tiền VAT: <strong className="text-amber-600 dark:text-amber-400">{totalVat.toLocaleString('vi-VN')} đ</strong></span>
+          <span>{t('doanh_so', 'Doanh số:')}<strong className="text-zinc-900 dark:text-zinc-100">{totalTaxable.toLocaleString('vi-VN')} đ</strong></span>
+          <span>{t('tien_vat_2', 'Tiền VAT:')}<strong className="text-amber-600 dark:text-amber-400">{totalVat.toLocaleString('vi-VN')} đ</strong></span>
           <span>{t('saas_stock_out_tong_thanh_toan', 'Tổng thanh toán:')}<strong className="text-emerald-600 dark:text-emerald-400">{totalAmount.toLocaleString('vi-VN')} đ</strong></span>
         </div>
       </div>
