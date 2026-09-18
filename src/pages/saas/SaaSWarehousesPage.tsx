@@ -3,6 +3,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Warehouse, Plus, Building2, MapPin, Boxes, CheckCircle2, Edit2, Trash2, X } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
 import { useToast } from '../../contexts/ToastContext';
+import { useTranslation } from 'react-i18next';
 import client from '../../api/client';
 
 interface WarehouseItem {
@@ -30,6 +31,7 @@ interface OpeningStockItem {
 
 export const SaaSWarehousesPage: React.FC = () => {
   const { addToast } = useToast();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'warehouses' | 'opening_stock'>('warehouses');
 
   const [warehouses, setWarehouses] = useState<WarehouseItem[]>([]);
@@ -116,10 +118,10 @@ export const SaaSWarehousesPage: React.FC = () => {
       const payload = { code: whFormData.code, name: whFormData.name, address: whFormData.location, manager_name: whFormData.manager, phone: whFormData.phone, capacity: whFormData.capacity };
       if (editingWh) {
         await client.put(`/api/saas/warehouses/${editingWh.id}`, payload);
-        addToast('Cập nhật địa điểm kho bãi thành công!', 'success');
+        addToast(t('cap_nhat_dia_diem_kho', 'Cập nhật địa điểm kho bãi thành công!'), 'success');
       } else {
         await client.post('/api/saas/warehouses', payload);
-        addToast('Thêm địa điểm kho bãi mới thành công!', 'success');
+        addToast(t('them_dia_diem_kho_bai', 'Thêm địa điểm kho bãi mới thành công!'), 'success');
       }
       await loadWarehouseData();
       setShowWhModal(false);
@@ -178,7 +180,7 @@ export const SaaSWarehousesPage: React.FC = () => {
       });
       await loadWarehouseData();
       setShowStockModal(false);
-      addToast('Đã lưu tồn kho đầu kỳ vào cơ sở dữ liệu!', 'success');
+      addToast(t('da_luu_ton_kho_dau', 'Đã lưu tồn kho đầu kỳ vào cơ sở dữ liệu!'), 'success');
     } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể lưu tồn đầu kỳ.', 'error'); }
   };
 
@@ -194,7 +196,7 @@ export const SaaSWarehousesPage: React.FC = () => {
   const warehouseColumns: ColumnDef<WarehouseItem>[] = [
     {
       accessorKey: 'code',
-      header: 'Mã Kho',
+      header: t('saas_warehouses_ma_kho', 'Mã Kho'),
       cell: (info) => (
         <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-xs border border-amber-200 dark:border-amber-800">
           {info.getValue() as string}
@@ -203,12 +205,12 @@ export const SaaSWarehousesPage: React.FC = () => {
     },
     {
       accessorKey: 'name',
-      header: 'Tên Địa Điểm Kho',
+      header: t('saas_warehouses_ten_dia_diem_kho', 'Tên Địa Điểm Kho'),
       cell: (info) => <span className="font-bold text-zinc-900 dark:text-zinc-100">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'location',
-      header: 'Địa Chỉ Vận Hành',
+      header: t('saas_warehouses_dia_chi_van_hanh', 'Địa Chỉ Vận Hành'),
       cell: (info) => (
         <div className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 max-w-xs truncate">
           <MapPin className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
@@ -218,7 +220,7 @@ export const SaaSWarehousesPage: React.FC = () => {
     },
     {
       accessorKey: 'manager',
-      header: 'Thủ Kho Phụ Trách',
+      header: t('saas_warehouses_thu_kho_phu_trach', 'Thủ Kho Phụ Trách'),
       cell: (info) => (
         <div className="text-xs space-y-0.5">
           <p className="font-semibold text-zinc-800 dark:text-zinc-200">{info.getValue() as string}</p>
@@ -228,20 +230,19 @@ export const SaaSWarehousesPage: React.FC = () => {
     },
     {
       accessorKey: 'capacity',
-      header: 'Diện Tích',
+      header: t('saas_warehouses_dien_tich', 'Diện Tích'),
     },
     {
       accessorKey: 'stockCount',
-      header: 'Tổng Mã Lưu Kho',
+      header: t('saas_warehouses_tong_ma_l_u_kho', 'Tổng Mã Lưu Kho'),
       cell: (info) => (
         <span className="font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md text-xs border border-emerald-200 dark:border-emerald-800">
-          {info.getValue() as number} SKU
-        </span>
+          {info.getValue() as number} {t('sku_3', 'SKU')}</span>
       ),
     },
     {
       accessorKey: 'status',
-      header: 'Trạng Thái',
+      header: t('status', 'Trạng Thái'),
       cell: (info) => (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
           <CheckCircle2 className="h-3 w-3" /> {info.getValue() as string}
@@ -250,20 +251,20 @@ export const SaaSWarehousesPage: React.FC = () => {
     },
     {
       id: 'actions',
-      header: 'Thao Tác',
+      header: t('actions', 'Thao Tác'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => handleOpenWhEdit(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-            title="Sửa thông tin kho"
+            title={t('saas_warehouses_sua_thong_tin_kho', 'Sửa thông tin kho')}
           >
             <Edit2 className="h-4 w-4 text-amber-500" />
           </button>
           <button
             onClick={() => handleDeleteWh(row.original.id, row.original.name)}
             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors"
-            title="Xóa kho bãi"
+            title={t('saas_warehouses_xoa_kho_bai', 'Xóa kho bãi')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -275,21 +276,21 @@ export const SaaSWarehousesPage: React.FC = () => {
   const openingStockColumns: ColumnDef<OpeningStockItem>[] = [
     {
       accessorKey: 'sku',
-      header: 'Mã SKU',
+      header: t('saas_reports_ma_sku', 'Mã SKU'),
       cell: (info) => <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'productName',
-      header: 'Tên Sản Phẩm',
+      header: t('dashboard_product_name', 'Tên Sản Phẩm'),
       cell: (info) => <span className="font-semibold text-zinc-900 dark:text-zinc-100">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'warehouseName',
-      header: 'Kho Nhập Số Dư',
+      header: t('saas_warehouses_kho_nhap_so_d', 'Kho Nhập Số Dư'),
     },
     {
       accessorKey: 'openingQuantity',
-      header: 'Số Lượng Đầu Kỳ',
+      header: t('saas_warehouses_so_l_ong_dau_ky', 'Số Lượng Đầu Kỳ'),
       cell: (info) => (
         <span className="font-bold text-zinc-900 dark:text-zinc-100">
           {info.getValue() as number} {info.row.original.unit}
@@ -298,7 +299,7 @@ export const SaaSWarehousesPage: React.FC = () => {
     },
     {
       accessorKey: 'openingValue',
-      header: 'Giá Trị Tồn Đầu Kỳ',
+      header: t('saas_warehouses_gia_tri_ton_dau_ky', 'Giá Trị Tồn Đầu Kỳ'),
       cell: (info) => (
         <span className="font-bold text-amber-600 dark:text-amber-400">
           {(info.getValue() as number).toLocaleString('vi-VN')} đ
@@ -307,20 +308,20 @@ export const SaaSWarehousesPage: React.FC = () => {
     },
     {
       id: 'actions',
-      header: 'Thao Tác',
+      header: t('actions', 'Thao Tác'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => handleOpenStockEdit(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-            title="Sửa số dư"
+            title={t('saas_warehouses_sua_so_d', 'Sửa số dư')}
           >
             <Edit2 className="h-4 w-4 text-amber-500" />
           </button>
           <button
             onClick={() => handleDeleteStock(row.original.id, row.original.productName)}
             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors"
-            title="Xóa dòng tồn"
+            title={t('saas_warehouses_xoa_dong_ton', 'Xóa dòng tồn')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -335,11 +336,9 @@ export const SaaSWarehousesPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Warehouse className="h-6 w-6 text-amber-500" /> Quản Lý Kho Bãi & Số Dư Đầu Kỳ
-          </h2>
+            <Warehouse className="h-6 w-6 text-amber-500" /> {t('quan_ly_kho_bai_so', 'Quản Lý Kho Bãi & Số Dư Đầu Kỳ')}</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Khai báo danh sách địa điểm kho bãi, phân bổ thủ kho phụ trách và cập nhật tồn kho đầu kỳ.
-          </p>
+            {t('khai_bao_danh_sach_dia', 'Khai báo danh sách địa điểm kho bãi, phân bổ thủ kho phụ trách và cập nhật tồn kho đầu kỳ.')}</p>
         </div>
 
         {activeTab === 'warehouses' ? (
@@ -347,19 +346,17 @@ export const SaaSWarehousesPage: React.FC = () => {
             onClick={handleOpenWhAdd}
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all"
           >
-            <Plus className="h-4 w-4" /> Thêm kho bãi mới
-          </button>
+            <Plus className="h-4 w-4" /> {t('saas_warehouses_them_kho_bai_moi', 'Thêm kho bãi mới')}</button>
         ) : (
           <button
             onClick={handleOpenStockAdd}
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all"
           >
-            <Plus className="h-4 w-4" /> Khai báo dư lượng đầu kỳ
-          </button>
+            <Plus className="h-4 w-4" /> {t('saas_warehouses_khai_bao_d_l_ong_dau_ky', 'Khai báo dư lượng đầu kỳ')}</button>
         )}
       </div>
 
-      {loading && <p className="text-xs text-zinc-500">Đang tải kho và tồn đầu kỳ từ PostgreSQL...</p>}
+      {loading && <p className="text-xs text-zinc-500">{t('dang_tai_kho_va_ton', 'Đang tải kho và tồn đầu kỳ từ PostgreSQL...')}</p>}
       {loadError && <p className="text-xs text-red-600">{loadError}</p>}
 
       {/* Tabs */}
@@ -372,7 +369,7 @@ export const SaaSWarehousesPage: React.FC = () => {
               : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
           }`}
         >
-          <Building2 className="h-4 w-4" /> Danh Sách Kho Bãi ({warehouses.length})
+          <Building2 className="h-4 w-4" /> {t('danh_sach_kho_bai', 'Danh Sách Kho Bãi (')}{warehouses.length})
         </button>
         <button
           onClick={() => setActiveTab('opening_stock')}
@@ -382,15 +379,15 @@ export const SaaSWarehousesPage: React.FC = () => {
               : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
           }`}
         >
-          <Boxes className="h-4 w-4" /> Số Dư Tồn Kho Đầu Kỳ ({openingStocks.length})
+          <Boxes className="h-4 w-4" /> {t('so_du_ton_kho_dau', 'Số Dư Tồn Kho Đầu Kỳ (')}{openingStocks.length})
         </button>
       </div>
 
       {/* Content based on Active Tab */}
       {activeTab === 'warehouses' ? (
-        <DataTable columns={warehouseColumns} data={warehouses} searchPlaceholder="Tìm tên kho, mã kho, thủ kho..." />
+        <DataTable columns={warehouseColumns} data={warehouses} searchPlaceholder={t('tim_ten_kho_ma_kho', 'Tìm tên kho, mã kho, thủ kho...')} />
       ) : (
-        <DataTable columns={openingStockColumns} data={openingStocks} searchPlaceholder="Tìm tên sản phẩm, mã SKU đầu kỳ..." />
+        <DataTable columns={openingStockColumns} data={openingStocks} searchPlaceholder={t('tim_ten_san_pham_ma', 'Tìm tên sản phẩm, mã SKU đầu kỳ...')} />
       )}
 
       {/* Add / Edit Warehouse Modal */}
@@ -410,18 +407,18 @@ export const SaaSWarehousesPage: React.FC = () => {
             <form onSubmit={handleSaveWarehouse} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Mã Kho *</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_warehouses_ma_kho_1', 'Mã Kho *')}</label>
                   <input
                     type="text"
                     required
                     value={whFormData.code}
                     onChange={(e) => setWhFormData({ ...whFormData, code: e.target.value })}
-                    placeholder="VD: KHO-HP"
+                    placeholder={t('vd_kho_hp', 'VD: KHO-HP')}
                     className="w-full px-3 py-2 text-sm font-mono font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Diện tích kho</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_warehouses_dien_tich_kho', 'Diện tích kho')}</label>
                   <input
                     type="text"
                     value={whFormData.capacity}
@@ -432,46 +429,46 @@ export const SaaSWarehousesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Tên Kho *</label>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_warehouses_ten_kho', 'Tên Kho *')}</label>
                 <input
                   type="text"
                   required
                   value={whFormData.name}
                   onChange={(e) => setWhFormData({ ...whFormData, name: e.target.value })}
-                  placeholder="VD: Kho Hải Phòng - Cảng Đình Vũ"
+                  placeholder={t('vd_kho_hai_phong_cang', 'VD: Kho Hải Phòng - Cảng Đình Vũ')}
                   className="w-full px-3 py-2 text-sm font-semibold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Địa chỉ chính xác</label>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_warehouses_dia_chi_chinh_xac', 'Địa chỉ chính xác')}</label>
                 <input
                   type="text"
                   value={whFormData.location}
                   onChange={(e) => setWhFormData({ ...whFormData, location: e.target.value })}
-                  placeholder="Nhập địa chỉ vận hành kho"
+                  placeholder={t('nhap_dia_chi_van_hanh', 'Nhập địa chỉ vận hành kho')}
                   className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Họ tên thủ kho</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_warehouses_ho_ten_thu_kho', 'Họ tên thủ kho')}</label>
                   <input
                     type="text"
                     value={whFormData.manager}
                     onChange={(e) => setWhFormData({ ...whFormData, manager: e.target.value })}
-                    placeholder="Tên quản lý kho"
+                    placeholder={t('saas_warehouses_ten_quan_ly_kho', 'Tên quản lý kho')}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Số điện thoại liên hệ</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_warehouses_so_dien_thoai_lien_he', 'Số điện thoại liên hệ')}</label>
                   <input
                     type="text"
                     value={whFormData.phone}
                     onChange={(e) => setWhFormData({ ...whFormData, phone: e.target.value })}
-                    placeholder="SĐT thủ kho"
+                    placeholder={t('saas_warehouses_sdt_thu_kho', 'SĐT thủ kho')}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -483,8 +480,7 @@ export const SaaSWarehousesPage: React.FC = () => {
                   onClick={() => setShowWhModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
                 >
-                  Hủy Bỏ
-                </button>
+                  {t('cancel', 'Hủy Bỏ')}</button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg shadow-xs"
@@ -514,42 +510,42 @@ export const SaaSWarehousesPage: React.FC = () => {
             <form onSubmit={handleSaveOpeningStock} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Mã SKU *</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_warehouses_ma_sku_1', 'Mã SKU *')}</label>
                   <input
                     type="text"
                     required
                     value={stockFormData.sku}
                     onChange={(e) => setStockFormData({ ...stockFormData, sku: e.target.value })}
-                    placeholder="VD: SP005"
+                    placeholder={t('vd_sp005', 'VD: SP005')}
                     className="w-full px-3 py-2 text-sm font-mono font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Đơn vị tính</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('uom', 'Đơn vị tính')}</label>
                   <input
                     type="text"
                     value={stockFormData.unit}
                     onChange={(e) => setStockFormData({ ...stockFormData, unit: e.target.value })}
-                    placeholder="Cái, Hộp, Kg..."
+                    placeholder={t('saas_warehouses_cai_hop_kg', 'Cái, Hộp, Kg...')}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Tên Sản Phẩm / Vật Tư *</label>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('ten_san_pham_vat_tu', 'Tên Sản Phẩm / Vật Tư *')}</label>
                 <input
                   type="text"
                   required
                   value={stockFormData.productName}
                   onChange={(e) => setStockFormData({ ...stockFormData, productName: e.target.value })}
-                  placeholder="Nhập tên mặt hàng tồn kho"
+                  placeholder={t('nhap_ten_mat_hang_ton', 'Nhập tên mặt hàng tồn kho')}
                   className="w-full px-3 py-2 text-sm font-semibold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Kho Nhập Số Dư</label>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_warehouses_kho_nhap_so_d', 'Kho Nhập Số Dư')}</label>
                 <select
                   value={stockFormData.warehouseId}
                   onChange={(e) => {
@@ -558,7 +554,7 @@ export const SaaSWarehousesPage: React.FC = () => {
                   }}
                   className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 >
-                  <option value="">Chọn kho</option>
+                  <option value="">{t('chon_kho', 'Chọn kho')}</option>
                   {warehouses.map((w) => (
                     <option key={w.id} value={w.id}>
                       {w.name}
@@ -569,7 +565,7 @@ export const SaaSWarehousesPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Số Lượng Tồn</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_warehouses_so_l_ong_ton', 'Số Lượng Tồn')}</label>
                   <input
                     type="number"
                     value={stockFormData.openingQuantity}
@@ -578,7 +574,7 @@ export const SaaSWarehousesPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Tổng Giá Trị (VND)</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('tong_gia_tri_vnd', 'Tổng Giá Trị (VND)')}</label>
                   <input
                     type="number"
                     value={stockFormData.openingValue}
@@ -594,8 +590,7 @@ export const SaaSWarehousesPage: React.FC = () => {
                   onClick={() => setShowStockModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
                 >
-                  Hủy Bỏ
-                </button>
+                  {t('cancel', 'Hủy Bỏ')}</button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg shadow-xs"

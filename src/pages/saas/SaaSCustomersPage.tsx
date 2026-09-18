@@ -126,7 +126,7 @@ export const SaaSCustomersPage: React.FC = () => {
   const handleSaveResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetTargetCustomer || !newResetPassword.trim()) {
-      addToast('Vui lòng nhập mật khẩu WebShop mới hợp lệ', 'error');
+      addToast(t('vui_long_nhap_mat_khau_2', 'Vui lòng nhập mật khẩu WebShop mới hợp lệ'), 'error');
       return;
     }
 
@@ -180,7 +180,7 @@ export const SaaSCustomersPage: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email) {
-      addToast('Tên và email khách hàng là bắt buộc.', 'error');
+      addToast(t('ten_va_email_khach_hang', 'Tên và email khách hàng là bắt buộc.'), 'error');
       return;
     }
     try {
@@ -218,7 +218,7 @@ export const SaaSCustomersPage: React.FC = () => {
   const columns: ColumnDef<CustomerItem>[] = [
     {
       accessorKey: 'code',
-      header: 'Mã KH',
+      header: t('customer_code', 'Mã KH'),
       cell: (info) => (
         <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
           {info.getValue() as string}
@@ -227,12 +227,12 @@ export const SaaSCustomersPage: React.FC = () => {
     },
     {
       accessorKey: 'name',
-      header: 'Tên Khách Hàng',
+      header: t('saas_reports_ten_khach_hang', 'Tên Khách Hàng'),
       cell: (info) => <span className="font-bold text-zinc-900 dark:text-zinc-100">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'phone',
-      header: 'Liên Hệ',
+      header: t('saas_customers_lien_he', 'Liên Hệ'),
       cell: (info) => (
         <div className="text-xs space-y-0.5">
           <div className="flex items-center gap-1 text-zinc-800 dark:text-zinc-200 font-medium">
@@ -248,7 +248,7 @@ export const SaaSCustomersPage: React.FC = () => {
     },
     {
       id: 'webPassword',
-      header: 'Mật Khẩu WebShop',
+      header: t('saas_customers_mat_khau_webshop', 'Mật Khẩu WebShop'),
       cell: ({ row }) => {
         const cust = row.original;
         const isPassVisible = !!visiblePasswords[cust.id];
@@ -293,7 +293,7 @@ export const SaaSCustomersPage: React.FC = () => {
     },
     {
       accessorKey: 'type',
-      header: 'Phân Loại',
+      header: t('saas_debt_phan_loai', 'Phân Loại'),
       cell: (info) => (
         <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold text-amber-700 dark:text-amber-300">
           {info.getValue() as string}
@@ -302,12 +302,12 @@ export const SaaSCustomersPage: React.FC = () => {
     },
     {
       accessorKey: 'taxCode',
-      header: 'Mã Số Thuế',
+      header: t('saas_register_tax_code', 'Mã Số Thuế'),
       cell: (info) => <span className="font-mono text-xs text-zinc-600 dark:text-zinc-400">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'currentDebt',
-      header: 'Nợ Phải Thu',
+      header: t('saas_customers_no_phai_thu', 'Nợ Phải Thu'),
       cell: (info) => {
         const debt = info.getValue() as number;
         return (
@@ -319,18 +319,18 @@ export const SaaSCustomersPage: React.FC = () => {
     },
     {
       accessorKey: 'creditLimit',
-      header: 'Hạn Mức Nợ',
+      header: t('saas_customers_han_muc_no', 'Hạn Mức Nợ'),
       cell: (info) => `${(info.getValue() as number).toLocaleString('vi-VN')} đ`,
     },
     {
       id: 'actions',
-      header: 'Thao Tác',
+      header: t('actions', 'Thao Tác'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => handleOpenResetPasswordModal(row.original)}
             className="p-1.5 rounded-md hover:bg-amber-100 dark:hover:bg-amber-950/60 text-amber-600 dark:text-amber-400 transition-colors cursor-pointer"
-            title="Cấp lại / Reset mật khẩu WebShop"
+            title={t('cap_lai_reset_mat_khau_4', 'Cấp lại / Reset mật khẩu WebShop')}
           >
             <Key className="h-4 w-4" />
           </button>
@@ -360,8 +360,7 @@ export const SaaSCustomersPage: React.FC = () => {
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <Users className="h-6 w-6 text-amber-500" /> {t('saas_customers_ho_s_tai_khoan_khach_hang', 'Hồ Sơ & Tài Khoản Khách Hàng')}</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Quản lý danh sách khách hàng, tài khoản đăng nhập WebShop, xem mắt thần mật khẩu (Eye View) và cấp lại mật khẩu.
-          </p>
+            {t('quan_ly_danh_sach_khach', 'Quản lý danh sách khách hàng, tài khoản đăng nhập WebShop, xem mắt thần mật khẩu (Eye View) và cấp lại mật khẩu.')}</p>
         </div>
         <button
           onClick={handleOpenAdd}
@@ -370,7 +369,7 @@ export const SaaSCustomersPage: React.FC = () => {
           <UserPlus className="h-4 w-4" /> {t('saas_customers_them_khach_hang_moi', 'Thêm khách hàng mới')}</button>
       </div>
 
-      <DataTable columns={columns} data={customers} searchPlaceholder="Tìm tên khách hàng, SĐT, mã số thuế..." />
+      <DataTable columns={columns} data={customers} searchPlaceholder={t('tim_ten_khach_hang_sdt', 'Tìm tên khách hàng, SĐT, mã số thuế...')} />
 
       {/* ======================================================== */}
       {/* MODAL 1: ADD / EDIT WEBSHOP CUSTOMER PROFILE             */}
@@ -471,7 +470,7 @@ export const SaaSCustomersPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Hạn Mức Cho Nợ (VND)</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('han_muc_cho_no_vnd', 'Hạn Mức Cho Nợ (VND)')}</label>
                   <input
                     type="number"
                     value={formData.creditLimit}
@@ -509,8 +508,7 @@ export const SaaSCustomersPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <Key className="h-5 w-5 text-amber-500" />
-                Cấp Lại / Reset Mật Khẩu WebShop
-              </h3>
+                {t('cap_lai_reset_mat_khau_4', 'Cấp Lại / Reset Mật Khẩu WebShop')}</h3>
               <button
                 onClick={() => setIsResetModalOpen(false)}
                 className="p-1 rounded-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
@@ -527,7 +525,7 @@ export const SaaSCustomersPage: React.FC = () => {
                 </span>
               </div>
               <div className="text-[11px] opacity-80">
-                Email: {resetTargetCustomer.email} | SĐT: {resetTargetCustomer.phone}
+                {t('email', 'Email:')}{resetTargetCustomer.email} {t('sdt_2', '| SĐT:')}{resetTargetCustomer.phone}
               </div>
             </div>
 
@@ -535,7 +533,7 @@ export const SaaSCustomersPage: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="font-bold text-zinc-700 dark:text-zinc-300">
-                    Mật Khẩu WebShop Mới Cấp Lại <span className="text-rose-500">*</span>
+                    {t('mat_khau_webshop_moi_cap', 'Mật Khẩu WebShop Mới Cấp Lại')}<span className="text-rose-500">*</span>
                   </label>
                   <button
                     type="button"
@@ -578,7 +576,7 @@ export const SaaSCustomersPage: React.FC = () => {
                   className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
-                  <span>Lưu & Cấp Mật Khẩu WebShop</span>
+                  <span>{t('luu_cap_mat_khau_webshop', 'Lưu & Cấp Mật Khẩu WebShop')}</span>
                 </button>
               </div>
             </form>

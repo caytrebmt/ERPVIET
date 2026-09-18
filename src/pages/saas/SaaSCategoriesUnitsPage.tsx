@@ -84,7 +84,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
         if (categoryRes.data?.ok) setCategories(categoryRes.data.data.map((item: any) => ({ ...item, name: item.name_vi || item.name, description: item.description || '', productCount: Number(item.product_count || 0), status: item.is_active === false ? 'Tạm khóa' : 'Hoạt động' })));
         if (uomRes.data?.ok) setUnits(uomRes.data.data.map((item: any) => ({ ...item, name: item.name_vi || item.name, description: item.description || '', isFractional: Boolean(item.is_fractional) })));
       })
-      .catch(() => addToast('Không thể tải dữ liệu danh mục từ PostgreSQL.', 'error'));
+      .catch(() => addToast(t('khong_the_tai_du_lieu', 'Không thể tải dữ liệu danh mục từ PostgreSQL.'), 'error'));
   }, []);
 
   const handleOpenCatAdd = () => {
@@ -533,15 +533,14 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                   required
                   value={catFormData.code}
                   onChange={(e) => setCatFormData({ ...catFormData, code: e.target.value })}
-                  placeholder="VD: CAT-GEAR"
+                  placeholder={t('vd_cat_gear', 'VD: CAT-GEAR')}
                   className="w-full px-3 py-2 text-sm font-mono font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 />
               </div>
 
               <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                  <Languages className="h-4 w-4" /> Multi-language Names / Tên 2 Ngôn Ngữ
-                </div>
+                  <Languages className="h-4 w-4" /> {t('multi_language_names_ten_2', 'Multi-language Names / Tên 2 Ngôn Ngữ')}</div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
                     {t('saas_products_ten_tieng_viet', '🇻🇳 Tên tiếng Việt *')}</label>
@@ -556,13 +555,12 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    🇬🇧 English Name
-                  </label>
+                    {t('english_name', '🇬🇧 English Name')}</label>
                   <input
                     type="text"
                     value={catFormData.name_en}
                     onChange={(e) => setCatFormData({ ...catFormData, name_en: e.target.value })}
-                    placeholder="e.g. Office Supplies & Stationery"
+                    placeholder={t('e_g_office_supplies_stationery', 'e.g. Office Supplies & Stationery')}
                     className="w-full px-3 py-2 text-sm font-semibold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -570,8 +568,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
 
               <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                  <Languages className="h-4 w-4" /> Multi-language Description / Mô tả 2 Ngôn Ngữ
-                </div>
+                  <Languages className="h-4 w-4" /> {t('multi_language_description_mo_ta', 'Multi-language Description / Mô tả 2 Ngôn Ngữ')}</div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
                     {t('saas_products_mo_ta_tieng_viet', '🇻🇳 Mô tả tiếng Việt')}</label>
@@ -579,19 +576,18 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                     rows={2}
                     value={catFormData.description_vi}
                     onChange={(e) => setCatFormData({ ...catFormData, description_vi: e.target.value })}
-                    placeholder="Giấy in A4, Bìa thái, Kẹp bướm, Sổ tay..."
+                    placeholder={t('giay_in_a4_bia_thai', 'Giấy in A4, Bìa thái, Kẹp bướm, Sổ tay...')}
                     className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    🇬🇧 English Description
-                  </label>
+                    {t('english_description', '🇬🇧 English Description')}</label>
                   <textarea
                     rows={2}
                     value={catFormData.description_en}
                     onChange={(e) => setCatFormData({ ...catFormData, description_en: e.target.value })}
-                    placeholder="A4 paper, binders, clips, notebooks..."
+                    placeholder={t('a4_paper_binders_clips_notebooks', 'A4 paper, binders, clips, notebooks...')}
                     className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -648,15 +644,14 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                   required
                   value={unitFormData.code}
                   onChange={(e) => setUnitFormData({ ...unitFormData, code: e.target.value })}
-                  placeholder="VD: THUNG"
+                  placeholder={t('vd_thung', 'VD: THUNG')}
                   className="w-full px-3 py-2 text-sm font-mono font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 />
               </div>
 
               <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                  <Languages className="h-4 w-4" /> Multi-language Unit Name / Tên ĐVT 2 Ngôn Ngữ
-                </div>
+                  <Languages className="h-4 w-4" /> {t('multi_language_unit_name_ten', 'Multi-language Unit Name / Tên ĐVT 2 Ngôn Ngữ')}</div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
                     {t('saas_products_ten_tieng_viet', '🇻🇳 Tên tiếng Việt *')}</label>
@@ -671,13 +666,12 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    🇬🇧 English Name
-                  </label>
+                    {t('english_name', '🇬🇧 English Name')}</label>
                   <input
                     type="text"
                     value={unitFormData.name_en}
                     onChange={(e) => setUnitFormData({ ...unitFormData, name_en: e.target.value })}
-                    placeholder="e.g. Piece / Box / Carton"
+                    placeholder={t('e_g_piece_box_carton', 'e.g. Piece / Box / Carton')}
                     className="w-full px-3 py-2 text-sm font-semibold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -685,29 +679,26 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
 
               <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                  <Languages className="h-4 w-4" /> Multi-language Description / Mô tả ĐVT
-                </div>
+                  <Languages className="h-4 w-4" /> {t('multi_language_description_mo_ta_2', 'Multi-language Description / Mô tả ĐVT')}</div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    🇻🇳 Diễn giải tiếng Việt
-                  </label>
+                    {t('dien_giai_tieng_viet', '🇻🇳 Diễn giải tiếng Việt')}</label>
                   <input
                     type="text"
                     value={unitFormData.description_vi}
                     onChange={(e) => setUnitFormData({ ...unitFormData, description_vi: e.target.value })}
-                    placeholder="Đóng gói 24 lon/thùng"
+                    placeholder={t('dong_goi_24_lon_thung', 'Đóng gói 24 lon/thùng')}
                     className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    🇬🇧 English Description
-                  </label>
+                    {t('english_description', '🇬🇧 English Description')}</label>
                   <input
                     type="text"
                     value={unitFormData.description_en}
                     onChange={(e) => setUnitFormData({ ...unitFormData, description_en: e.target.value })}
-                    placeholder="Carton package of 24 units"
+                    placeholder={t('carton_package_of_24_units', 'Carton package of 24 units')}
                     className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -828,8 +819,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
 
               <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                  <Languages className="h-4 w-4" /> Multi-language Notes / Ghi chú 2 Ngôn Ngữ
-                </div>
+                  <Languages className="h-4 w-4" /> {t('multi_language_notes_ghi_chu', 'Multi-language Notes / Ghi chú 2 Ngôn Ngữ')}</div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
                     {t('saas_categories_units_ghi_chu_tieng_viet', '🇻🇳 Ghi chú tiếng Việt')}</label>
@@ -837,14 +827,13 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                     type="text"
                     value={convFormData.note_vi}
                     onChange={(e) => setConvFormData({ ...convFormData, note_vi: e.target.value })}
-                    placeholder="1 Thùng hàng quy chuẩn = 24 Hộp"
+                    placeholder={t('category_unit_conversion_placeholder', '1 Thùng hàng quy chuẩn = 24 Hộp')}
                     className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    🇬🇧 English Note
-                  </label>
+                    {t('english_note', '🇬🇧 English Note')}</label>
                   <input
                     type="text"
                     value={convFormData.note_en}

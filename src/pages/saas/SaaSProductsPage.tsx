@@ -581,7 +581,7 @@ export const SaaSProductsPage: React.FC = () => {
                     required
                     value={formData.sku}
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    placeholder="VD: SP001"
+                    placeholder={t('vd_sp001', 'VD: SP001')}
                     className="w-full px-3 py-2 text-sm font-mono font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -594,7 +594,7 @@ export const SaaSProductsPage: React.FC = () => {
                     type="text"
                     value={formData.brand}
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                    placeholder="VD: Dell, Logitech, Double A..."
+                    placeholder={t('vd_dell_logitech_double_a', 'VD: Dell, Logitech, Double A...')}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -603,8 +603,7 @@ export const SaaSProductsPage: React.FC = () => {
               {/* Bilingual Product Name */}
               <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                  <Languages className="h-4 w-4" /> Product Name (2 Languages) / Tên Sản Phẩm 2 Ngôn Ngữ
-                </div>
+                  <Languages className="h-4 w-4" /> {t('product_name_2_languages_ten', 'Product Name (2 Languages) / Tên Sản Phẩm 2 Ngôn Ngữ')}</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
@@ -614,19 +613,18 @@ export const SaaSProductsPage: React.FC = () => {
                       required
                       value={formData.name_vi}
                       onChange={(e) => setFormData({ ...formData, name_vi: e.target.value })}
-                      placeholder="VD: Laptop Dell Inspiron 15 3520"
+                      placeholder={t('vd_laptop_dell_inspiron_15', 'VD: Laptop Dell Inspiron 15 3520')}
                       className="w-full px-3 py-2 text-sm font-semibold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      🇬🇧 English Name
-                    </label>
+                      {t('english_name', '🇬🇧 English Name')}</label>
                     <input
                       type="text"
                       value={formData.name_en}
                       onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
-                      placeholder="e.g. Dell Inspiron 15 3520 Laptop"
+                      placeholder={t('e_g_dell_inspiron_15', 'e.g. Dell Inspiron 15 3520 Laptop')}
                       className="w-full px-3 py-2 text-sm font-semibold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                     />
                   </div>
@@ -648,10 +646,10 @@ export const SaaSProductsPage: React.FC = () => {
                     }}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 font-semibold"
                   >
-                    <option value="Văn phòng phẩm">Văn phòng phẩm (Office Supplies)</option>
-                    <option value="Laptop & Máy tính">Laptop & Máy tính (Laptops & Computers)</option>
-                    <option value="Linh kiện & Điện tử">Linh kiện & Điện tử (Electronics & Accessories)</option>
-                    <option value="Mực In & Phụ Kiện">Mực In & Phụ Kiện (Printer Ink & Accessories)</option>
+                    <option value="Văn phòng phẩm">{t('van_phong_pham_office_supplies', 'Văn phòng phẩm (Office Supplies)')}</option>
+                    <option value="Laptop & Máy tính">{t('laptop_may_tinh_laptops_computers', 'Laptop & Máy tính (Laptops & Computers)')}</option>
+                    <option value="Linh kiện & Điện tử">{t('linh_kien_dien_tu_electronics', 'Linh kiện & Điện tử (Electronics & Accessories)')}</option>
+                    <option value="Mực In & Phụ Kiện">{t('muc_in_phu_kien_printer', 'Mực In & Phụ Kiện (Printer Ink & Accessories)')}</option>
                   </select>
                 </div>
 
@@ -668,12 +666,12 @@ export const SaaSProductsPage: React.FC = () => {
                     }}
                     className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 font-semibold"
                   >
-                    <option value="Cái">Cái (Piece / Pcs)</option>
-                    <option value="Ream">Ream (500 tờ / sheets)</option>
-                    <option value="Tệp">Tệp (Pack)</option>
-                    <option value="Hộp">Hộp (Box)</option>
-                    <option value="Thùng">Thùng (Carton)</option>
-                    <option value="Kg">Kilogram (Kg)</option>
+                    <option value="Cái">{t('cai_piece_pcs', 'Cái (Piece / Pcs)')}</option>
+                    <option value="Ream">{t('ream_500_to_sheets', 'Ream (500 tờ / sheets)')}</option>
+                    <option value="Tệp">{t('tep_pack', 'Tệp (Pack)')}</option>
+                    <option value="Hộp">{t('hop_box', 'Hộp (Box)')}</option>
+                    <option value="Thùng">{t('thung_carton', 'Thùng (Carton)')}</option>
+                    <option value="Kg">{t('kilogram_kg', 'Kilogram (Kg)')}</option>
                   </select>
                 </div>
               </div>
@@ -784,8 +782,7 @@ export const SaaSProductsPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
                   <div>
                     <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      🇻🇳 Xuất xứ (Tiếng Việt)
-                    </label>
+                      {t('xuat_xu_tieng_viet', '🇻🇳 Xuất xứ (Tiếng Việt)')}</label>
                     <input
                       type="text"
                       value={formData.origin_vi}
@@ -796,20 +793,18 @@ export const SaaSProductsPage: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      🇬🇧 Origin (English)
-                    </label>
+                      {t('origin_english', '🇬🇧 Origin (English)')}</label>
                     <input
                       type="text"
                       value={formData.origin_en}
                       onChange={(e) => setFormData({ ...formData, origin_en: e.target.value })}
-                      placeholder="e.g. USA / China"
+                      placeholder={t('e_g_usa_china', 'e.g. USA / China')}
                       className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      🇻🇳 Bảo hành (Tiếng Việt)
-                    </label>
+                      {t('bao_hanh_tieng_viet', '🇻🇳 Bảo hành (Tiếng Việt)')}</label>
                     <input
                       type="text"
                       value={formData.warranty_vi}
@@ -820,13 +815,12 @@ export const SaaSProductsPage: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      🇬🇧 Warranty (English)
-                    </label>
+                      {t('warranty_english', '🇬🇧 Warranty (English)')}</label>
                     <input
                       type="text"
                       value={formData.warranty_en}
                       onChange={(e) => setFormData({ ...formData, warranty_en: e.target.value })}
-                      placeholder="e.g. 12 Months Official Warranty"
+                      placeholder={t('e_g_12_months_official', 'e.g. 12 Months Official Warranty')}
                       className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                     />
                   </div>
@@ -840,19 +834,18 @@ export const SaaSProductsPage: React.FC = () => {
                       rows={2}
                       value={formData.description_vi}
                       onChange={(e) => setFormData({ ...formData, description_vi: e.target.value })}
-                      placeholder="Nhập giới thiệu chi tiết sản phẩm..."
+                      placeholder={t('nhap_gioi_thieu_chi_tiet', 'Nhập giới thiệu chi tiết sản phẩm...')}
                       className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      🇬🇧 English Description
-                    </label>
+                      {t('english_description', '🇬🇧 English Description')}</label>
                     <textarea
                       rows={2}
                       value={formData.description_en}
                       onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
-                      placeholder="Enter English product description..."
+                      placeholder={t('enter_english_product_description', 'Enter English product description...')}
                       className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                     />
                   </div>

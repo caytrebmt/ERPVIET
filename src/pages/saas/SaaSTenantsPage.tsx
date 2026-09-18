@@ -52,19 +52,19 @@ export interface TenantDetail {
   webshop_name_vi?: string;
 }
 
-const PLAN_CONFIG: Record<string, { labelVi: string; labelEn: string; color: string; icon: any }> = {
-  free: { labelVi: 'Miễn phí', labelEn: 'Free', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30', icon: ShieldCheck },
-  starter: { labelVi: 'Starter', labelEn: 'Starter', color: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30', icon: ShieldCheck },
-  professional: { labelVi: 'Professional', labelEn: 'Professional', color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', icon: Crown },
-  enterprise: { labelVi: 'Enterprise', labelEn: 'Enterprise', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', icon: Crown },
+const PLAN_CONFIG: Record<string, { viCopy: string; labelEn: string; color: string; icon: any }> = {
+  free: { viCopy: 'Miễn phí', labelEn: 'Free', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30', icon: ShieldCheck },
+  starter: { viCopy: 'Starter', labelEn: 'Starter', color: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30', icon: ShieldCheck },
+  professional: { viCopy: 'Professional', labelEn: 'Professional', color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', icon: Crown },
+  enterprise: { viCopy: 'Enterprise', labelEn: 'Enterprise', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', icon: Crown },
 };
 
-const STATUS_CONFIG: Record<string, { labelVi: string; labelEn: string; color: string; icon: any }> = {
-  trial: { labelVi: 'Dùng thử', labelEn: 'Trial', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', icon: Clock },
-  active: { labelVi: 'Đang hoạt động', labelEn: 'Active', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', icon: CheckCircle2 },
-  past_due: { labelVi: 'Quá hạn', labelEn: 'Past Due', color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', icon: Clock },
-  canceled: { labelVi: 'Đã hủy', labelEn: 'Canceled', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30', icon: Ban },
-  suspended: { labelVi: 'Đã tạm dừng', labelEn: 'Suspended', color: 'bg-red-500/10 text-red-600 border-red-500/30', icon: Ban },
+const STATUS_CONFIG: Record<string, { viCopy: string; labelEn: string; color: string; icon: any }> = {
+  trial: { viCopy: 'Dùng thử', labelEn: 'Trial', color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', icon: Clock },
+  active: { viCopy: 'Đang hoạt động', labelEn: 'Active', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', icon: CheckCircle2 },
+  past_due: { viCopy: 'Quá hạn', labelEn: 'Past Due', color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', icon: Clock },
+  canceled: { viCopy: 'Đã hủy', labelEn: 'Canceled', color: 'bg-gray-500/10 text-gray-600 border-gray-500/30', icon: Ban },
+  suspended: { viCopy: 'Đã tạm dừng', labelEn: 'Suspended', color: 'bg-red-500/10 text-red-600 border-red-500/30', icon: Ban },
 };
 
 export const SaaSTenantsPage: React.FC = () => {
@@ -177,7 +177,7 @@ export const SaaSTenantsPage: React.FC = () => {
     },
     {
       accessorKey: 'slug',
-      header: 'Slug',
+      header: t('slug', 'Slug'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <code className="text-[10px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-700 dark:text-gray-300">
@@ -199,7 +199,7 @@ export const SaaSTenantsPage: React.FC = () => {
         return (
           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold ${config.color}`}>
             <Icon className="w-3 h-3" />
-            {pickLocalized(isEn, config.labelEn, config.labelVi)}
+            {pickLocalized(isEn, config.labelEn, config.viCopy)}
           </span>
         );
       },
@@ -214,7 +214,7 @@ export const SaaSTenantsPage: React.FC = () => {
         return (
           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold ${config.color}`}>
             <Icon className="w-3 h-3" />
-            {pickLocalized(isEn, config.labelEn, config.labelVi)}
+            {pickLocalized(isEn, config.labelEn, config.viCopy)}
           </span>
         );
       },
@@ -476,7 +476,7 @@ export const SaaSTenantsPage: React.FC = () => {
                       <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedTenant.tax_code}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">Email</span>
+                      <span className="text-gray-500">{t('email_2', 'Email')}</span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedTenant.email || '-'}</span>
                     </div>
                     <div className="flex justify-between text-xs">

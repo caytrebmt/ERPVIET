@@ -422,14 +422,13 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
                   </span>
                 </div>
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/50">
-                  ONLINE
-                </span>
+                  {t('online', 'ONLINE')}</span>
               </div>
 
               <div className="text-[11px] space-y-1 text-zinc-400 font-mono">
                 <div className="flex items-center justify-between">
                     <span className="text-zinc-500">{t('sidebar_engine')}:</span>
-                  <span className="font-semibold text-zinc-300">PostgreSQL / Supabase</span>
+                  <span className="font-semibold text-zinc-300">{t('postgresql_supabase', 'PostgreSQL / Supabase')}</span>
                 </div>
                 
               </div>

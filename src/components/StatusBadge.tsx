@@ -31,6 +31,12 @@ interface StatusBadgeProps {
   size?: 'sm' | 'md';
 }
 
+const STATUS_SUCCESS_KEYWORDS = ['đã thanh toán', 'hoàn thành', 'trong hạn', 'chấp nhận', 'đã xuất hóa đơn', 'đã điều chỉnh'] as const;
+const STATUS_DANGER_KEYWORDS = ['trễ nợ', 'nợ xấu', 'còn nợ', 'đã hủy', 'thiếu'] as const;
+const STATUS_WARNING_KEYWORDS = ['thanh toán một phần', 'nháp', 'đang kiểm kê', 'thừa'] as const;
+const STATUS_INFO_KEYWORDS = ['đã gửi', 'đang xử lý'] as const;
+const hasBadgeKeyword = (status: string, keywords: readonly string[]) => keywords.some((keyword) => status.includes(keyword));
+
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, customText, size = 'sm' }) => {
   const normalized = (status || '').toString().toLowerCase().trim();
 
@@ -40,14 +46,9 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, customText, si
   // Green / Emerald: Paid, Completed, Active, Completed, Khớp, Đã thanh toán, Trong hạn
   if (
     normalized.includes('paid') ||
-    normalized.includes('đã thanh toán') ||
-    normalized.includes('hoàn thành') ||
+    hasBadgeKeyword(normalized, STATUS_SUCCESS_KEYWORDS) ||
     normalized.includes('completed') ||
-    normalized.includes('active') ||
-    normalized.includes('trong hạn') ||
-    normalized.includes('chấp nhận') ||
-    normalized.includes('đã xuất hóa đơn') ||
-    normalized.includes('đã điều chỉnh')
+    normalized.includes('active')
   ) {
     textColor = 'text-emerald-600 dark:text-emerald-400';
     dotClass = 'bg-emerald-500';
@@ -55,12 +56,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, customText, si
   // Red / Rose: Overdue, Cancelled, Trễ nợ, Nợ xấu, Còn nợ, Đã hủy
   else if (
     normalized.includes('overdue') ||
-    normalized.includes('trễ nợ') ||
-    normalized.includes('nợ xấu') ||
-    normalized.includes('còn nợ') ||
-    normalized.includes('cancelled') ||
-    normalized.includes('đã hủy') ||
-    normalized.includes('thiếu')
+    hasBadgeKeyword(normalized, STATUS_DANGER_KEYWORDS) ||
+    normalized.includes('cancelled')
   ) {
     textColor = 'text-rose-600 dark:text-rose-400';
     dotClass = 'bg-rose-500';
@@ -68,11 +65,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, customText, si
   // Amber / Yellow: Partially paid, Draft, Nháp, Chờ, Đang kiểm kê
   else if (
     normalized.includes('partially') ||
-    normalized.includes('thanh toán một phần') ||
-    normalized.includes('draft') ||
-    normalized.includes('nháp') ||
-    normalized.includes('đang kiểm kê') ||
-    normalized.includes('thừa')
+    hasBadgeKeyword(normalized, STATUS_WARNING_KEYWORDS) ||
+    normalized.includes('draft')
   ) {
     textColor = 'text-amber-600 dark:text-amber-400';
     dotClass = 'bg-amber-500';
@@ -81,8 +75,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, customText, si
   else if (
     normalized.includes('pending') ||
     normalized.includes('processing') ||
-    normalized.includes('đã gửi') ||
-    normalized.includes('đang xử lý')
+    hasBadgeKeyword(normalized, STATUS_INFO_KEYWORDS)
   ) {
     textColor = 'text-blue-600 dark:text-blue-400';
     dotClass = 'bg-blue-500';

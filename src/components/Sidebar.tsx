@@ -351,7 +351,7 @@ const Sidebar: React.FC = () => {
       <button
         onClick={() => setMobileOpen(true)}
         className="lg:hidden fixed bottom-5 left-5 z-40 w-12 h-12 rounded-full bg-indigo-600 text-white shadow-lg flex items-center justify-center cursor-pointer"
-        title="Mở menu"
+        title={t('mo_menu', 'Mở menu')}
       >
         <span className="text-xl leading-none font-bold">≡</span>
       </button>

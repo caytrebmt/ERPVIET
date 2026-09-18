@@ -92,7 +92,7 @@ const AccountPage: React.FC = () => {
   return (
     <div className="flex flex-col gap-6">
       <div className="border-b border-gray-150 dark:border-gray-800 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-850 dark:text-white uppercase">HỒ SƠ CỦA BẠN</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-850 dark:text-white uppercase">{t('ho_so_cua_ban', 'HỒ SƠ CỦA BẠN')}</h1>
         
         {/* Quick action shortcuts */}
         <div className="flex gap-2">
@@ -100,8 +100,7 @@ const AccountPage: React.FC = () => {
             to={shopPath("/orders")}
             className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-600 dark:hover:border-indigo-400 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
           >
-            <Package className="w-4 h-4 text-indigo-600" /> Lịch sử đơn hàng
-          </Link>
+            <Package className="w-4 h-4 text-indigo-600" /> {t('lich_su_don_hang', 'Lịch sử đơn hàng')}</Link>
           <button
             onClick={logout}
             className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
@@ -115,11 +114,10 @@ const AccountPage: React.FC = () => {
         <div className="lg:col-span-6 flex flex-col gap-6">
           <form onSubmit={handleUpdateProfile} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-xs flex flex-col gap-4 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-xs border-b border-gray-100 dark:border-gray-800 pb-2.5 uppercase tracking-wider flex items-center gap-1.5">
-              <User className="w-4.5 h-4.5 text-indigo-600" /> THÔNG TIN TÀI KHOẢN
-            </h3>
+              <User className="w-4.5 h-4.5 text-indigo-600" /> {t('thong_tin_tai_khoan', 'THÔNG TIN TÀI KHOẢN')}</h3>
 
             <div className="flex flex-col gap-1.5 text-xs">
-              <label className="font-semibold text-gray-600 dark:text-gray-400">Địa chỉ Email (Không được đổi)</label>
+              <label className="font-semibold text-gray-600 dark:text-gray-400">{t('dia_chi_email_khong_duoc', 'Địa chỉ Email (Không được đổi)')}</label>
               <div className="bg-gray-100/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
                 <Mail className="w-4 h-4" />
                 <span>{user?.email}</span>
@@ -127,7 +125,7 @@ const AccountPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-1.5 text-xs">
-              <label className="font-semibold text-gray-600 dark:text-gray-400">Họ và tên</label>
+              <label className="font-semibold text-gray-600 dark:text-gray-400">{t('ho_va_ten', 'Họ và tên')}</label>
               <div className="relative">
                 <input
                   type="text"
@@ -163,12 +161,10 @@ const AccountPage: React.FC = () => {
             >
               {updatingProfile ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Updating...
-                </>
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t('updating', 'Updating...')}</>
               ) : (
                 <>
-                  <CheckCircle className="w-4 h-4" /> Cập nhật hồ sơ
-                </>
+                  <CheckCircle className="w-4 h-4" /> {t('cap_nhat_ho_so', 'Cập nhật hồ sơ')}</>
               )}
             </button>
           </form>
@@ -178,16 +174,15 @@ const AccountPage: React.FC = () => {
         <div className="lg:col-span-6 flex flex-col gap-6">
           <form onSubmit={handleChangePassword} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-xs flex flex-col gap-4 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-xs border-b border-gray-100 dark:border-gray-800 pb-2.5 uppercase tracking-wider flex items-center gap-1.5">
-              <KeyRound className="w-4.5 h-4.5 text-indigo-600" /> ĐỔI MẬT KHẨU BẢO MẬT
-            </h3>
+              <KeyRound className="w-4.5 h-4.5 text-indigo-600" /> {t('doi_mat_khau_bao_mat', 'ĐỔI MẬT KHẨU BẢO MẬT')}</h3>
 
             <div className="flex flex-col gap-1.5 text-xs">
-              <label className="font-semibold text-gray-600 dark:text-gray-400">Mật khẩu hiện tại</label>
+              <label className="font-semibold text-gray-600 dark:text-gray-400">{t('mat_khau_hien_tai', 'Mật khẩu hiện tại')}</label>
               <div className="relative">
                 <input
                   type={showCurrentPassword ? "text" : "password"}
                   required
-                  placeholder="Nhập mật khẩu đang dùng"
+                  placeholder={t('nhap_mat_khau_dang_dung', 'Nhập mật khẩu đang dùng')}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-9 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -204,12 +199,12 @@ const AccountPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-1.5 text-xs">
-              <label className="font-semibold text-gray-600 dark:text-gray-400">Mật khẩu mới</label>
+              <label className="font-semibold text-gray-600 dark:text-gray-400">{t('mat_khau_moi', 'Mật khẩu mới')}</label>
               <div className="relative">
                 <input
                   type={showNewPassword ? "text" : "password"}
                   required
-                  placeholder="Tối thiểu 8 ký tự"
+                  placeholder={t('toi_thieu_8_ky_tu', 'Tối thiểu 8 ký tự')}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-9 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -226,12 +221,12 @@ const AccountPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-1.5 text-xs">
-              <label className="font-semibold text-gray-600 dark:text-gray-400">Xác nhận mật khẩu mới</label>
+              <label className="font-semibold text-gray-600 dark:text-gray-400">{t('xac_nhan_mat_khau_moi', 'Xác nhận mật khẩu mới')}</label>
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   required
-                  placeholder="Nhập lại mật khẩu mới"
+                  placeholder={t('nhap_lai_mat_khau_moi', 'Nhập lại mật khẩu mới')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-9 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -254,12 +249,10 @@ const AccountPage: React.FC = () => {
             >
               {updatingPassword ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Changing...
-                </>
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t('changing', 'Changing...')}</>
               ) : (
                 <>
-                  <KeyRound className="w-4 h-4" /> Thay đổi mật khẩu
-                </>
+                  <KeyRound className="w-4 h-4" /> {t('thay_doi_mat_khau', 'Thay đổi mật khẩu')}</>
               )}
             </button>
           </form>

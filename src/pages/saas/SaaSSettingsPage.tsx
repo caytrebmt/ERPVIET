@@ -52,6 +52,7 @@ type SettingsTabId = 'users_rbac' | 'translations' | 'translations_json' | 'comp
 //   - menu                             : Cấu hình menu DB (sys_menus toàn hệ thống)
 //   - api                              : Kết nối API Backend (hạ tầng nền tảng)
 const SUPER_ADMIN_ONLY_TABS: SettingsTabId[] = ['translations', 'translations_json', 'menu', 'api'];
+const DEFAULT_MENU_GROUP = 'Khác';
 
 export const SaaSSettingsPage: React.FC = () => {
   const { addToast } = useToast();
@@ -81,7 +82,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
   const [newMenuName, setNewMenuName] = useState('');
   const [newMenuPath, setNewMenuPath] = useState('');
-  const [newMenuGroup, setNewMenuGroup] = useState('Khác');
+  const [newMenuGroup, setNewMenuGroup] = useState(DEFAULT_MENU_GROUP);
 
   // Tab 3: Inventory & Operational Policy. Defaults are only placeholders
   // until the tenant settings response fills the form.
@@ -497,7 +498,7 @@ export const SaaSSettingsPage: React.FC = () => {
           {/* TAB 1: COMPANY PROFILE & PRINT TEMPLATES */}
           {effectiveTab === 'company' && (
               <form onSubmit={handleSaveCompany} className="space-y-6">
-            {companyLoading && <p className="text-xs text-zinc-500">Đang tải thông tin doanh nghiệp từ PostgreSQL...</p>}
+            {companyLoading && <p className="text-xs text-zinc-500">{t('dang_tai_thong_tin_doanh', 'Đang tải thông tin doanh nghiệp từ PostgreSQL...')}</p>}
 
             {/* WebShop storefront of THIS tenant — every business opens and
                 shares its own shop URL; products/orders stay tenant-scoped. */}
@@ -546,14 +547,12 @@ export const SaaSSettingsPage: React.FC = () => {
 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <Building2 className="h-5 w-5 text-amber-500" /> Thông Tin Pháp Lý Doanh Nghiệp (In trên hóa đơn & báo giá)
-            </h3>
+              <Building2 className="h-5 w-5 text-amber-500" /> {t('thong_tin_phap_ly_doanh', 'Thông Tin Pháp Lý Doanh Nghiệp (In trên hóa đơn & báo giá)')}</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Tên Doanh Nghiệp (Đầy đủ)
-                </label>
+                  {t('ten_doanh_nghiep_day_du', 'Tên Doanh Nghiệp (Đầy đủ)')}</label>
                 <input
                   type="text"
                   value={companyInfo.name}
@@ -565,8 +564,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Mã Số Thuế (Tax ID)
-                </label>
+                  {t('ma_so_thue_tax_id', 'Mã Số Thuế (Tax ID)')}</label>
                 <input
                   type="text"
                   value={companyInfo.taxCode}
@@ -614,8 +612,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <CreditCard className="h-5 w-5 text-blue-500" /> Tài Khoản Ngân Hàng Thụ Hưởng & QR Thanh Toán
-            </h3>
+              <CreditCard className="h-5 w-5 text-blue-500" /> {t('tai_khoan_ngan_hang_thu', 'Tài Khoản Ngân Hàng Thụ Hưởng & QR Thanh Toán')}</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -655,8 +652,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <Printer className="h-5 w-5 text-emerald-500" /> Cấu Hình Mẫu In Chứng Từ PDF (Phiếu Nhập/Xuất & Báo Giá)
-            </h3>
+              <Printer className="h-5 w-5 text-emerald-500" /> {t('cau_hinh_mau_in_chung', 'Cấu Hình Mẫu In Chứng Từ PDF (Phiếu Nhập/Xuất & Báo Giá)')}</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -667,9 +663,9 @@ export const SaaSSettingsPage: React.FC = () => {
                   onChange={(e) => setCompanyInfo({ ...companyInfo, pdfPaperSize: e.target.value })}
                   className="w-full px-3 py-2 text-xs font-semibold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100"
                 >
-                  <option value="A4">A4 (Tiêu chuẩn doanh nghiệp)</option>
-                  <option value="A5">A5 (Phiếu nhỏ tiết kiệm)</option>
-                  <option value="80mm">K80 (In nhiệt hóa đơn bán lẻ)</option>
+                  <option value="A4">{t('a4_tieu_chuan_doanh_nghiep', 'A4 (Tiêu chuẩn doanh nghiệp)')}</option>
+                  <option value="A5">{t('a5_phieu_nho_tiet_kiem', 'A5 (Phiếu nhỏ tiết kiệm)')}</option>
+                  <option value="80mm">{t('k80_in_nhiet_hoa_don', 'K80 (In nhiệt hóa đơn bán lẻ)')}</option>
                 </select>
               </div>
 
@@ -686,8 +682,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Lời Cảm Ơn / Ghi Chú Chân Trang Mẫu In
-                </label>
+                  {t('loi_cam_on_ghi_chu', 'Lời Cảm Ơn / Ghi Chú Chân Trang Mẫu In')}</label>
                 <input
                   type="text"
                   value={companyInfo.pdfFooterNote}
@@ -715,11 +710,9 @@ export const SaaSSettingsPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <Database className="h-5 w-5 text-amber-500" /> Bảng Định Nghĩa Menu DB & Bật/Tắt Tính Năng Realtime
-                </h3>
+                  <Database className="h-5 w-5 text-amber-500" /> {t('bang_dinh_nghia_menu_db', 'Bảng Định Nghĩa Menu DB & Bật/Tắt Tính Năng Realtime')}</h3>
                 <p className="text-xs text-zinc-500 mt-0.5">
-                  Quản lý danh mục các menu chức năng trong hệ thống SaaS, bật/tắt menu trực tiếp trên giao diện người dùng.
-                </p>
+                  {t('quan_ly_danh_muc_cac', 'Quản lý danh mục các menu chức năng trong hệ thống SaaS, bật/tắt menu trực tiếp trên giao diện người dùng.')}</p>
               </div>
             </div>
 
@@ -730,7 +723,7 @@ export const SaaSSettingsPage: React.FC = () => {
                   {t('saas_settings_ten_menu_moi', 'Tên Menu Mới')}</label>
                 <input
                   type="text"
-                  placeholder="Ví dụ: Báo Cáo Doanh Thu Theo Vùng"
+                  placeholder={t('vi_du_bao_cao_doanh', 'Ví dụ: Báo Cáo Doanh Thu Theo Vùng')}
                   value={newMenuName}
                   onChange={(e) => setNewMenuName(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 font-semibold"
@@ -739,11 +732,10 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div className="flex-1">
                 <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 mb-1">
-                  Đường Dẫn URL (Route)
-                </label>
+                  {t('duong_dan_url_route', 'Đường Dẫn URL (Route)')}</label>
                 <input
                   type="text"
-                  placeholder="/saas/regional-reports"
+                  placeholder={t('saas_regional_reports', '/saas/regional-reports')}
                   value={newMenuPath}
                   onChange={(e) => setNewMenuPath(e.target.value)}
                   className="w-full px-3 py-2 text-xs font-mono bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
@@ -845,42 +837,38 @@ export const SaaSSettingsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Phương Pháp Tính Giá Vốn Hàng Tồn Kho
-                </label>
+                  {t('phuong_phap_tinh_gia_von', 'Phương Pháp Tính Giá Vốn Hàng Tồn Kho')}</label>
                 <select
                   value={policySettings.costingMethod}
                   onChange={(e) => setPolicySettings({ ...policySettings, costingMethod: e.target.value })}
                   className="w-full px-3 py-2 text-xs font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100"
                 >
-                  <option value="Bình quân gia quyền ròng">Bình Quân Gia Quyền Ròng (Chuẩn TT200)</option>
-                  <option value="FIFO">Nhập Trước Xuất Trước (FIFO)</option>
+                  <option value="Bình quân gia quyền ròng">{t('binh_quan_gia_quyen_rong', 'Bình Quân Gia Quyền Ròng (Chuẩn TT200)')}</option>
+                  <option value="FIFO">{t('nhap_truoc_xuat_truoc_fifo', 'Nhập Trước Xuất Trước (FIFO)')}</option>
                   <option value="Đích danh">{t('saas_settings_gia_dich_danh_lo_hang', 'Giá Đích Danh Lô Hàng')}</option>
                 </select>
                 <p className="text-[11px] text-zinc-500 mt-1">
-                  Giá vốn tự động tính lại ngay khi phát sinh phiếu nhập kho mới.
-                </p>
+                  {t('gia_von_tu_dong_tinh', 'Giá vốn tự động tính lại ngay khi phát sinh phiếu nhập kho mới.')}</p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Thuế Suất VAT Mặc Định Cho Hàng Hóa Mới (%)
-                </label>
+                  {t('thue_suat_vat_mac_dinh', 'Thuế Suất VAT Mặc Định Cho Hàng Hóa Mới (%)')}</label>
                 <select
                   value={policySettings.defaultVatRate}
                   onChange={(e) => setPolicySettings({ ...policySettings, defaultVatRate: Number(e.target.value) })}
                   className="w-full px-3 py-2 text-xs font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100"
                 >
-                  <option value={0}>0% (Hàng xuất khẩu / Không chịu thuế)</option>
-                  <option value={5}>5% (Hàng nông sản, thiết bị y tế)</option>
-                  <option value={8}>8% (Thuế GTGT giảm theo Nghị định 2026)</option>
-                  <option value={10}>10% (Thuế GTGT phổ thông)</option>
+                  <option value={0}>{t('vat_0_export_non_taxable', '0% (Hàng xuất khẩu / Không chịu thuế)')}</option>
+                  <option value={5}>{t('vat_5_agricultural_medical', '5% (Hàng nông sản, thiết bị y tế)')}</option>
+                  <option value={8}>{t('vat_8_reduced_2026', '8% (Thuế GTGT giảm theo Nghị định 2026)')}</option>
+                  <option value={10}>{t('vat_10_standard', '10% (Thuế GTGT phổ thông)')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Định Mức Tồn Kho Tối Thiểu (Cảnh Báo Tự Động)
-                </label>
+                  {t('dinh_muc_ton_kho_toi', 'Định Mức Tồn Kho Tối Thiểu (Cảnh Báo Tự Động)')}</label>
                 <input
                   type="number"
                   value={policySettings.minStockThreshold}
@@ -891,8 +879,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Hạn Mức Công Nợ Cho Phép Khách Hàng Mới (VNĐ)
-                </label>
+                  {t('han_muc_cong_no_cho', 'Hạn Mức Công Nợ Cho Phép Khách Hàng Mới (VNĐ)')}</label>
                 <input
                   type="number"
                   step={5000000}
@@ -911,8 +898,8 @@ export const SaaSSettingsPage: React.FC = () => {
                     className="h-4 w-4 rounded border-zinc-300 text-amber-500 focus:ring-amber-500/20 cursor-pointer accent-amber-500"
                   />
                   <div>
-                    <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Cho Phép Xuất Âm Kho (Negative Stock)</span>
-                    <p className="text-[11px] text-zinc-500">Cho phép tạo phiếu xuất kho khi tồn kho hiện tại chưa cập nhật đủ phiếu nhập.</p>
+                    <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{t('cho_phep_xuat_am_kho', 'Cho Phép Xuất Âm Kho (Negative Stock)')}</span>
+                    <p className="text-[11px] text-zinc-500">{t('cho_phep_tao_phieu_xuat', 'Cho phép tạo phiếu xuất kho khi tồn kho hiện tại chưa cập nhật đủ phiếu nhập.')}</p>
                   </div>
                 </label>
 
@@ -924,8 +911,8 @@ export const SaaSSettingsPage: React.FC = () => {
                     className="h-4 w-4 rounded border-zinc-300 text-amber-500 focus:ring-amber-500/20 cursor-pointer accent-amber-500"
                   />
                   <div>
-                    <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Tự Động Sinh Mã Chứng Từ Kèm Theo Ngày</span>
-                    <p className="text-[11px] text-zinc-500">Quy tắc sinh mã tự động cho Đơn hàng, Phiếu xuất, Phiếu nhập, Báo giá...</p>
+                    <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{t('tu_dong_sinh_ma_chung', 'Tự Động Sinh Mã Chứng Từ Kèm Theo Ngày')}</span>
+                    <p className="text-[11px] text-zinc-500">{t('quy_tac_sinh_ma_tu', 'Quy tắc sinh mã tự động cho Đơn hàng, Phiếu xuất, Phiếu nhập, Báo giá...')}</p>
                   </div>
                 </label>
               </div>
@@ -935,27 +922,24 @@ export const SaaSSettingsPage: React.FC = () => {
           {/* SECTION 2: DOCUMENT NUMBERING & PREFIX SETTINGS */}
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <Sliders className="h-5 w-5 text-amber-500" /> Cấu Hình Tiền Tố & Quy Tắc Sinh Mã Chứng Từ
-            </h3>
+              <Sliders className="h-5 w-5 text-amber-500" /> {t('cau_hinh_tien_to_quy', 'Cấu Hình Tiền Tố & Quy Tắc Sinh Mã Chứng Từ')}</h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Tiền Tố Đơn Hàng Web (Order Prefix)
-                </label>
+                  {t('tien_to_don_hang_web', 'Tiền Tố Đơn Hàng Web (Order Prefix)')}</label>
                 <input
                   type="text"
                   value={policySettings.orderCodePrefix || 'ORD-'}
                   onChange={(e) => setPolicySettings({ ...policySettings, orderCodePrefix: e.target.value })}
                   className="w-full px-3 py-2 text-xs font-mono font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100"
-                  placeholder="ORD-"
+                  placeholder={t('ord', 'ORD-')}
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Tiền Tố Phiếu Xuất Kho (Stock Out)
-                </label>
+                  {t('tien_to_phieu_xuat_kho', 'Tiền Tố Phiếu Xuất Kho (Stock Out)')}</label>
                 <input
                   type="text"
                   value={policySettings.stockOutPrefix || 'PX-'}
@@ -967,8 +951,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Tiền Tố Phiếu Nhập Kho (Stock In)
-                </label>
+                  {t('tien_to_phieu_nhap_kho', 'Tiền Tố Phiếu Nhập Kho (Stock In)')}</label>
                 <input
                   type="text"
                   value={policySettings.stockInPrefix || 'PN-'}
@@ -980,8 +963,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Tiền Tố Báo Giá (Quotation)
-                </label>
+                  {t('tien_to_bao_gia_quotation', 'Tiền Tố Báo Giá (Quotation)')}</label>
                 <input
                   type="text"
                   value={policySettings.quotationPrefix || 'BG-'}
@@ -993,8 +975,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Tiền Tố Hóa Đơn VAT (Invoice)
-                </label>
+                  {t('tien_to_hoa_don_vat', 'Tiền Tố Hóa Đơn VAT (Invoice)')}</label>
                 <input
                   type="text"
                   value={policySettings.invoicePrefix || 'HD-'}
@@ -1006,16 +987,15 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Định Dạng Ngày Tháng Trong Mã
-                </label>
+                  {t('dinh_dang_ngay_thang_trong', 'Định Dạng Ngày Tháng Trong Mã')}</label>
                 <select
                   value={policySettings.dateFormatPattern || 'YYMMDD'}
                   onChange={(e) => setPolicySettings({ ...policySettings, dateFormatPattern: e.target.value })}
                   className="w-full px-3 py-2 text-xs font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100"
                 >
-                  <option value="YYMMDD">YYMMDD (Gọn nhẹ: 260730 - Khuyên dùng)</option>
-                  <option value="YYYYMMDD">YYYYMMDD (Đầy đủ: 20260730)</option>
-                  <option value="YYMM">YYMM (Theo tháng: 2607)</option>
+                  <option value="YYMMDD">{t('yymmdd_gon_nhe_260730_khuyen', 'YYMMDD (Gọn nhẹ: 260730 - Khuyên dùng)')}</option>
+                  <option value="YYYYMMDD">{t('yyyymmdd_day_du_20260730', 'YYYYMMDD (Đầy đủ: 20260730)')}</option>
+                  <option value="YYMM">{t('yymm_theo_thang_2607', 'YYMM (Theo tháng: 2607)')}</option>
                 </select>
               </div>
 
@@ -1027,28 +1007,28 @@ export const SaaSSettingsPage: React.FC = () => {
                   onChange={(e) => setPolicySettings({ ...policySettings, numberPaddingLength: Number(e.target.value) })}
                   className="w-full px-3 py-2 text-xs font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100"
                 >
-                  <option value={3}>3 chữ số (001, 002, 003)</option>
-                  <option value={4}>4 chữ số (0001, 0002, 0003)</option>
-                  <option value={5}>5 chữ số (00001, 00002, 00003)</option>
+                  <option value={3}>{t('padding_3_digits_sample', '3 chữ số (001, 002, 003)')}</option>
+                  <option value={4}>{t('padding_4_digits_sample', '4 chữ số (0001, 0002, 0003)')}</option>
+                  <option value={5}>{t('padding_5_digits_sample', '5 chữ số (00001, 00002, 00003)')}</option>
                 </select>
               </div>
             </div>
 
             {/* Live Sample Preview Box */}
             <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-zinc-800 dark:text-zinc-200 space-y-1.5">
-              <span className="font-bold text-amber-600 dark:text-amber-400 block">Mẫu mã chứng từ sẽ sinh ra theo cấu hình:</span>
+              <span className="font-bold text-amber-600 dark:text-amber-400 block">{t('mau_ma_chung_tu_se', 'Mẫu mã chứng từ sẽ sinh ra theo cấu hình:')}</span>
               <div className="flex flex-wrap gap-2.5 font-mono font-bold text-[11px] pt-1">
                 <span className="px-2.5 py-1 bg-white dark:bg-zinc-800 border border-amber-500/30 rounded-lg shadow-2xs">
-                  Đơn hàng Web: {policySettings.orderCodePrefix || 'ORD-'}{policySettings.dateFormatPattern === 'YYYYMMDD' ? '20260730' : (policySettings.dateFormatPattern === 'YYMM' ? '2607' : '260730')}-{(1).toString().padStart(policySettings.numberPaddingLength || 3, '0')}
+                  {t('don_hang_web', 'Đơn hàng Web:')}{policySettings.orderCodePrefix || 'ORD-'}{policySettings.dateFormatPattern === 'YYYYMMDD' ? '20260730' : (policySettings.dateFormatPattern === 'YYMM' ? '2607' : '260730')}-{(1).toString().padStart(policySettings.numberPaddingLength || 3, '0')}
                 </span>
                 <span className="px-2.5 py-1 bg-white dark:bg-zinc-800 border border-amber-500/30 rounded-lg shadow-2xs">
-                  Phiếu xuất kho: {policySettings.stockOutPrefix || 'PX-'}{policySettings.dateFormatPattern === 'YYYYMMDD' ? '20260730' : (policySettings.dateFormatPattern === 'YYMM' ? '2607' : '260730')}-{(1).toString().padStart(policySettings.numberPaddingLength || 3, '0')}
+                  {t('phieu_xuat_kho', 'Phiếu xuất kho:')}{policySettings.stockOutPrefix || 'PX-'}{policySettings.dateFormatPattern === 'YYYYMMDD' ? '20260730' : (policySettings.dateFormatPattern === 'YYMM' ? '2607' : '260730')}-{(1).toString().padStart(policySettings.numberPaddingLength || 3, '0')}
                 </span>
                 <span className="px-2.5 py-1 bg-white dark:bg-zinc-800 border border-amber-500/30 rounded-lg shadow-2xs">
-                  Phiếu nhập kho: {policySettings.stockInPrefix || 'PN-'}{policySettings.dateFormatPattern === 'YYYYMMDD' ? '20260730' : (policySettings.dateFormatPattern === 'YYMM' ? '2607' : '260730')}-{(1).toString().padStart(policySettings.numberPaddingLength || 3, '0')}
+                  {t('phieu_nhap_kho', 'Phiếu nhập kho:')}{policySettings.stockInPrefix || 'PN-'}{policySettings.dateFormatPattern === 'YYYYMMDD' ? '20260730' : (policySettings.dateFormatPattern === 'YYMM' ? '2607' : '260730')}-{(1).toString().padStart(policySettings.numberPaddingLength || 3, '0')}
                 </span>
                 <span className="px-2.5 py-1 bg-white dark:bg-zinc-800 border border-amber-500/30 rounded-lg shadow-2xs">
-                  Báo giá: {policySettings.quotationPrefix || 'BG-'}{policySettings.dateFormatPattern === 'YYYYMMDD' ? '20260730' : (policySettings.dateFormatPattern === 'YYMM' ? '2607' : '260730')}-{(1).toString().padStart(policySettings.numberPaddingLength || 3, '0')}
+                  {t('bao_gia', 'Báo giá:')}{policySettings.quotationPrefix || 'BG-'}{policySettings.dateFormatPattern === 'YYYYMMDD' ? '20260730' : (policySettings.dateFormatPattern === 'YYMM' ? '2607' : '260730')}-{(1).toString().padStart(policySettings.numberPaddingLength || 3, '0')}
                 </span>
               </div>
             </div>
@@ -1069,14 +1049,12 @@ export const SaaSSettingsPage: React.FC = () => {
         <form onSubmit={handleSaveApiConfig} className="space-y-6">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <Server className="h-5 w-5 text-amber-500" /> Cấu Hình API Gateway & Authorization Header
-            </h3>
+              <Server className="h-5 w-5 text-amber-500" /> {t('cau_hinh_api_gateway_authorization', 'Cấu Hình API Gateway & Authorization Header')}</h3>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Base URL API Backend Server
-                </label>
+                  {t('base_url_api_backend_server', 'Base URL API Backend Server')}</label>
                 <input
                   type="text"
                   value={apiConfig.apiBaseUrl}
@@ -1085,14 +1063,12 @@ export const SaaSSettingsPage: React.FC = () => {
                   required
                 />
                 <p className="text-[11px] text-zinc-500 mt-1">
-                  Mọi yêu cầu gửi đến <code className="text-amber-500 font-mono">src/services/api.js</code> sẽ tự động nối chuỗi URL này.
-                </p>
+                  {t('moi_yeu_cau_gui_den', 'Mọi yêu cầu gửi đến')}<code className="text-amber-500 font-mono">{t('src_services_api_js', 'src/services/api.js')}</code> {t('se_tu_dong_noi_chuoi', 'sẽ tự động nối chuỗi URL này.')}</p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1">
-                  <Key className="h-3.5 w-3.5 text-amber-500" /> JWT Bearer Authorization Token
-                </label>
+                  <Key className="h-3.5 w-3.5 text-amber-500" /> {t('jwt_bearer_authorization_token', 'JWT Bearer Authorization Token')}</label>
                 <textarea
                   rows={3}
                   value={apiConfig.jwtToken}
@@ -1103,8 +1079,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Webhook Event URL (Nhanh Thông Báo Đơn Hàng)
-                </label>
+                  {t('webhook_event_url_nhanh_thong', 'Webhook Event URL (Nhanh Thông Báo Đơn Hàng)')}</label>
                 <input
                   type="text"
                   value={apiConfig.webhookUrl}
@@ -1149,18 +1124,15 @@ export const SaaSSettingsPage: React.FC = () => {
         <form onSubmit={handleSaveNotify} className="space-y-6">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <BellRing className="h-5 w-5 text-amber-500" /> Cấu Hình Cảnh Báo & Kênh Thông Báo Tự Động
-            </h3>
+              <BellRing className="h-5 w-5 text-amber-500" /> {t('cau_hinh_canh_bao_kenh', 'Cấu Hình Cảnh Báo & Kênh Thông Báo Tự Động')}</h3>
 
             <div className="space-y-4">
               <label className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 cursor-pointer">
                 <div>
                   <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
-                    Cảnh Báo Hàng Tồn Kho Dưới Định Mức
-                  </span>
+                    {t('canh_bao_hang_ton_kho', 'Cảnh Báo Hàng Tồn Kho Dưới Định Mức')}</span>
                   <span className="text-[11px] text-zinc-500">
-                    Gửi thông báo trên thanh topbar khi số lượng sản phẩm chạm ngưỡng tồn tối thiểu.
-                  </span>
+                    {t('gui_thong_bao_tren_thanh', 'Gửi thông báo trên thanh topbar khi số lượng sản phẩm chạm ngưỡng tồn tối thiểu.')}</span>
                 </div>
                 <input
                   type="checkbox"
@@ -1173,11 +1145,9 @@ export const SaaSSettingsPage: React.FC = () => {
               <label className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 cursor-pointer">
                 <div>
                   <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
-                    Cảnh Báo Công Nợ Khách Hàng Quá Hạn
-                  </span>
+                    {t('canh_bao_cong_no_khach', 'Cảnh Báo Công Nợ Khách Hàng Quá Hạn')}</span>
                   <span className="text-[11px] text-zinc-500">
-                    Cảnh báo khi khoản phải thu vượt quá {notifyConfig.debtWarningDays} ngày chưa thanh toán.
-                  </span>
+                    {t('canh_bao_khi_khoan_phai', 'Cảnh báo khi khoản phải thu vượt quá')}{notifyConfig.debtWarningDays} {t('ngay_chua_thanh_toan', 'ngày chưa thanh toán.')}</span>
                 </div>
                 <input
                   type="checkbox"
@@ -1190,11 +1160,9 @@ export const SaaSSettingsPage: React.FC = () => {
               <label className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 cursor-pointer">
                 <div>
                   <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
-                    Cảnh Báo Lệch Kho Sau Khi Kiểm Kê
-                  </span>
+                    {t('canh_bao_lech_kho_sau', 'Cảnh Báo Lệch Kho Sau Khi Kiểm Kê')}</span>
                   <span className="text-[11px] text-zinc-500">
-                    Tự động tạo phiếu thông báo khi phát hiện chênh lệch giữa kho sổ sách và kiểm kê thực tế.
-                  </span>
+                    {t('tu_dong_tao_phieu_thong', 'Tự động tạo phiếu thông báo khi phát hiện chênh lệch giữa kho sổ sách và kiểm kê thực tế.')}</span>
                 </div>
                 <input
                   type="checkbox"
@@ -1221,20 +1189,16 @@ export const SaaSSettingsPage: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-4 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <Download className="h-5 w-5 text-emerald-500" /> Sao Lưu Dữ Liệu An Toàn (JSON Backup)
-            </h3>
+              <Download className="h-5 w-5 text-emerald-500" /> {t('sao_luu_du_lieu_an', 'Sao Lưu Dữ Liệu An Toàn (JSON Backup)')}</h3>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
-              Xuất toàn bộ cấu hình hệ thống, bảng định nghĩa menu DB, thông tin doanh nghiệp và chính sách vận hành ra file định dạng JSON.
-            </p>
+              {t('xuat_toan_bo_cau_hinh', 'Xuất toàn bộ cấu hình hệ thống, bảng định nghĩa menu DB, thông tin doanh nghiệp và chính sách vận hành ra file định dạng JSON.')}</p>
 
             <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
-                  Tải Về File Sao Lưu Toàn Bộ Cấu Hình ERP
-                </p>
+                  {t('tai_ve_file_sao_luu', 'Tải Về File Sao Lưu Toàn Bộ Cấu Hình ERP')}</p>
                 <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
-                  File bao gồm chứng từ, menu active, chính sách thuế & cấu hình API.
-                </p>
+                  {t('file_bao_gom_chung_tu', 'File bao gồm chứng từ, menu active, chính sách thuế & cấu hình API.')}</p>
               </div>
               <button
                 type="button"

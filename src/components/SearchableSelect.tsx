@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, ChevronDown, Check, X } from 'lucide-react';
 import { matchesVietnameseSearch } from '../utils/vietnamese';
+import { useTranslation } from 'react-i18next';
 
 export interface SelectOption {
   value: string | number;
@@ -27,6 +28,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   className = '',
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -183,7 +185,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm nhanh theo tên, mã SKU, MST..."
+              placeholder={t('tim_nhanh_theo_ten_ma', 'Tìm nhanh theo tên, mã SKU, MST...')}
               className="w-full text-xs bg-transparent border-none outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
             />
             {searchTerm && (
@@ -242,7 +244,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               })
             ) : (
               <div className="p-4 text-center text-xs text-zinc-400">
-                Không tìm thấy kết quả phù hợp cho "{searchTerm}"
+                {t('khong_tim_thay_ket_qua', 'Không tìm thấy kết quả phù hợp cho "')}{searchTerm}"
               </div>
             )}
           </div>

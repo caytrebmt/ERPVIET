@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSaaSAuth } from "../contexts/SaaSAuthContext";
 import { ShieldAlert, ArrowLeft, Lock } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 interface SaaSProtectedRouteProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface SaaSProtectedRouteProps {
 }
 
 const SaaSProtectedRoute: React.FC<SaaSProtectedRouteProps> = ({ children, allowedRoles, superAdminOnly }) => {
+  const { t } = useTranslation();
   const { isErpAuthenticated, erpLoading, erpUser, hasRole } = useSaaSAuth();
   const location = useLocation();
 
@@ -18,7 +20,7 @@ const SaaSProtectedRoute: React.FC<SaaSProtectedRouteProps> = ({ children, allow
       <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-amber-500">
         <div className="flex flex-col items-center gap-3">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500"></div>
-          <p className="text-xs font-semibold text-zinc-400">Đang kiểm tra quyền truy cập hệ thống ERP-VIỆT...</p>
+          <p className="text-xs font-semibold text-zinc-400">{t('dang_kiem_tra_quyen_truy', 'Đang kiểm tra quyền truy cập hệ thống ERP-VIỆT...')}</p>
         </div>
       </div>
     );
@@ -35,17 +37,16 @@ const SaaSProtectedRoute: React.FC<SaaSProtectedRouteProps> = ({ children, allow
           <ShieldAlert className="w-8 h-8" />
         </div>
         <h2 className="text-xl font-bold text-zinc-100 mb-2">
-          403 - Không Có Quyền Truy Cập
+          {t('protected_route_403_access_denied', '403 - Không Có Quyền Truy Cập')}
         </h2>
         <p className="text-xs text-zinc-400 max-w-md mb-6">
-          Chỉ <strong className="text-amber-400">quản trị viên nền tảng</strong> mới có quyền truy cập tính năng này.
-        </p>
+          {t('chi', 'Chỉ')}<strong className="text-amber-400">{t('quan_tri_vien_nen_tang', 'quản trị viên nền tảng')}</strong> {t('moi_co_quyen_truy_cap', 'mới có quyền truy cập tính năng này.')}</p>
         <button
           onClick={() => window.history.back()}
           className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Quay lại trang trước</span>
+          <span>{t('quay_lai_trang_truoc', 'Quay lại trang trước')}</span>
         </button>
       </div>
     );
@@ -58,20 +59,19 @@ const SaaSProtectedRoute: React.FC<SaaSProtectedRouteProps> = ({ children, allow
           <ShieldAlert className="w-8 h-8" />
         </div>
         <h2 className="text-xl font-bold text-zinc-100 mb-2">
-          403 - Không Có Quyền Truy Cập Phân Hệ
+          {t('protected_route_403_module_access_denied', '403 - Không Có Quyền Truy Cập Phân Hệ')}
         </h2>
         <p className="text-xs text-zinc-400 max-w-md mb-2">
-          Tài khoản của bạn <strong className="text-amber-400">{erpUser?.full_name}</strong> ({erpUser?.role_name_vi}) không được cấp quyền truy cập tính năng này.
-        </p>
+          {t('tai_khoan_cua_ban', 'Tài khoản của bạn')}<strong className="text-amber-400">{erpUser?.full_name}</strong> ({erpUser?.role_name_vi}{t('khong_duoc_cap_quyen_truy', ') không được cấp quyền truy cập tính năng này.')}</p>
         <p className="text-[11px] text-zinc-500 max-w-sm mb-6">
-          Các vai trò có quyền: <span className="text-zinc-300 font-mono">{allowedRoles.join(", ")}</span>
+          {t('cac_vai_tro_co_quyen', 'Các vai trò có quyền:')}<span className="text-zinc-300 font-mono">{allowedRoles.join(", ")}</span>
         </p>
         <button
           onClick={() => window.history.back()}
           className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Quay lại trang trước</span>
+          <span>{t('quay_lai_trang_truoc', 'Quay lại trang trước')}</span>
         </button>
       </div>
     );

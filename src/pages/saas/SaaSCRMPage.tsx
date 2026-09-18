@@ -198,12 +198,12 @@ export const SaaSCRMPage: React.FC = () => {
             className="w-full sm:w-auto px-3 py-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100"
           >
             <option value="ALL">{t('crm_all_statuses', 'Tất cả Trạng thái')}</option>
-            <option value="NEW">NEW (Mới tạo)</option>
-            <option value="CONTACTED">CONTACTED (Đã liên hệ)</option>
-            <option value="QUALIFIED">QUALIFIED (Đánh giá tiềm năng)</option>
-            <option value="PROPOSAL">PROPOSAL (Đã gửi Báo giá)</option>
-            <option value="WON">WON (Đã chốt HD)</option>
-            <option value="LOST">LOST (Hủy/Thất bại)</option>
+            <option value="NEW">{t('new_moi_tao', 'NEW (Mới tạo)')}</option>
+            <option value="CONTACTED">{t('contacted_da_lien_he', 'CONTACTED (Đã liên hệ)')}</option>
+            <option value="QUALIFIED">{t('qualified_danh_gia_tiem_nang', 'QUALIFIED (Đánh giá tiềm năng)')}</option>
+            <option value="PROPOSAL">{t('proposal_da_gui_bao_gia', 'PROPOSAL (Đã gửi Báo giá)')}</option>
+            <option value="WON">{t('won_da_chot_hd', 'WON (Đã chốt HD)')}</option>
+            <option value="LOST">{t('lost_huy_that_bai', 'LOST (Hủy/Thất bại)')}</option>
           </select>
         </div>
 
@@ -216,7 +216,7 @@ export const SaaSCRMPage: React.FC = () => {
         </button>
       </div>
 
-      {loading && <p className="text-xs text-zinc-500">Đang tải Lead từ PostgreSQL...</p>}
+      {loading && <p className="text-xs text-zinc-500">{t('dang_tai_lead_tu_postgresql', 'Đang tải Lead từ PostgreSQL...')}</p>}
 
       {/* Leads Table */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-2xs">
@@ -323,7 +323,7 @@ export const SaaSCRMPage: React.FC = () => {
                   type="text"
                   value={newLead.company_name}
                   onChange={(e) => setNewLead({ ...newLead, company_name: e.target.value })}
-                  placeholder="Ví dụ: Công ty TNHH Thương Mại ABC"
+                  placeholder={t('vi_du_cong_ty_tnhh', 'Ví dụ: Công ty TNHH Thương Mại ABC')}
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100"
                 />
               </div>
@@ -344,13 +344,12 @@ export const SaaSCRMPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Email
-                  </label>
+                    {t('email_2', 'Email')}</label>
                   <input
                     type="email"
                     value={newLead.email}
                     onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
-                    placeholder="example@domain.vn"
+                    placeholder={t('example_domain_vn', 'example@domain.vn')}
                     className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -377,8 +376,8 @@ export const SaaSCRMPage: React.FC = () => {
                     onChange={(e) => setNewLead({ ...newLead, source: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100"
                   >
-                    <option value="Website">Website Form</option>
-                    <option value="Hotline">Hotline / Zalo</option>
+                    <option value="Website">{t('website_form', 'Website Form')}</option>
+                    <option value="Hotline">{t('hotline_zalo', 'Hotline / Zalo')}</option>
                     <option value="Event">{t('saas_c_r_m_trien_lam_event', 'Triển Lãm / Event')}</option>
                     <option value="Referral">{t('saas_c_r_m_ng_oi_quen_gioi_thieu', 'Người quen Giới thiệu')}</option>
                   </select>

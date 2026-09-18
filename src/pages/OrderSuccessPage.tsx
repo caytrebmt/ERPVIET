@@ -64,8 +64,7 @@ const OrderSuccessPage: React.FC = () => {
           </p>
         </p>
         <Link to={shopPath("/")} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-4">
-          Quay lại trang chủ
-        </Link>
+          {t('quay_lai_trang_chu', 'Quay lại trang chủ')}</Link>
       </div>
     );
   }
@@ -82,14 +81,13 @@ const OrderSuccessPage: React.FC = () => {
         <div className="w-12 h-12 bg-green-50 dark:bg-green-950/20 rounded-full flex items-center justify-center text-green-600 dark:text-green-400 mb-1">
           <CheckCircle className="w-8 h-8" />
         </div>
-        <h1 className="text-lg md:text-xl font-bold text-gray-850 dark:text-white">ĐẶT HÀNG THÀNH CÔNG!</h1>
+        <h1 className="text-lg md:text-xl font-bold text-gray-850 dark:text-white">{t('dat_hang_thanh_cong', 'ĐẶT HÀNG THÀNH CÔNG!')}</h1>
         <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md leading-relaxed m-0">
-          Cảm ơn bạn <strong className="text-gray-850 dark:text-gray-200">{order.customerName}</strong> đã đặt mua hàng. Đơn hàng của bạn đã được ghi nhận trên hệ thống ERPACC và đang được bộ phận vận hành xử lý.
-        </p>
+          {t('cam_on_ban', 'Cảm ơn bạn')}<strong className="text-gray-850 dark:text-gray-200">{order.customerName}</strong> {t('da_dat_mua_hang_don', 'đã đặt mua hàng. Đơn hàng của bạn đã được ghi nhận trên hệ thống ERPACC và đang được bộ phận vận hành xử lý.')}</p>
 
         {/* Copyable Order Code badge */}
         <div className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-800 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 mt-2 flex flex-wrap items-center gap-2 sm:gap-3 select-all">
-          <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase">Mã đơn hàng:</span>
+          <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase">{t('ma_don_hang', 'Mã đơn hàng:')}</span>
           <span className="font-mono text-sm font-bold text-gray-950 dark:text-white truncate">{order.code}</span>
           <button
             onClick={copyCodeToClipboard}
@@ -107,16 +105,15 @@ const OrderSuccessPage: React.FC = () => {
         <div className={`flex flex-col gap-4 ${order.paymentMethod === "VIETQR" ? "md:col-span-7" : "md:col-span-12"}`}>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-xs flex flex-col gap-3.5 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-sm border-b border-gray-100 dark:border-gray-800 pb-2.5 uppercase tracking-wider">
-              CHI TIẾT ĐƠN HÀNG
-            </h3>
+              {t('chi_tiet_don_hang', 'CHI TIẾT ĐƠN HÀNG')}</h3>
 
             <div className="flex flex-col gap-2.5 text-xs text-gray-600 dark:text-gray-400">
               <div className="flex justify-between">
-                <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" /> Ngày lập đơn:</span>
+                <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" /> {t('ngay_lap_don', 'Ngày lập đơn:')}</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-250">{formatDate(order.createdAt)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="flex items-center gap-1.5"><CreditCard className="w-4 h-4 text-gray-400 dark:text-gray-500" /> Thanh toán:</span>
+                <span className="flex items-center gap-1.5"><CreditCard className="w-4 h-4 text-gray-400 dark:text-gray-500" /> {t('thanh_toan', 'Thanh toán:')}</span>
                 <span className="font-bold text-indigo-600 dark:text-indigo-400 uppercase">
                   {order.paymentMethod === "COD"
                     ? "Thanh toán khi nhận (COD)"
@@ -126,16 +123,16 @@ const OrderSuccessPage: React.FC = () => {
                 </span>
               </div>
               <div className="border-t border-gray-100 dark:border-gray-800 pt-3 flex flex-col gap-1 text-[11px] leading-relaxed">
-                <span className="font-bold text-gray-700 dark:text-gray-300">Thông tin nhận hàng:</span>
-                <p className="m-0 text-gray-600 dark:text-gray-400">Họ tên: <strong className="text-gray-800 dark:text-gray-200">{order.customerName}</strong></p>
-                <p className="m-0 text-gray-600 dark:text-gray-400">Điện thoại: {order.customerPhone}</p>
-                <p className="m-0 text-gray-600 dark:text-gray-400">Địa chỉ giao: {order.shippingAddress}</p>
-                {order.note && <p className="m-0 text-gray-500 dark:text-gray-450 italic">Ghi chú: "{order.note}"</p>}
+                <span className="font-bold text-gray-700 dark:text-gray-300">{t('thong_tin_nhan_hang', 'Thông tin nhận hàng:')}</span>
+                <p className="m-0 text-gray-600 dark:text-gray-400">{t('ho_ten', 'Họ tên:')}<strong className="text-gray-800 dark:text-gray-200">{order.customerName}</strong></p>
+                <p className="m-0 text-gray-600 dark:text-gray-400">{t('dien_thoai', 'Điện thoại:')}{order.customerPhone}</p>
+                <p className="m-0 text-gray-600 dark:text-gray-400">{t('dia_chi_giao', 'Địa chỉ giao:')}{order.shippingAddress}</p>
+                {order.note && <p className="m-0 text-gray-500 dark:text-gray-450 italic">{t('ghi_chu', 'Ghi chú: "')}{order.note}"</p>}
               </div>
 
               {/* Items checklist summary */}
               <div className="border-t border-gray-100 dark:border-gray-800 pt-3 mt-1">
-                <span className="font-bold text-gray-700 dark:text-gray-300 block mb-2">Sản phẩm đã mua:</span>
+                <span className="font-bold text-gray-700 dark:text-gray-300 block mb-2">{t('san_pham_da_mua', 'Sản phẩm đã mua:')}</span>
                 <div className="divide-y divide-gray-50 dark:divide-gray-850 max-h-32 overflow-y-auto">
                   {order.items.map((item) => (
                     <div key={item.id} className="flex justify-between py-1.5 text-[11px] text-gray-600 dark:text-gray-450">
@@ -158,14 +155,13 @@ const OrderSuccessPage: React.FC = () => {
         {order.paymentMethod === "VIETQR" && (
           <div className="md:col-span-5 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-xs flex flex-col items-center text-center gap-3 transition-colors duration-200">
             <h3 className="font-bold text-gray-900 dark:text-white text-sm border-b border-gray-100 dark:border-gray-800 pb-2 w-full uppercase tracking-wider">
-              QUÉT MÃ VIETQR
-            </h3>
+              {t('quet_ma_vietqr', 'QUÉT MÃ VIETQR')}</h3>
             <div className="relative aspect-square w-full max-w-[200px] border border-gray-150 dark:border-gray-800 p-2 rounded-lg bg-white shadow-xs">
-              <img src={vietQrUrl} alt="VietQR Vietcombank" className="w-full h-full object-contain" />
+              <img src={vietQrUrl} alt={t('vietqr_vietcombank', 'VietQR Vietcombank')} className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col gap-1 text-[10px] text-gray-500 dark:text-gray-450 leading-normal max-w-[220px]">
-              <p className="m-0 font-bold text-indigo-600 dark:text-indigo-400">Quét mã bằng ứng dụng Ngân hàng (Mobile Banking)</p>
-              <p className="m-0">Mã QR đã chứa chính xác số tiền <strong className="text-gray-800 dark:text-gray-200">{formatPrice(order.total_amount)}</strong> và nội dung chuyển tiền <strong className="text-gray-800 dark:text-gray-200">{order.code}</strong> để tự động duyệt đơn hỏa tốc.</p>
+              <p className="m-0 font-bold text-indigo-600 dark:text-indigo-400">{t('quet_ma_bang_ung_dung', 'Quét mã bằng ứng dụng Ngân hàng (Mobile Banking)')}</p>
+              <p className="m-0">{t('ma_qr_da_chua_chinh', 'Mã QR đã chứa chính xác số tiền')}<strong className="text-gray-800 dark:text-gray-200">{formatPrice(order.total_amount)}</strong> {t('va_noi_dung_chuyen_tien', 'và nội dung chuyển tiền')}<strong className="text-gray-800 dark:text-gray-200">{order.code}</strong> {t('de_tu_dong_duyet_don', 'để tự động duyệt đơn hỏa tốc.')}</p>
             </div>
           </div>
         )}
@@ -177,8 +173,7 @@ const OrderSuccessPage: React.FC = () => {
           to={shopPath("/")}
           className="bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-bold px-6 py-2.5 rounded-full shadow-xs transition-colors cursor-pointer"
         >
-          Tiếp tục mua sắm
-        </Link>
+          {t('tiep_tuc_mua_sam', 'Tiếp tục mua sắm')}</Link>
         <Link
           to={shopPath("/orders")}
           className="border border-indigo-600 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-xs font-bold px-6 py-2.5 rounded-full transition-all cursor-pointer flex items-center gap-1 shadow-xs"

@@ -78,6 +78,10 @@ interface CustomerOption {
   address: string;
 }
 
+const STOCK_OUT_APPROVED_KEYWORDS = ['duyệt', 'xuất kho', 'Đóng gói', 'thành công', 'Đã duyệt'] as const;
+const STOCK_OUT_PENDING_KEYWORDS = ['Chờ'] as const;
+const hasStockOutStatusKeyword = (status: string | undefined, keywords: readonly string[]) => keywords.some((keyword) => String(status || '').includes(keyword));
+
 export const SaaSStockOutPage: React.FC = () => {
   const { t } = useLanguage();
   const { addToast } = useToast();
@@ -106,7 +110,7 @@ export const SaaSStockOutPage: React.FC = () => {
             quantity: o.items?.[0]?.quantity || 0,
             amount: o.total_amount || 0,
             items: o.items || [],
-            status: o.erp_status?.includes('PXK') || o.erp_status?.includes('duyệt') || o.erp_status?.includes('xuất kho') || o.erp_status?.includes('Đóng gói') || o.erp_status?.includes('Shipper') || o.erp_status?.includes('thành công')
+            status: o.erp_status?.includes('PXK') || o.erp_status?.includes('Shipper') || hasStockOutStatusKeyword(o.erp_status, STOCK_OUT_APPROVED_KEYWORDS)
               ? 'Đã duyệt & Xuất kho (PX)'
               : 'Chờ duyệt xuất kho',
           }));
@@ -507,7 +511,7 @@ export const SaaSStockOutPage: React.FC = () => {
       header: t('saas_stock_out_trang_thai_quy_trinh', 'Trạng Thái Quy Trình'),
       cell: (info) => {
         const val = info.getValue() as string;
-        const isApproved = val.includes('Đã duyệt');
+        const isApproved = hasStockOutStatusKeyword(val, STOCK_OUT_APPROVED_KEYWORDS);
         return (
           <span
             className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${
@@ -526,7 +530,7 @@ export const SaaSStockOutPage: React.FC = () => {
       id: 'actions',
       header: t('saas_stock_out_duyet_d_n_erp', 'Duyệt Đơn ERP'),
       cell: ({ row }) => {
-        const isApproved = row.original.status.includes('Đã duyệt');
+        const isApproved = hasStockOutStatusKeyword(row.original.status, STOCK_OUT_APPROVED_KEYWORDS);
         if (isApproved) {
           return <span className="text-xs font-semibold text-emerald-600 italic">{t('saas_stock_out_da_lap_phieu_px', 'Đã lập phiếu PX')}</span>;
         }
@@ -579,7 +583,7 @@ export const SaaSStockOutPage: React.FC = () => {
               : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
           }`}
         >
-          <Globe className="h-4 w-4" /> {t('don_hang_webshop_cho_duyet', 'Đơn Hàng WebShop Chờ Duyệt (')}{webOrders.filter((w) => w.status.includes('Chờ')).length})
+          <Globe className="h-4 w-4" /> {t('don_hang_webshop_cho_duyet', 'Đơn Hàng WebShop Chờ Duyệt (')}{webOrders.filter((w) => hasStockOutStatusKeyword(w.status, STOCK_OUT_PENDING_KEYWORDS)).length})
         </button>
       </div>
 

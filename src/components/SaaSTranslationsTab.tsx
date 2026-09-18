@@ -527,7 +527,7 @@ export const SaaSTranslationsTab: React.FC = () => {
             <button
               onClick={handleSyncJson}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition cursor-pointer border border-emerald-200 dark:border-emerald-800"
-              title="Sync translations from JSON locale files"
+              title={t('sync_translations_from_json_locale', 'Sync translations from JSON locale files')}
             >
               <RefreshCw className="w-3.5 h-3.5 text-emerald-500" />
               <span>{t('dong_bo_json_sync_json', 'Đồng bộ JSON')}</span>
@@ -539,7 +539,7 @@ export const SaaSTranslationsTab: React.FC = () => {
               title={t('xuat_file_json_dich_thuat', 'Xuất file JSON dịch thuật')}
             >
               <Download className="w-3.5 h-3.5 text-blue-500" />
-              <span>JSON Export</span>
+              <span>{t('json_export', 'JSON Export')}</span>
             </button>
 
             <label className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer ${isImporting ? 'opacity-60 pointer-events-none' : ''}`}>
@@ -658,8 +658,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                     className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
                     title={t('sap_xep_theo_tieng_viet', 'Sắp xếp theo tiếng Việt (thứ tự bảng chữ cái tiếng Việt)')}
                   >
-                    Tiếng Việt 🇻🇳
-                    {renderSortIcon('vi')}
+                    {t('tieng_viet', 'Tiếng Việt 🇻🇳')}{renderSortIcon('vi')}
                   </button>
                 </th>
                 <th className="py-3 px-4 w-1/3">
@@ -668,8 +667,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                     className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
                     title={t('sap_xep_theo_tieng_anh', 'Sắp xếp theo tiếng Anh (trên server)')}
                   >
-                    English 🇬🇧
-                    {renderSortIcon('en')}
+                    {t('english', 'English 🇬🇧')}{renderSortIcon('en')}
                   </button>
                 </th>
                 <th className="py-3 px-4 text-right w-24">{t('actions', 'Thao tác')}</th>
@@ -712,7 +710,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                                 type="text"
                                 value={editCategory}
                                 onChange={(e) => setEditCategory(e.target.value.toLowerCase().trim())}
-                                placeholder="category"
+                                placeholder={t('category_2', 'category')}
                                 className="px-1.5 py-0.5 rounded border border-blue-400 dark:border-blue-600 bg-white dark:bg-zinc-800 text-[10px] font-mono font-bold text-zinc-900 dark:text-zinc-100"
                               />
                             ) : (
@@ -720,8 +718,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                             )}
                             {item.isCustom && (
                               <span className="px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-sans">
-                                Custom
-                              </span>
+                                {t('custom', 'Custom')}</span>
                             )}
                           </div>
                         </div>
@@ -737,7 +734,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                             className="w-full p-2 rounded-lg border border-blue-400 dark:border-blue-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         ) : (
-                          <span className="font-medium text-zinc-800 dark:text-zinc-200 break-words">{item.vi || <span className="text-zinc-400 italic">(Chưa dịch)</span>}</span>
+                          <span className="font-medium text-zinc-800 dark:text-zinc-200 break-words">{item.vi || <span className="text-zinc-400 italic">{t('chua_dich', '(Chưa dịch)')}</span>}</span>
                         )}
                       </td>
 
@@ -751,7 +748,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                             className="w-full p-2 rounded-lg border border-blue-400 dark:border-blue-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                           />
                         ) : (
-                          <span className="font-medium text-zinc-800 dark:text-zinc-200 break-words">{item.en || <span className="text-zinc-400 italic">(Untranslated)</span>}</span>
+                          <span className="font-medium text-zinc-800 dark:text-zinc-200 break-words">{item.en || <span className="text-zinc-400 italic">{t('untranslated', '(Untranslated)')}</span>}</span>
                         )}
                       </td>
 
@@ -877,7 +874,7 @@ export const SaaSTranslationsTab: React.FC = () => {
               {t('cau_hinh_ngon_ngu_he', 'Cấu hình Ngôn ngữ Hệ thống & Quốc gia')}
             </h3>
           </div>
-          <span className="text-xs text-zinc-500">Default: 🇻🇳 Tiếng Việt (vi)</span>
+          <span className="text-xs text-zinc-500">{t('default_tieng_viet_vi', 'Default: 🇻🇳 Tiếng Việt (vi)')}</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -886,8 +883,8 @@ export const SaaSTranslationsTab: React.FC = () => {
             <div className="flex items-center gap-3">
               <span className="text-2xl">🇻🇳</span>
               <div>
-                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Tiếng Việt (Vietnamese)</h4>
-                <p className="text-xs text-zinc-500">Mã: <code className="font-mono text-blue-600">vi</code> | {t('ngon_ngu_goc_he_thong', 'Ngôn ngữ gốc hệ thống')}</p>
+                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{t('tieng_viet_vietnamese_2', 'Tiếng Việt (Vietnamese)')}</h4>
+                <p className="text-xs text-zinc-500">{t('translations_code_label', 'Mã:')} <code className="font-mono text-blue-600">vi</code> | {t('ngon_ngu_goc_he_thong', 'Ngôn ngữ gốc hệ thống')}</p>
               </div>
             </div>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
@@ -900,8 +897,8 @@ export const SaaSTranslationsTab: React.FC = () => {
             <div className="flex items-center gap-3">
               <span className="text-2xl">🇬🇧</span>
               <div>
-                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">English (Tiếng Anh)</h4>
-                <p className="text-xs text-zinc-500">Mã: <code className="font-mono text-blue-600">en</code> | {t('thuong_mai_quoc_te_commercial', 'Thương mại quốc tế')}</p>
+                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{t('english_tieng_anh', 'English (Tiếng Anh)')}</h4>
+                <p className="text-xs text-zinc-500">{t('translations_code_label', 'Mã:')} <code className="font-mono text-blue-600">en</code> | {t('thuong_mai_quoc_te_commercial', 'Thương mại quốc tế')}</p>
               </div>
             </div>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
@@ -938,7 +935,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Ví dụ: report_monthly_vat, button_approve_po"
+                  placeholder={t('vi_du_report_monthly_vat', 'Ví dụ: report_monthly_vat, button_approve_po')}
                   value={newKey}
                   onChange={(e) => setNewKey(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
@@ -981,7 +978,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                 <textarea
                   rows={2}
                   required
-                  placeholder="Nhập nghĩa Tiếng Việt..."
+                  placeholder={t('nhap_nghia_tieng_viet', 'Nhập nghĩa Tiếng Việt...')}
                   value={newVi}
                   onChange={(e) => setNewVi(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -994,7 +991,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Enter English translation..."
+                  placeholder={t('enter_english_translation', 'Enter English translation...')}
                   value={newEn}
                   onChange={(e) => setNewEn(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
