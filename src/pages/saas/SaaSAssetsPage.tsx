@@ -191,7 +191,7 @@ export const SaaSAssetsPage: React.FC = () => {
         </div>
       </div>
 
-      {loading && <p className="text-xs text-zinc-500">Đang tải tài sản từ PostgreSQL...</p>}
+      {loading && <p className="text-xs text-zinc-500">{t('dang_tai_tai_san_tu', 'Đang tải tài sản từ PostgreSQL...')}</p>}
 
       {/* Assets Table */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-2xs">

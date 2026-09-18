@@ -737,10 +737,65 @@ jobs:
 229.6 kB / gzip 68.7 kB — đổi lại là EN đầy đủ; có thể lazy-load ngôn ngữ không hoạt động nếu muốn giảm).
 
 **Còn tồn (đề xuất follow-up, không chặn)**:
-- 1.492 chuỗi VI hardcode ở các trang chưa nối `t()` (ratchet đã khoá, mỗi module giảm dần được).
+- Chuỗi VI hardcode ở các trang chưa nối `t()`: theo metric lúc đó là 1.492, nhưng bộ đếm tính nhầm cả
+  giá trị mặc định trong `t(key, 'Tiếng Việt')`; metric đúng (đã sửa trong `scripts/i18n-count-hardcoded.cjs`)
+  là **790**. Đợt 2 bên dưới đã kéo xuống **684** và baseline ratchet đã ghi theo số mới.
 - `missing-translations-report.md` + `candidates.json` + `scripts/i18n-replacements.json` là input của
   đợt cũ, nay đã lỗi thời → nên xóa ở đợt dọn tiếp theo.
 - 14 key vẫn dùng dấu gạch ngang (`dashboard-tong-quan`, `xem-webshop`, `an-mat-khau`…) thay vì
   snake_case theo chuẩn §2.4 — gộp vào đợt chuẩn hoá tên key (đã có `scripts/normalize-locales.js`).
 - Thông báo trả về từ `saasRouter`/`shopRouter` (key `api_*`) vẫn là chuỗi cứng trong API;
   dịch chúng cần chọn ngôn ngữ theo request (`Accept-Language` / `preferred_lang`), không thuộc phạm vi từ điển UI.
+
+---
+
+## 🧾 PHỤ LỤC — ĐỢT 2 CỦA ISSUE #12 (2026-09-18)
+
+Phạm vi: nối `t()` cho 3 module chưa có ai dịch — `SaaSAssetsPage`, `SaaSStockInPage`, `SaaSStockOutPage`
+(chọn theo mức độ hiển thị: trang tài sản + 2 phiếu nhập/xuất kho).
+
+| Hạng mục | Kết quả |
+|---|---|
+| Điểm gọi `t()` mới trong 3 trang | **132** (StockOut 74 · StockIn 57 · Assets 1) — JSX text, attribute UI, tham số toast, `label:`/`title:`; tổng `t()` của 3 trang: **162** |
+| Key mới vào từ điển | **56** (tổng **1.373** key đang dùng; vi/en bằng nhau; **0** giá trị EN rỗng; **0** EN còn dấu tiếng Việt) |
+| Ternary còn lại ở 3 trang | `isEn ?` = **0**, `language === 'en' ?` = **0** |
+| Chuỗi UI thật còn hardcode ở 3 trang | **7** — đều là ký hiệu tiền `đ` ghép trong JSX (`t()` đã phủ phần còn lại) |
+| Nợ hardcode toàn repo (metric đúng) | **790 → 684**; baseline ratchet ghi lại = **684** |
+| Kiểm thử | `tsc` 0 lỗi · `npm test` **85/85** · `npm run lint` sạch · `npm run build` OK · dev server trả 200 + transform OK cho `/saas/assets`, `/saas/stock-in`, `/saas/stock-out` |
+
+Thuật ngữ mới chốt theo `docs/i18n-glossary.md`: Phiếu nhập kho → *Goods Receipt / receipt note* ·
+Phiếu xuất kho → *Delivery Note* · Sổ Nhập Kho → *Stock-In Register* · Tồn kho → *Inventory Balance* ·
+VAT đầu vào/đầu ra → *Input VAT* / *Output VAT* · Đơn vị tính (ĐVT) → *UOM* · Công nợ phải thu →
+*Accounts Receivable* · “Thu tiền ngay” → *cash on delivery* · “Không thuế” → *Tax exempt*.
+
+**Ba lỗi công cụ đã vấp và cách sửa** (đọc trước khi chạy codemod trên module khác):
+
+1. `NEVER_ATTRS` chứa `'className'` trong khi script so sánh tên attribute đã `.toLowerCase()`
+   → bộ lọc không khớp, 21 class Tailwind (`p-6 space-y-6 p-2`) bị biến thành key.
+   *Sửa:* chuẩn hoá danh sách cấm về chữ thường và **chỉ** tạo key cho attribute nằm trong whitelist
+   `UI_ATTRS` (`label`, `title`, `placeholder`, `alt`, `aria-label`…), thêm `to`/`href`/`path`/`accessorKey`… vào nhóm cấm.
+2. Bộ đếm nợ tính cả chuỗi mặc định trong `t('key','Tiếng Việt')` → sau khi nối `t()` hàng loạt, “nợ”
+   tăng 1.492 → 1.515 dù thực tế đã dịch thêm. *Sửa:* bỏ 2 tham số của `t(...)` khỏi thống kê.
+3. `SaaSStockInPage`/`SaaSStockOutPage` **không khai báo** `const { t } = useLanguage()` nên codemod
+   bỏ qua im lặng (đúng, để không sinh code lỗi) → phải chèn hook trước.
+   Codemod giờ tự chèn `import { useLanguage }` + hook nếu component thiếu.
+
+Cách chạy (idempotent, có dry-run):
+
+```bash
+node scripts/i18n-wire-hardcoded.cjs --create-keys --files=src/pages/saas/SaaSAssetsPage.tsx[,…]        # xem kế hoạch
+node scripts/i18n-wire-hardcoded.cjs --create-keys --write --files=… && npx tsc --noEmit                # áp dụng + kiểm tra
+# các key mới có en="" → dịch tay theo docs/i18n-glossary.md rồi:
+node scripts/i18n-count-hardcoded.cjs --write-baseline && npm test
+```
+
+**Còn tồn sau đợt 2 (đề xuất, không chặn):**
+- 127 key di sản bị **mất dấu trong tên** (kiểu `..._duyet_d_n_hang` thay vì `..._don_hang`) do bộ sinh
+  key cũ không Việt→ASCII được `ơ/ư`; giá trị & bản dịch vẫn đúng, chỉ tên key xấu. Nên gộp vào đợt
+  chuẩn hoá tên key (cùng 14 key gạch ngang đã ghi ở trên) — rename hàng loạt bằng cách tính lại
+  `slugOf()` từ giá trị VI rồi cập nhật `src` + 2 file JSON.
+- 684 chuỗi VI chưa nối `t()`, tập trung ở `SaaSSettingsPage` (64), `OrderDetailPage` (42),
+  `SaaSPurchasingPage` (41), `SaaSWebOrdersPage` (40), `SaaSWarehousesPage` (37) → chạy đúng lệnh ở trên theo module.
+- Vài giá trị VI/EN là **mảnh JSX** (`chi_tiet_mat_hang_nhap` = "Chi Tiết Mặt Hàng Nhập Kho (" + số dòng + `dong` = "dòng)")
+  vì text bị `{}` chia cắt. Dịch được, nhưng đẹp hơn là gộp thành `t(key, '… ({{count}} dòng)')`;
+  codemod không tự làm vì phải sửa cấu trúc JSX.

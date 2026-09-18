@@ -167,7 +167,10 @@ thành super admin). Người vận hành khác cần quyền → DBA set thủ 
   cùng một chuỗi → một key duy nhất (dedup theo giá trị VI đã chuẩn hoá).
 - **CI guard**: `tests/i18n.test.ts` (xem §5.5) — parity vi/en, cấm `⚠`, cấm giá trị EN chưa dịch,
   cấm ternary chọn ngôn ngữ, buộc mọi key `t()` trong code phải có trong từ điển, và ratchet chống hardcode tăng.
-- **Từ điển hiện tại**: ~1.3k key, EN đã dịch 100% theo `docs/i18n-glossary.md`.
+- **Từ điển hiện tại**: 1.373 key đang dùng, EN dịch 100% theo `docs/i18n-glossary.md`.
+- **Ratchet nợ dịch**: `scripts/i18n-count-hardcoded.cjs` đếm chuỗi VI hardcode trong tầng hiển thị
+  (AST), chốt vào `tests/i18n-hardcoded-baseline.json` — test i18n FAIL nếu số này tăng. Baseline hiện tại
+  **684 / 34 file**. Chuỗi mặc định trong `t(key, 'Tiếng Việt')` **không** bị tính là nợ vì đã có bản dịch EN.
 ---
 
 ## 3. Các nghiệp vụ (Business Modules)
@@ -554,8 +557,13 @@ node scripts/i18n-count-hardcoded.cjs --write-baseline     # sau khi đã giảm
 node scripts/refactor-lang-ternary.cjs                 # dry-run + /tmp/i18n-plan.json
 node scripts/refactor-lang-ternary.cjs --write
 
-# 3) Nối chuỗi hardcode trong JSX text / thuộc tính UI → t() theo key đã có trong từ điển
+# 3) Nối chuỗi hardcode trong JSX text / thuộc tính UI → t() (tái dùng key đã có trong từ điển;
+#    --create-keys sinh key MỚI cho chuỗi chưa có, và tự chèn useLanguage() nếu component thiếu hook)
 node scripts/i18n-wire-hardcoded.cjs --write
+node scripts/i18n-wire-hardcoded.cjs --create-keys --files=src/pages/saas/SaaSStockInPage.tsx   # dry-run theo module
+node scripts/i18n-wire-hardcoded.cjs --create-keys --write --files=a.tsx,b.tsx                  # áp dụng
+#   → key mới có en="" : PHẢI dịch theo docs/i18n-glossary.md rồi chốt lại baseline:
+#     npx tsc --noEmit && node scripts/i18n-count-hardcoded.cjs --write-baseline && npm test
 
 # 4) Dọn từ điển: flatten key lồng, backfill key code đang gọi, xóa key mồ côi
 node scripts/i18n-prune-and-flatten.cjs

@@ -27,6 +27,9 @@ const ts = require('typescript');
 const ROOT = path.join(__dirname, '..');
 const VI_PATH = path.join(ROOT, 'public', 'locales', 'vi.json');
 const WRITE = process.argv.includes('--write');
+/** --create-keys: với chuỗi UI chưa có trong từ điển → sinh key mới (vi = nguyên văn, en = '' để dịch sau). */
+const CREATE_KEYS = process.argv.includes('--create-keys');
+const NEW_KEYS_PATH = '/tmp/i18n-new-keys.json';
 const FILES_ARG = (process.argv.find((a) => a.startsWith('--files=')) || '').split('=')[1];
 
 /** Thuộc tính chỉ ảnh hưởng tới văn bản hiển thị → được phép bọc t(). */
@@ -43,6 +46,19 @@ const removeTones = (s) =>
 const norm = (s) => removeTones(s).replace(/\s+/g, ' ').trim().toLowerCase();
 const hasLetters = (s) => /[a-zA-ZàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđÀ-Ỹ]/.test(String(s));
 const jsQuote = (t) => `'${String(t).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' ')}'`;
+/** Cần >= 3 ký tự chữ: loại 'đ' (đơn vị tiền), ký hiệu, số. */
+const isProse = (s) => hasLetters(s) && String(s).replace(/[^A-Za-z\u00C0-\u1EF9]/g, '').length >= 3;
+
+const slugOf = (text) => {
+  const base = removeTones(String(text).replace(/\{\{[^}]*\}\}/g, ' '))
+    .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+    .replace(/(^|_)(value\d+|v\d+)(?=_|$)/g, '_').replace(/^_+|_+$/g, '');
+  const words = base.split('_').filter(Boolean);
+  if (!words.length) return '';
+  let key = words.slice(0, 5).join('_');
+  if (key.length > 44) key = key.slice(0, 44).replace(/_+$/, '');
+  return /^[a-z][a-z0-9_]*$/.test(key) ? key : '';
+};
 
 const vi = JSON.parse(fs.readFileSync(VI_PATH, 'utf8'));
 const byViText = new Map();
@@ -50,6 +66,13 @@ for (const [k, v] of Object.entries(vi)) {
   if (k.startsWith('_') || typeof v !== 'string') continue;
   const n = norm(v);
   if (n && !byViText.has(n)) byViText.set(n, k);
+}
+
+/** Văn bản của StringLiteral / NoSubstitutionTemplate (bỏ qua template có ${}). */
+function plainStringText(node, sf) {
+  if (!node) return null;
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
+  return null;
 }
 
 function collectFiles() {
@@ -70,6 +93,22 @@ function collectFiles() {
 
 const plan = [];
 let totalEdits = 0;
+const createdKeys = {};
+
+function createKeyFor(viText, enText) {
+  let key = slugOf(viText || '') || slugOf(enText || '');
+  if (!key) return null;
+  let candidate = key;
+  let i = 2;
+  while (vi[candidate] !== undefined || createdKeys[candidate] !== undefined) {
+    candidate = `${key}_${i++}`;
+  }
+  createdKeys[candidate] = { vi: viText, en: enText || '' };
+  const n = norm(viText);
+  if (!byViText.has(n)) byViText.set(n, candidate);
+  vi[candidate] = viText; // để các vị trí trùng chuỗi tái dùng ngay trong lần chạy này
+  return candidate;
+}
 
 for (const filePath of collectFiles()) {
   const rel = path.relative(ROOT, filePath);
@@ -94,17 +133,26 @@ for (const filePath of collectFiles()) {
   findT(sf);
   if (!tDecls.length) continue; // file không có `t` → bỏ qua
 
-  /** `t` chỉ gọi được trong component đã khai báo nó: xét function gần nhất quanh node. */
-  const enclosingScope = (node) => {
+  /**
+   * `t` phải khả dụng tại vị trí dùng: đi ngược lên các scope cha,`t` khai báo ở scope nào
+   * mà KẾT THÚC TRƯỚC vị trí node (closure hợp lệ) là dùng được.
+   */
+  const scopeOf = (node) => {
     let cur = node.parent;
     while (cur && !ts.isFunctionLike(cur) && !ts.isSourceFile(cur)) cur = cur.parent;
     return cur;
   };
   const tInScope = (node) => {
-    const scope = enclosingScope(node);
-    const lo = scope ? scope.getStart(sf) : 0;
-    const hi = scope ? scope.getEnd() : full.length;
-    return tDecls.some((d) => d.end <= node.getStart(sf) && d.start >= lo - 1 && d.end <= hi + 1);
+    const pos = node.getStart(sf);
+    let scope = node;
+    while (scope) {
+      const lo = ts.isSourceFile(scope) ? 0 : scope.getStart(sf);
+      const hi = ts.isSourceFile(scope) ? full.length : scope.getEnd();
+      if (tDecls.some((d) => d.start >= lo && d.end <= hi && d.end <= pos)) return true;
+      scope = scope.parent && ts.isSourceFile(scope.parent) ? null : scope.parent;
+      while (scope && !ts.isFunctionLike(scope) && !ts.isSourceFile(scope)) scope = scope.parent;
+    }
+    return false;
   };
 
   const edits = [];
@@ -118,15 +166,19 @@ for (const filePath of collectFiles()) {
     if (node.kind === ts.SyntaxKind.JsxText) {
       const raw = full.slice(node.getStart(sf), node.getEnd());
       const trimmed = raw.trim();
-      const key = trimmed && hasLetters(trimmed) && trimmed.length > 1 ? byViText.get(norm(trimmed)) : undefined;
+      let key = trimmed && isProse(trimmed) ? byViText.get(norm(trimmed)) : undefined;
+      if (!key && CREATE_KEYS && isProse(trimmed) && trimmed.length < 200) key = createKeyFor(trimmed);
       if (key && !raw.includes('{') && !raw.includes('}')) {
         const lead = raw.slice(0, raw.indexOf(trimmed[0]));
         const tailLen = raw.length - (raw.indexOf(trimmed) + trimmed.length);
         const tail = raw.slice(raw.length - tailLen);
+        // Giữ khoảng trắng CÙNG DÒNG (ảnh hưởng render); khoảng trắng có xuống dòng được JSX
+        // collapse thành không → bỏ an toàn.
+        const keepWs = (w) => (w && !/[\n\r]/.test(w) ? `{${jsQuote(w)}}` : '');
         const parts = [];
-        if (lead.trim()) parts.push(jsQuote(lead));
+        if (lead.trim()) parts.push(keepWs(lead) || `{${jsQuote(lead)}}`);
         parts.push(`{t(${jsQuote(key)}, ${jsQuote(trimmed)})}`);
-        if (tail.trim()) parts.push(jsQuote(tail));
+        if (tail.trim()) parts.push(keepWs(tail) || `{${jsQuote(tail)}}`);
         addEdit(node.getStart(sf), node.getEnd(), parts.join(''), { kind: 'jsx-text', key, text: trimmed }, node);
       }
     }
@@ -136,8 +188,9 @@ for (const filePath of collectFiles()) {
       const attrName = node.name.getText(sf).toLowerCase();
       const text = node.initializer.text;
       if (!NEVER_ATTRS.has(attrName) && (UI_ATTRS.has(attrName) || hasLetters(text))) {
-        const key = byViText.get(norm(text));
-        if (key && hasLetters(text) && text.trim().length > 1) {
+        let key = byViText.get(norm(text));
+        if (!key && CREATE_KEYS && UI_ATTRS.has(attrName) && isProse(text)) key = createKeyFor(text);
+        if (key && isProse(text)) {
           addEdit(node.getStart(sf), node.getEnd(), `${node.name.getText(sf)}={t(${jsQuote(key)}, ${jsQuote(text)})}`, {
             kind: 'attr',
             key,
@@ -145,6 +198,29 @@ for (const filePath of collectFiles()) {
             text,
           }, node);
         }
+      }
+    }
+
+    if (CREATE_KEYS && ts.isCallExpression(node) && node.arguments.length) {
+      const callee = node.expression.getText(sf);
+      const TOAST_RE = /(?:addToast|showToast|pushToast|toast|alert|confirm|setError|setSuccess|setNotice|notify)$/;
+      if (TOAST_RE.test(callee.replace(/\s/g, '')) || /\.(?:alert|confirm)$/.test(callee)) {
+        const arg0 = node.arguments[0];
+        const text = plainStringText(arg0, sf);
+        if (text && isProse(text) && text.length < 260) {
+          const key = byViText.get(norm(text)) || createKeyFor(text);
+          if (key) addEdit(arg0.getStart(sf), arg0.getEnd(), `t(${jsQuote(key)}, ${jsQuote(text)})`, { kind: 'toast', key, text }, node);
+        }
+      }
+    }
+
+    if (CREATE_KEYS && ts.isPropertyAssignment(node) && ts.isStringLiteral(node.initializer)) {
+      const propName = node.name.getText(sf).replace(/['"]/g, '').toLowerCase();
+      const SAFE_PROPS = /^(label|title|text|header|placeholder|tooltip|errormessage|emptymessage|confirmtext|canceltext|heading|subtitle|buttonlabel|actionlabel|colheader)$/;
+      const text = node.initializer.text;
+      if (SAFE_PROPS.test(propName) && isProse(text) && text.length < 260) {
+        const key = byViText.get(norm(text)) || createKeyFor(text);
+        if (key) addEdit(node.initializer.getStart(sf), node.initializer.getEnd(), `t(${jsQuote(key)}, ${jsQuote(text)})`, { kind: 'prop', key, prop: propName, text }, node);
       }
     }
 
@@ -175,4 +251,28 @@ console.log(`\n🧵 i18n-wire-hardcoded — ${WRITE ? 'WRITE' : 'DRY-RUN'}`);
 console.log(`   files: ${plan.length} | replacements: ${totalEdits}`);
 for (const f of plan) console.log(`   ${f.file}: ${f.count}`);
 fs.writeFileSync('/tmp/i18n-wire-plan.json', JSON.stringify(plan, null, 1));
+if (Object.keys(createdKeys).length) {
+  fs.writeFileSync(NEW_KEYS_PATH, JSON.stringify(createdKeys, null, 1));
+  console.log(`   ⚠ ${Object.keys(createdKeys).length} key MỚI cần dịch EN → ${NEW_KEYS_PATH}`);
+  if (WRITE) {
+    const viPath = path.join(ROOT, 'public', 'locales', 'vi.json');
+    const enPath = path.join(ROOT, 'public', 'locales', 'en.json');
+    const viJson = JSON.parse(fs.readFileSync(viPath, 'utf8'));
+    const enJson = JSON.parse(fs.readFileSync(enPath, 'utf8'));
+    for (const [k, v] of Object.entries(createdKeys)) {
+      viJson[k] = v.vi;
+      enJson[k] = v.en;
+      if (viJson._groups) {
+        if (!viJson._groups['Khác']) viJson._groups['Khác'] = [];
+        if (!viJson._groups['Khác'].includes(k)) viJson._groups['Khác'].push(k);
+      }
+      if (enJson._groups) {
+        if (!enJson._groups['Khác']) enJson._groups['Khác'] = [];
+        if (!enJson._groups['Khác'].includes(k)) enJson._groups['Khác'].push(k);
+      }
+    }
+    fs.writeFileSync(viPath, `${JSON.stringify(viJson, null, 2)}\n`);
+    fs.writeFileSync(enPath, `${JSON.stringify(enJson, null, 2)}\n`);
+  }
+}
 console.log('   📋 /tmp/i18n-wire-plan.json');

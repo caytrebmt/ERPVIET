@@ -8,7 +8,7 @@
 >
 > | Chỉ số | TRƯỚC (khi lập kế hoạch) | SAU |
 > |---|---|---|
-> | Key trong `vi.json` | 1.402 (tích tụ, nhiều key chết) | **1.317** — mọi key đều đang được dùng |
+> | Key trong `vi.json` | 1.402 (tích tụ, nhiều key chết) | **1.373** — mọi key đều đang được dùng |
 > | `en.json` thiếu key | 921 | **0** |
 > | Giá trị EN chưa dịch (`⚠`) | 977 | **0** |
 > | Giá trị EN trùng tiếng Việt | 18 | **0** (guard mới chặn) |
@@ -16,11 +16,19 @@
 > | Ternary `isEn ?` | 138 | **0** |
 > | Ternary `language === 'en' ?` (guard cũ KHÔNG bắt) | 334 | **0** |
 > | Key `t()` gọi trong code nhưng thiếu trong từ điển (UI in raw key) | 20 | **0** (guard mới chặn) |
-> | Chuỗi VI hardcode còn lại trong tầng hiển thị | ~1.445 | **1.492** — đã chốt baseline ratchet, chỉ được giảm |
+> | Chuỗi VI hardcode còn lại trong tầng hiển thị | ~1.445 | **684** (baseline ratchet, chỉ được giảm) |
+> | Điểm gọi `t()` mới ở `SaaSAssetsPage`/`SaaSStockIn/OutPage` (đợt 2) | — | **+132** (162 điểm gọi `t()` ở 3 trang) |
+>
+> *Lưu ý metric:* con số **1.492** ghi lần đầu là lỗi của `scripts/i18n-count-hardcoded.cjs` — nó tính cả
+> chuỗi mặc định trong `t('key', 'Tiếng Việt')` (vốn đã được dịch). Sau khi sửa bộ đếm, cùng cây mã là
+> **790**; đợt 2 nối 3 trang `SaaSAssets`/`SaaSStockIn`/`SaaSStockOut` kéo xuống **684**. Không so trực tiếp
+> 1.492 với 684 như hai phép đo cùng chuẩn.
 >
 > Ba việc trong kế hoạch đều xong ở tầng **từ điển + cơ chế**; phần còn lại là **độ phủ từng trang**
-> (các trang chưa từng gọi `t()` như `SaaSAssetsPage`, `SaaSStockIn/OutPage`, `SaaSQuotationsPage`…)
-> — đã có tool chạy theo module: `node scripts/i18n-wire-hardcoded.cjs --write` + `scripts/refactor-lang-ternary.cjs --write`.
+> (các trang chưa từng gọi `t()` như `SaaSQuotationsPage`, `SaaSSettingsPage`, `CheckoutPage`…).
+> `SaaSAssetsPage`, `SaaSStockInPage`, `SaaSStockOutPage` đã xử lý xong ở **đợt 2** — xem phụ lục #12 của
+> `ISSUES_AND_FIXES.md`. Tool chạy theo module (idempotent, có dry-run):
+> `node scripts/i18n-wire-hardcoded.cjs --create-keys --files=… [--write]` + `scripts/refactor-lang-ternary.cjs --write`.
 > Xem thêm §5.5 của `PROJECT_INFO.md`.
 
 

@@ -61,11 +61,18 @@ for (const file of tsxFiles) {
       const name = node.name.getText(sf).toLowerCase();
       if (!DATA_ATTRS.has(name) && hasViText(node.initializer.text)) n += 1;
     } else if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
-      // chuỗi đứng một mình trong biểu thức UI (ngoài JSX attribute) — ví dụ label: 'Báo giá'
+      // Chuỗi đứng một mình trong biểu thức UI (label: 'Báo giá', addToast('…')) vẫn là NỢ;
+      // nhưng 2 tham số của t(key, 'defaultValue') là mặc định hợp lệ → không tính.
       const parent = node.parent;
-      const isObjectLabel = parent && ts.isPropertyAssignment(parent) && /label|title|text|name|message|placeholder|description|heading|caption/i.test(parent.name.getText(sf));
-      const isIntrinsicText = parent && (ts.isJsxExpression(parent) || ts.isCallExpression(parent));
-      if ((isObjectLabel || (isIntrinsicText && !ts.isJsxAttribute(parent))) && hasViText(node.text)) n += 1;
+      const isTArg =
+        parent && ts.isCallExpression(parent) && /^(?:[A-Za-z0-9_]*\.)?t$/.test(parent.expression.getText(sf));
+      const isJsxAttrExpr = parent && ts.isJsxExpression(parent) && parent.parent && parent.parent.kind === ts.SyntaxKind.JsxAttribute;
+      if (!isTArg && !isJsxAttrExpr) {
+        const isObjectLabel =
+          parent && ts.isPropertyAssignment(parent) && /label|title|text|message|placeholder|description|heading|caption/i.test(parent.name.getText(sf));
+        const isIntrinsicText = parent && (ts.isJsxExpression(parent) || ts.isCallExpression(parent));
+        if ((isObjectLabel || (isIntrinsicText && !ts.isJsxAttribute(parent))) && hasViText(node.text)) n += 1;
+      }
     }
     ts.forEachChild(node, visit);
   };

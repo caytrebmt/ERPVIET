@@ -22,6 +22,7 @@ import { SearchableSelect, SelectOption } from '../../components/SearchableSelec
 import { useToast } from '../../contexts/ToastContext';
 import { generateERPCode } from '../../utils/format';
 import client from '../../api/client';
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   PurchaseOrder,
   fetchPOs,
@@ -78,6 +79,7 @@ interface SupplierOption {
 }
 
 export const SaaSStockInPage: React.FC = () => {
+  const { t } = useLanguage();
   const { addToast } = useToast();
   const location = useLocation();
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ preset: 'all', fromDate: '', toDate: '' });
@@ -264,7 +266,7 @@ export const SaaSStockInPage: React.FC = () => {
   const handleAddLineItem = () => {
     const defaultProd = products[0];
     if (!defaultProd) {
-      addToast('Chưa có sản phẩm thực trong tenant để thêm vào phiếu nhập.', 'error');
+      addToast(t('chua_co_san_pham_thuc', 'Chưa có sản phẩm thực trong tenant để thêm vào phiếu nhập.'), 'error');
       return;
     }
     const newItem: StockInLineItem = {
@@ -282,7 +284,7 @@ export const SaaSStockInPage: React.FC = () => {
 
   const handleRemoveLineItem = (id: string) => {
     if (lineItems.length <= 1) {
-      addToast('Phiếu nhập kho phải có ít nhất 1 mặt hàng!', 'warning');
+      addToast(t('phieu_nhap_kho_phai_co', 'Phiếu nhập kho phải có ít nhất 1 mặt hàng!'), 'warning');
       return;
     }
     setLineItems(lineItems.filter((item) => item.id !== id));
@@ -330,12 +332,12 @@ export const SaaSStockInPage: React.FC = () => {
 
   const handleSaveVoucher = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (lineItems.length === 0) { addToast('Vui lòng thêm ít nhất 1 hàng hóa vào phiếu nhập!', 'error'); return; }
+    if (lineItems.length === 0) { addToast(t('vui_long_them_it_nhat', 'Vui lòng thêm ít nhất 1 hàng hóa vào phiếu nhập!'), 'error'); return; }
     const supplier = suppliers.find((item) => item.id === voucherForm.supplierId);
     const warehouse = voucherForm.warehouse;
-    if (!supplier || !warehouse) { addToast('Vui lòng chọn nhà cung cấp và kho thực trong tenant.', 'error'); return; }
+    if (!supplier || !warehouse) { addToast(t('vui_long_chon_nha_cung', 'Vui lòng chọn nhà cung cấp và kho thực trong tenant.'), 'error'); return; }
     const warehouseId = Number(warehouse);
-    if (!Number.isInteger(warehouseId) || warehouseId <= 0) { addToast('Chưa xác định được kho thực. Vui lòng chọn lại kho.', 'error'); return; }
+    if (!Number.isInteger(warehouseId) || warehouseId <= 0) { addToast(t('chua_xac_dinh_duoc_kho', 'Chưa xác định được kho thực. Vui lòng chọn lại kho.'), 'error'); return; }
     try {
       await client.post('/api/saas/inventory/movements', {
         type: 'NHAP_KHO', warehouseId, referenceDoc: voucherForm.invoiceNo || voucherForm.code,
@@ -354,7 +356,7 @@ export const SaaSStockInPage: React.FC = () => {
   const columns: ColumnDef<StockInVoucher>[] = [
     {
       accessorKey: 'code',
-      header: 'Mã Phiếu',
+      header: t('saas_stock_in_ma_phieu', 'Mã Phiếu'),
       cell: (info) => (
         <div>
           <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
@@ -370,12 +372,12 @@ export const SaaSStockInPage: React.FC = () => {
     },
     {
       accessorKey: 'date',
-      header: 'Ngày Nhập Kho',
+      header: t('saas_stock_in_ngay_nhap_kho', 'Ngày Nhập Kho'),
       cell: (info) => <span className="text-xs text-zinc-600 dark:text-zinc-400 font-mono">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'supplierName',
-      header: 'Nhà Cung Cấp',
+      header: t('menu_suppliers', 'Nhà Cung Cấp'),
       cell: (info) => (
         <div className="max-w-[200px] truncate">
           <p className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 truncate">{info.getValue() as string}</p>
@@ -387,7 +389,7 @@ export const SaaSStockInPage: React.FC = () => {
     },
     {
       accessorKey: 'warehouse',
-      header: 'Kho Nhập',
+      header: t('saas_stock_in_kho_nhap', 'Kho Nhập'),
       cell: (info) => (
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
           {info.getValue() as string}
@@ -396,7 +398,7 @@ export const SaaSStockInPage: React.FC = () => {
     },
     {
       accessorKey: 'invoiceNo',
-      header: 'Số Hóa Đơn',
+      header: t('saas_stock_in_so_hoa_d_n', 'Số Hóa Đơn'),
       cell: (info) => {
         const val = info.getValue() as string;
         return val ? (
@@ -404,13 +406,13 @@ export const SaaSStockInPage: React.FC = () => {
             {info.row.original.invoiceSeries} - {val}
           </span>
         ) : (
-          <span className="text-zinc-400 italic text-xs">Chưa có HĐ</span>
+          <span className="text-zinc-400 italic text-xs">{t('saas_stock_in_ch_a_co_hd', 'Chưa có HĐ')}</span>
         );
       },
     },
     {
       accessorKey: 'totalAmount',
-      header: 'Tổng Giá Trị',
+      header: t('saas_stock_in_tong_gia_tri', 'Tổng Giá Trị'),
       cell: (info) => (
         <span className="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100">
           {(info.getValue() as number).toLocaleString('vi-VN')} đ
@@ -419,7 +421,7 @@ export const SaaSStockInPage: React.FC = () => {
     },
     {
       accessorKey: 'status',
-      header: 'Trạng Thái',
+      header: t('status', 'Trạng Thái'),
       cell: (info) => {
         const val = info.getValue() as string;
         return (
@@ -438,27 +440,27 @@ export const SaaSStockInPage: React.FC = () => {
     },
     {
       id: 'actions',
-      header: 'Thao Tác',
+      header: t('actions', 'Thao Tác'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => handleOpenPrint(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-            title="In Phiếu Nhập Kho Chuẩn"
+            title={t('saas_stock_in_in_phieu_nhap_kho_chuan', 'In Phiếu Nhập Kho Chuẩn')}
           >
             <Printer className="h-4 w-4 text-emerald-600" />
           </button>
           <button
             onClick={() => handleOpenEditVoucher(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-            title="Chỉnh sửa phiếu nhập"
+            title={t('saas_stock_in_chinh_sua_phieu_nhap', 'Chỉnh sửa phiếu nhập')}
           >
             <Edit2 className="h-4 w-4 text-amber-500" />
           </button>
           <button
             onClick={() => handleDeleteVoucher(row.original.id, row.original.code)}
             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors"
-            title="Xóa phiếu"
+            title={t('saas_stock_in_xoa_phieu', 'Xóa phiếu')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -474,24 +476,21 @@ export const SaaSStockInPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <ArrowDownLeft className="h-6 w-6 text-emerald-500" /> Sổ Nhập Kho (Goods Receipt & Stock-In)
-          </h2>
+            <ArrowDownLeft className="h-6 w-6 text-emerald-500" /> {t('so_nhap_kho_goods_receipt', 'Sổ Nhập Kho (Goods Receipt & Stock-In)')}</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Giai đoạn 4 trong quy trình khép kín: Tự động tải thông tin từ Đơn Mua Hàng (PO), cộng dồn tồn kho và ghi nhận VAT.
-          </p>
+            {t('giai_doan_4_trong_quy', 'Giai đoạn 4 trong quy trình khép kín: Tự động tải thông tin từ Đơn Mua Hàng (PO), cộng dồn tồn kho và ghi nhận VAT.')}</p>
         </div>
 
         <button
           onClick={handleOpenAddVoucher}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all"
         >
-          <Plus className="h-4 w-4" /> Tạo phiếu nhập mới
-        </button>
+          <Plus className="h-4 w-4" /> {t('saas_stock_in_tao_phieu_nhap_moi', 'Tạo phiếu nhập mới')}</button>
       </div>
 
       <SaaSDateFilterBar onFilterChange={(val) => setDateFilter(val)} />
 
-      <DataTable columns={columns} data={filteredStockIns} searchPlaceholder="Tìm mã phiếu nhập, số PO, tên nhà cung cấp..." />
+      <DataTable columns={columns} data={filteredStockIns} searchPlaceholder={t('tim_ma_phieu_nhap_so', 'Tìm mã phiếu nhập, số PO, tên nhà cung cấp...')} />
 
       {/* Print Modal */}
       {selectedStockIn && (
@@ -543,8 +542,8 @@ export const SaaSStockInPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4 text-blue-400 shrink-0" />
                 <div>
-                  <span className="font-bold text-blue-300">Tự động kết nối với Đơn Mua Hàng (PO):</span>
-                  <p className="text-[11px] text-zinc-400">Chọn PO có sẵn để tự động điền Nhà Cung Cấp, Hóa Đơn và Danh Mục Hàng Mua.</p>
+                  <span className="font-bold text-blue-300">{t('tu_dong_ket_noi_voi', 'Tự động kết nối với Đơn Mua Hàng (PO):')}</span>
+                  <p className="text-[11px] text-zinc-400">{t('chon_po_co_san_de', 'Chọn PO có sẵn để tự động điền Nhà Cung Cấp, Hóa Đơn và Danh Mục Hàng Mua.')}</p>
                 </div>
               </div>
 
@@ -564,7 +563,7 @@ export const SaaSStockInPage: React.FC = () => {
                   }}
                   className="w-full px-3 py-1.5 bg-zinc-900 border border-blue-500/40 rounded-lg text-zinc-100 font-mono font-bold text-xs"
                 >
-                  <option value="">-- Chọn Đơn Mua Hàng (PO) --</option>
+                  <option value="">{t('chon_don_mua_hang_po', '-- Chọn Đơn Mua Hàng (PO) --')}</option>
                   {availablePOs.map((p) => (
                     <option key={p.id} value={p.po_number}>
                       {p.po_number} - {p.supplier_name} ({p.total_amount.toLocaleString('vi-VN')} đ)
@@ -579,8 +578,7 @@ export const SaaSStockInPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                   <div>
                     <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Mã Phiếu Nhập *
-                    </label>
+                      {t('saas_stock_in_ma_phieu_nhap', 'Mã Phiếu Nhập *')}</label>
                     <input
                       type="text"
                       required
@@ -592,8 +590,7 @@ export const SaaSStockInPage: React.FC = () => {
 
                   <div>
                     <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Ngày Nhập Kho *
-                    </label>
+                      {t('saas_stock_in_ngay_nhap_kho_1', 'Ngày Nhập Kho *')}</label>
                     <input
                       type="date"
                       required
@@ -605,12 +602,11 @@ export const SaaSStockInPage: React.FC = () => {
 
                   <div>
                     <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Kho Tiếp Nhận *
-                    </label>
+                      {t('saas_stock_in_kho_tiep_nhan', 'Kho Tiếp Nhận *')}</label>
                     <SearchableSelect
                       value={voucherForm.warehouse}
                       onChange={(val) => setVoucherForm({ ...voucherForm, warehouse: val })}
-                      placeholder="Chọn kho tiếp nhận..."
+                      placeholder={t('saas_stock_in_chon_kho_tiep_nhan', 'Chọn kho tiếp nhận...')}
                       options={warehouses.map((warehouse) => ({
                         value: String(warehouse.id), label: warehouse.name, code: `K${warehouse.id}`,
                       }))}
@@ -619,12 +615,11 @@ export const SaaSStockInPage: React.FC = () => {
 
                   <div>
                     <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Nhà Cung Cấp * (Fast Search)
-                    </label>
+                      {t('nha_cung_cap_fast_search', 'Nhà Cung Cấp * (Fast Search)')}</label>
                     <SearchableSelect
                       value={voucherForm.supplierId}
                       onChange={(val) => setVoucherForm({ ...voucherForm, supplierId: val })}
-                      placeholder="Tìm NCC theo tên, mã, MST..."
+                      placeholder={t('saas_stock_in_tim_ncc_theo_ten_ma_mst', 'Tìm NCC theo tên, mã, MST...')}
                       options={suppliers.map((s) => ({
                         value: s.id,
                         label: s.name,
@@ -638,19 +633,18 @@ export const SaaSStockInPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <div>
                     <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Số Hóa Đơn Mua Hàng & Ký Hiệu
-                    </label>
+                      {t('so_hoa_don_mua_hang', 'Số Hóa Đơn Mua Hàng & Ký Hiệu')}</label>
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="Số HĐ mua"
+                        placeholder={t('saas_stock_in_so_hd_mua', 'Số HĐ mua')}
                         value={voucherForm.invoiceNo}
                         onChange={(e) => setVoucherForm({ ...voucherForm, invoiceNo: e.target.value })}
                         className="w-2/3 px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                       />
                       <input
                         type="text"
-                        placeholder="Ký hiệu"
+                        placeholder={t('saas_stock_in_ky_hieu', 'Ký hiệu')}
                         value={voucherForm.invoiceSeries}
                         onChange={(e) => setVoucherForm({ ...voucherForm, invoiceSeries: e.target.value })}
                         className="w-1/3 px-3 py-2 font-mono bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
@@ -660,11 +654,10 @@ export const SaaSStockInPage: React.FC = () => {
 
                   <div className="sm:col-span-2">
                     <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      Diễn Giải / Diễn Diễn Nhập Kho
-                    </label>
+                      {t('dien_giai_dien_dien_nhap', 'Diễn Giải / Diễn Diễn Nhập Kho')}</label>
                     <input
                       type="text"
-                      placeholder="Mô tả hóa đơn mua hàng, phiếu nhập vật tư..."
+                      placeholder={t('mo_ta_hoa_don_mua', 'Mô tả hóa đơn mua hàng, phiếu nhập vật tư...')}
                       value={voucherForm.note}
                       onChange={(e) => setVoucherForm({ ...voucherForm, note: e.target.value })}
                       className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
@@ -676,8 +669,7 @@ export const SaaSStockInPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-zinc-200 dark:border-zinc-800 text-xs">
                   <div>
                     <label className="block font-semibold text-emerald-600 dark:text-emerald-400 mb-1">
-                      Phương Thức VAT Đầu Vào
-                    </label>
+                      {t('saas_stock_in_ph_ng_thuc_vat_dau_vao', 'Phương Thức VAT Đầu Vào')}</label>
                     <div className="flex items-center gap-4 py-1">
                       <label className="inline-flex items-center gap-1.5 cursor-pointer">
                         <input
@@ -688,7 +680,7 @@ export const SaaSStockInPage: React.FC = () => {
                           onChange={() => setVoucherForm({ ...voucherForm, vatMode: 'grouped' })}
                           className="text-emerald-500 focus:ring-emerald-500"
                         />
-                        <span>VAT gộp phiếu</span>
+                        <span>{t('saas_stock_in_vat_gop_phieu', 'VAT gộp phiếu')}</span>
                       </label>
                       <label className="inline-flex items-center gap-1.5 cursor-pointer">
                         <input
@@ -699,7 +691,7 @@ export const SaaSStockInPage: React.FC = () => {
                           onChange={() => setVoucherForm({ ...voucherForm, vatMode: 'per_item' })}
                           className="text-emerald-500 focus:ring-emerald-500"
                         />
-                        <span>VAT theo từng dòng</span>
+                        <span>{t('saas_stock_in_vat_theo_t_ng_dong', 'VAT theo từng dòng')}</span>
                       </label>
                     </div>
                   </div>
@@ -707,8 +699,7 @@ export const SaaSStockInPage: React.FC = () => {
                   {voucherForm.vatMode === 'grouped' && (
                     <div>
                       <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                        Tỷ Lệ VAT Gộp (%)
-                      </label>
+                        {t('ty_le_vat_gop', 'Tỷ Lệ VAT Gộp (%)')}</label>
                       <select
                         value={voucherForm.vatRateGrouped}
                         onChange={(e) => setVoucherForm({ ...voucherForm, vatRateGrouped: Number(e.target.value) })}
@@ -716,7 +707,7 @@ export const SaaSStockInPage: React.FC = () => {
                       >
                         <option value={0}>0%</option>
                         <option value={5}>5%</option>
-                        <option value={8}>8% (Giảm thuế VAT)</option>
+                        <option value={8}>{t('vat_giam_thue_8', '8% (Giảm thuế VAT)')}</option>
                         <option value={10}>10%</option>
                       </select>
                     </div>
@@ -729,28 +720,26 @@ export const SaaSStockInPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                     <Calculator className="h-4 w-4 text-emerald-500" />
-                    Chi Tiết Mặt Hàng Nhập Kho ({lineItems.length} dòng)
-                  </h4>
+                    {t('chi_tiet_mat_hang_nhap', 'Chi Tiết Mặt Hàng Nhập Kho (')}{lineItems.length} {t('dong', 'dòng)')}</h4>
                   <button
                     type="button"
                     onClick={handleAddLineItem}
                     className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Thêm dòng nhập
-                  </button>
+                    <Plus className="h-3.5 w-3.5" /> {t('saas_stock_in_them_dong_nhap', 'Thêm dòng nhập')}</button>
                 </div>
 
                 <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-x-auto">
                   <table className="w-full text-xs text-left">
                     <thead className="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 font-semibold">
                       <tr>
-                        <th className="p-2 w-10 text-center">STT</th>
-                        <th className="p-2 min-w-[200px]">Mặt Hàng Nhập *</th>
-                        <th className="p-2 w-24 text-right">Số Lượng</th>
-                        <th className="p-2 w-20 text-center">ĐVT</th>
-                        <th className="p-2 w-32 text-right">Đơn Giá Nhập</th>
-                        {voucherForm.vatMode === 'per_item' && <th className="p-2 w-20 text-center">VAT %</th>}
-                        <th className="p-2 w-36 text-right">Thành Tiền</th>
+                        <th className="p-2 w-10 text-center">{t('stt', 'STT')}</th>
+                        <th className="p-2 min-w-[200px]">{t('mat_hang_nhap', 'Mặt Hàng Nhập *')}</th>
+                        <th className="p-2 w-24 text-right">{t('saas_stock_in_so_l_ong', 'Số Lượng')}</th>
+                        <th className="p-2 w-20 text-center">{t('dvt_uom', 'ĐVT')}</th>
+                        <th className="p-2 w-32 text-right">{t('saas_stock_in_d_n_gia_nhap', 'Đơn Giá Nhập')}</th>
+                        {voucherForm.vatMode === 'per_item' && <th className="p-2 w-20 text-center">{t('vat', 'VAT %')}</th>}
+                        <th className="p-2 w-36 text-right">{t('saas_stock_in_thanh_tien', 'Thành Tiền')}</th>
                         <th className="p-2 w-10 text-center"></th>
                       </tr>
                     </thead>
@@ -764,7 +753,7 @@ export const SaaSStockInPage: React.FC = () => {
                               <SearchableSelect
                                 value={item.productId}
                                 onChange={(val) => handleProductChange(item.id, val)}
-                                placeholder="Gõ tên hoặc SKU để tìm nhanh..."
+                                placeholder={t('go_ten_hoac_sku_de', 'Gõ tên hoặc SKU để tìm nhanh...')}
                                 options={products.map((p) => ({
                                   value: p.id,
                                   label: p.name,
@@ -830,24 +819,24 @@ export const SaaSStockInPage: React.FC = () => {
               {/* Total Summary Footer */}
               <div className="flex flex-col sm:flex-row items-end justify-between p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/50 rounded-xl gap-4">
                 <div className="text-xs text-zinc-500 dark:text-zinc-400 space-y-1">
-                  <p className="font-semibold text-zinc-700 dark:text-zinc-300">Ghi nhận tài chính & kho bãi:</p>
-                  <p>• Phiếu nhập hoàn thành sẽ tăng tồn kho tương ứng tại kho tiếp nhận.</p>
-                  <p>• Thuế VAT đầu vào sẽ được tổng hợp tự động vào bảng phân bổ thuế.</p>
+                  <p className="font-semibold text-zinc-700 dark:text-zinc-300">{t('saas_stock_in_ghi_nhan_tai_chinh_kho_bai', 'Ghi nhận tài chính & kho bãi:')}</p>
+                  <p>{t('phieu_nhap_hoan_thanh_se', '• Phiếu nhập hoàn thành sẽ tăng tồn kho tương ứng tại kho tiếp nhận.')}</p>
+                  <p>{t('thue_vat_dau_vao_se', '• Thuế VAT đầu vào sẽ được tổng hợp tự động vào bảng phân bổ thuế.')}</p>
                 </div>
 
                 <div className="text-right space-y-1 text-xs w-full sm:w-auto min-w-[240px]">
                   <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
-                    <span>Tổng tiền hàng mua:</span>
+                    <span>{t('saas_stock_in_tong_tien_hang_mua', 'Tổng tiền hàng mua:')}</span>
                     <span className="font-mono font-semibold">{calcSubtotal.toLocaleString('vi-VN')} đ</span>
                   </div>
                   <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
-                    <span>Tiền thuế VAT đầu vào:</span>
+                    <span>{t('saas_stock_in_tien_thue_vat_dau_vao', 'Tiền thuế VAT đầu vào:')}</span>
                     <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
                       +{calcVatAmount().toLocaleString('vi-VN')} đ
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm font-bold text-zinc-900 dark:text-zinc-100 pt-1 border-t border-emerald-200 dark:border-emerald-800">
-                    <span>Tổng thanh toán NCC:</span>
+                    <span>{t('saas_stock_in_tong_thanh_toan_ncc', 'Tổng thanh toán NCC:')}</span>
                     <span className="font-mono text-base text-emerald-600 dark:text-emerald-400">
                       {calcTotalAmount.toLocaleString('vi-VN')} đ
                     </span>
@@ -862,8 +851,7 @@ export const SaaSStockInPage: React.FC = () => {
                   onClick={() => setShowVoucherModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
                 >
-                  Hủy Bỏ
-                </button>
+                  {t('cancel', 'Hủy Bỏ')}</button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs"
