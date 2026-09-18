@@ -147,7 +147,7 @@ const OrderSuccessPage: React.FC = () => {
               </div>
 
               <div className="border-t border-gray-100 dark:border-gray-800 pt-3 flex justify-between items-baseline font-bold">
-                <span className="text-gray-900 dark:text-white text-sm">Tổng cộng thanh toán:</span>
+                <span className="text-gray-900 dark:text-white text-sm">{t('saas_purchasing_tong_cong_thanh_toan', 'Tổng cộng thanh toán:')}</span>
                 <span className="text-base text-indigo-600 dark:text-indigo-400">{formatPrice(order.total_amount)}</span>
               </div>
             </div>
@@ -183,8 +183,7 @@ const OrderSuccessPage: React.FC = () => {
           to={shopPath("/orders")}
           className="border border-indigo-600 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-xs font-bold px-6 py-2.5 rounded-full transition-all cursor-pointer flex items-center gap-1 shadow-xs"
         >
-          Quản lý đơn hàng
-          <ArrowRight className="w-4 h-4" />
+          {t('saas_web_orders_quan_ly_d_n_hang_webshop_e_commerce_sync', 'Quản lý đơn hàng')}<ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     </div>

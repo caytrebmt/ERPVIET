@@ -3,6 +3,27 @@
 > Mục tiêu: tiếng Anh hiển thị đầy đủ, đúng và nhất quán trên cả WebShop + ERP SaaS.
 > Trạng thái hiện tại đã đo đạc trực tiếp trên code tại branch `arena/01a01f8f-erpviet`.
 
+
+> **CẬP NHẬT 2026-09-18 — ĐÃ ĐÓNG (Issue #12).** Số liệu hiện tại:
+>
+> | Chỉ số | TRƯỚC (khi lập kế hoạch) | SAU |
+> |---|---|---|
+> | Key trong `vi.json` | 1.402 (tích tụ, nhiều key chết) | **1.317** — mọi key đều đang được dùng |
+> | `en.json` thiếu key | 921 | **0** |
+> | Giá trị EN chưa dịch (`⚠`) | 977 | **0** |
+> | Giá trị EN trùng tiếng Việt | 18 | **0** (guard mới chặn) |
+> | Key chứa ký tự tiếng Việt làm tên key | 8 | **0** |
+> | Ternary `isEn ?` | 138 | **0** |
+> | Ternary `language === 'en' ?` (guard cũ KHÔNG bắt) | 334 | **0** |
+> | Key `t()` gọi trong code nhưng thiếu trong từ điển (UI in raw key) | 20 | **0** (guard mới chặn) |
+> | Chuỗi VI hardcode còn lại trong tầng hiển thị | ~1.445 | **1.492** — đã chốt baseline ratchet, chỉ được giảm |
+>
+> Ba việc trong kế hoạch đều xong ở tầng **từ điển + cơ chế**; phần còn lại là **độ phủ từng trang**
+> (các trang chưa từng gọi `t()` như `SaaSAssetsPage`, `SaaSStockIn/OutPage`, `SaaSQuotationsPage`…)
+> — đã có tool chạy theo module: `node scripts/i18n-wire-hardcoded.cjs --write` + `scripts/refactor-lang-ternary.cjs --write`.
+> Xem thêm §5.5 của `PROJECT_INFO.md`.
+
+
 ---
 
 ## 1. HIỆN TRẠNG (số liệu thực tế, không ước lượng)

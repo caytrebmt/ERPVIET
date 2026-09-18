@@ -163,7 +163,7 @@ const CheckoutPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Ví dụ: Nguyễn Văn A"
+                  placeholder={t('saas_c_r_m_vi_du_nguyen_v_n_a', 'Ví dụ: Nguyễn Văn A')}
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -172,7 +172,7 @@ const CheckoutPage: React.FC = () => {
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                  Số điện thoại <span className="text-red-500">*</span>
+                  {t('saas_register_company_phone', 'Số điện thoại')}<span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
@@ -367,7 +367,7 @@ const CheckoutPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span>Vận chuyển (Shipping):</span>
-                <span className="text-green-600 font-semibold">Miễn phí</span>
+                <span className="text-green-600 font-semibold">{t('saas_tenants_mien_phi', 'Miễn phí')}</span>
               </div>
               {appliedPromo && (
                 <div className="flex justify-between text-green-600 font-semibold">

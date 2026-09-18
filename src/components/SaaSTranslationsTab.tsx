@@ -42,6 +42,7 @@ import {
   type TranslationSortField,
   type SortOrder,
 } from '../services/translationsService';
+import { getIntlLocale, pickLocalized } from '../utils/localized';
 
 type DataMode = 'loading' | 'server' | 'local';
 
@@ -83,6 +84,7 @@ export const SaaSTranslationsTab: React.FC = () => {
     resetToDefaults,
     loadLocaleTranslations,
     publishToJSON,
+    t,
   } = useLanguage();
 
   const { addToast } = useToast();
@@ -251,10 +253,10 @@ export const SaaSTranslationsTab: React.FC = () => {
     Object.keys(KNOWN_CATEGORY_LABELS).forEach((k) => catIds.add(k));
     const countsById = new Map(facets.map((f) => [f.id, f.count]));
     return [
-      { id: 'all', label: language === 'en' ? 'All Categories' : 'Tất cả danh mục', count: stats.total },
+      { id: 'all', label: t('tat_ca_danh_muc_all', 'Tất cả danh mục'), count: stats.total },
       ...Array.from(catIds).map((catId) => {
         const labelObj = KNOWN_CATEGORY_LABELS[catId];
-        const labelText = labelObj ? (language === 'en' ? labelObj.en : labelObj.vi) : catId;
+        const labelText = labelObj ? (pickLocalized(language === 'en', labelObj.en, labelObj.vi)) : catId;
         return { id: catId, label: labelText, count: countsById.get(catId) || 0 };
       }),
     ];
@@ -276,14 +278,14 @@ export const SaaSTranslationsTab: React.FC = () => {
   const handleSaveEdit = async (key: string) => {
     await updateTranslation(key, editVi, editEn, editCategory);
     setEditingRowKey(null);
-    addToast(language === 'en' ? `Translation '${key}' updated!` : `Đã cập nhật dịch thuật cho từ khóa '${key}'!`, 'success');
+    addToast(t('da_cap_nhat_dich_thuat', 'Đã cập nhật dịch thuật cho từ khóa \'{{key}}\'!', { key: key }), 'success');
     if (isServer) refreshServerList();
   };
 
   const handleDelete = async (key: string) => {
-    if (window.confirm(language === 'en' ? `Are you sure to delete key '${key}'?` : `Bạn có chắc muốn xóa từ khóa dịch '${key}'?`)) {
+    if (window.confirm(t('ban_co_chac_muon_xoa_5', 'Bạn có chắc muốn xóa từ khóa dịch \'{{key}}\'?', { key: key }))) {
       await deleteTranslation(key);
-      addToast(language === 'en' ? 'Translation deleted' : 'Đã xóa từ khóa dịch', 'info');
+      addToast(t('da_xoa_tu_khoa_dich', 'Đã xóa từ khóa dịch'), 'info');
       if (isServer) refreshServerList();
     }
   };
@@ -299,16 +301,16 @@ export const SaaSTranslationsTab: React.FC = () => {
     e.preventDefault();
     const formattedKey = newKey.trim().toLowerCase().replace(/\s+/g, '_');
     if (!formattedKey) {
-      addToast(language === 'en' ? 'Please enter a valid key code' : 'Vui lòng nhập mã từ khóa dịch', 'error');
+      addToast(t('vui_long_nhap_ma_tu_2', 'Vui lòng nhập mã từ khóa dịch'), 'error');
       return;
     }
     if (!newVi && !newEn) {
-      addToast(language === 'en' ? 'Please enter at least VI or EN translation' : 'Vui lòng nhập bản dịch tiếng Việt hoặc Tiếng Anh', 'error');
+      addToast(t('vui_long_nhap_ban_dich', 'Vui lòng nhập bản dịch tiếng Việt hoặc Tiếng Anh'), 'error');
       return;
     }
 
     await createTranslation(formattedKey, newVi || newEn, newEn || newVi, newCategory);
-    addToast(language === 'en' ? `Added new key '${formattedKey}' successfully!` : `Đã thêm mới từ khóa dịch '${formattedKey}' thành công!`, 'success');
+    addToast(t('da_them_moi_tu_khoa', 'Đã thêm mới từ khóa dịch \'{{formattedkey}}\' thành công!', { formattedkey: formattedKey }), 'success');
     setIsAddModalOpen(false);
     setNewKey('');
     setNewVi('');
@@ -335,7 +337,7 @@ export const SaaSTranslationsTab: React.FC = () => {
     const flat: Record<string, string> = {};
     source.forEach((item) => {
       if (item.key && !item.key.startsWith('_')) {
-        flat[item.key] = language === 'en' ? (item.en || item.vi) : (item.vi || item.en);
+        flat[item.key] = pickLocalized(language === 'en', (item.en || item.vi), (item.vi || item.en));
       }
     });
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(flat, null, 2));
@@ -345,7 +347,7 @@ export const SaaSTranslationsTab: React.FC = () => {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
-    addToast(language === 'en' ? 'Exported translation dictionary to JSON' : 'Đã xuất file từ điển dịch thuật JSON thành công', 'success');
+    addToast(t('da_xuat_file_tu_dien', 'Đã xuất file từ điển dịch thuật JSON thành công'), 'success');
   };
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -361,16 +363,14 @@ export const SaaSTranslationsTab: React.FC = () => {
       try {
         parsed = JSON.parse(event.target?.result as string);
       } catch {
-        addToast(language === 'en' ? 'Invalid JSON file format' : 'File JSON không đúng định dạng', 'error');
+        addToast(t('file_json_khong_dung_dinh', 'File JSON không đúng định dạng'), 'error');
         return;
       }
 
       const { items, skipped } = normalizeImportedTranslations(parsed);
       if (items.length === 0) {
         addToast(
-          language === 'en'
-            ? `No valid translation entries found${skipped ? ` (${skipped} skipped)` : ''}`
-            : `Không tìm thấy bản dịch hợp lệ${skipped ? ` (bỏ qua ${skipped} dòng)` : ''}`,
+          pickLocalized(language === 'en', `No valid translation entries found${skipped ? ` (${skipped} skipped)` : ''}`, `Không tìm thấy bản dịch hợp lệ${skipped ? ` (bỏ qua ${skipped} dòng)` : ''}`),
           'error',
         );
         return;
@@ -386,9 +386,7 @@ export const SaaSTranslationsTab: React.FC = () => {
           );
         }
         addToast(
-          language === 'en'
-            ? `Imported ${items.length} translations${skipped ? `, skipped ${skipped}` : ''}!`
-            : `Đã nhập ${items.length} bản dịch${skipped ? `, bỏ qua ${skipped} dòng` : ''} thành công!`,
+          pickLocalized(language === 'en', `Imported ${items.length} translations${skipped ? `, skipped ${skipped}` : ''}!`, `Đã nhập ${items.length} bản dịch${skipped ? `, bỏ qua ${skipped} dòng` : ''} thành công!`),
           'success',
         );
         if (isServer) refreshServerList();
@@ -402,9 +400,9 @@ export const SaaSTranslationsTab: React.FC = () => {
   };
 
   const handleResetDefaults = () => {
-    if (window.confirm(language === 'en' ? 'Reset all translations to original system defaults?' : 'Khôi phục toàn bộ từ điển dịch về mặc định của hệ thống?')) {
+    if (window.confirm(t('khoi_phuc_toan_bo_tu', 'Khôi phục toàn bộ từ điển dịch về mặc định của hệ thống?'))) {
       resetToDefaults();
-      addToast(language === 'en' ? 'Reset to default dictionary' : 'Đã khôi phục từ điển mặc định', 'info');
+      addToast(t('da_khoi_phuc_tu_dien', 'Đã khôi phục từ điển mặc định'), 'info');
       if (isServer) refreshServerList();
     }
   };
@@ -413,23 +411,21 @@ export const SaaSTranslationsTab: React.FC = () => {
     const result = await publishToJSON();
     if (result.ok) {
       addToast(
-        language === 'en'
-          ? `Published ${result.data?.published || 0} translations from DB to JSON files!`
-          : `Đã xuất bản ${result.data?.published || 0} bản dịch từ DB ra JSON!`,
+        t('da_xuat_ban_ban_dich_2', 'Đã xuất bản {{published}} bản dịch từ DB ra JSON!', { published: result.data?.published || 0 }),
         'success',
       );
     } else {
-      addToast(language === 'en' ? `Failed to publish: ${result.message}` : `Lỗi xuất bản: ${result.message}`, 'error');
+      addToast(t('loi_xuat_ban_failed_to', 'Lỗi xuất bản: {{message}}', { message: result.message }), 'error');
     }
   };
 
   const handleSyncJson = async () => {
     await loadLocaleTranslations();
-    addToast(language === 'en' ? 'Synced from JSON locale files' : 'Đã đồng bộ từ file JSON locale', 'info');
+    addToast(t('da_dong_bo_tu_file', 'Đã đồng bộ từ file JSON locale'), 'info');
     if (isServer) refreshServerList();
   };
 
-  const formatNumber = (n: number) => n.toLocaleString(language === 'en' ? 'en-US' : 'vi-VN');
+  const formatNumber = (n: number) => n.toLocaleString(getIntlLocale(language === 'en'));
 
   return (
     <div className="space-y-6">
@@ -440,15 +436,13 @@ export const SaaSTranslationsTab: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-blue-300 text-xs font-semibold uppercase tracking-wider">
               <Languages className="w-4 h-4 text-blue-400" />
-              <span>{language === 'en' ? 'System Translation Engine' : 'Hệ Thống Dịch Thuật Đa Ngôn Ngữ ERP'}</span>
+              <span>{t('he_thong_dich_thuat_da', 'Hệ Thống Dịch Thuật Đa Ngôn Ngữ ERP')}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-              {language === 'en' ? 'Multilingual Dictionary & Language Management' : 'Quản Lý Từ Điển & Ngôn Ngữ Hệ Thống'}
+              {t('quan_ly_tu_dien_ngon', 'Quản Lý Từ Điển & Ngôn Ngữ Hệ Thống')}
             </h2>
             <p className="text-slate-300 text-sm max-w-2xl">
-              {language === 'en'
-                ? 'Manage all system terms, navigation titles, buttons, and invoices dynamically in real time. Switch seamlessly between Vietnamese and English.'
-                : 'Thao tác trực tiếp từ điển dịch toàn bộ giao diện ERP, danh mục menu, chứng từ, hóa đơn và thông báo. Tự động áp dụng tức thì không cần khởi động lại.'}
+              {t('thao_tac_truc_tiep_tu', 'Thao tác trực tiếp từ điển dịch toàn bộ giao diện ERP, danh mục menu, chứng từ, hóa đơn và thông báo. Tự động áp dụng tức thì không cần khởi động lại.')}
             </p>
           </div>
 
@@ -458,14 +452,14 @@ export const SaaSTranslationsTab: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/15 transition cursor-pointer"
             >
               <Globe className="w-4 h-4 text-emerald-400" />
-              <span>{language === 'en' ? 'Switch to 🇻🇳 VI' : 'Switch to 🇬🇧 EN'}</span>
+              <span>{t('switch_to_en_switch_to', 'Switch to 🇬🇧 EN')}</span>
             </button>
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>{language === 'en' ? 'Add Translation Key' : 'Thêm Từ Khóa Dịch Mới'}</span>
+              <span>{t('them_tu_khoa_dich_moi', 'Thêm Từ Khóa Dịch Mới')}</span>
             </button>
           </div>
         </div>
@@ -473,19 +467,19 @@ export const SaaSTranslationsTab: React.FC = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/10">
           <div className="bg-white/5 rounded-xl p-3 border border-white/10 backdrop-blur-sm">
-            <span className="text-xs text-slate-400 block">{language === 'en' ? 'Total Keys' : 'Tổng số từ khóa'}</span>
+            <span className="text-xs text-slate-400 block">{t('tong_so_tu_khoa_total', 'Tổng số từ khóa')}</span>
             <span className="text-xl font-bold text-white">{formatNumber(stats.total)}</span>
           </div>
           <div className="bg-white/5 rounded-xl p-3 border border-white/10 backdrop-blur-sm">
-            <span className="text-xs text-slate-400 block">{language === 'en' ? 'Vietnamese 🇻🇳' : 'Hoàn thành Tiếng Việt 🇻🇳'}</span>
+            <span className="text-xs text-slate-400 block">{t('hoan_thanh_tieng_viet_vietnamese', 'Hoàn thành Tiếng Việt 🇻🇳')}</span>
             <span className="text-xl font-bold text-emerald-400">{formatNumber(stats.viCompleted)} / {formatNumber(stats.total)}</span>
           </div>
           <div className="bg-white/5 rounded-xl p-3 border border-white/10 backdrop-blur-sm">
-            <span className="text-xs text-slate-400 block">{language === 'en' ? 'English 🇬🇧' : 'Hoàn thành Tiếng Anh 🇬🇧'}</span>
+            <span className="text-xs text-slate-400 block">{t('hoan_thanh_tieng_anh_english', 'Hoàn thành Tiếng Anh 🇬🇧')}</span>
             <span className="text-xl font-bold text-blue-400">{formatNumber(stats.enCompleted)} / {formatNumber(stats.total)}</span>
           </div>
           <div className="bg-white/5 rounded-xl p-3 border border-white/10 backdrop-blur-sm">
-            <span className="text-xs text-slate-400 block">{language === 'en' ? 'Active Languages' : 'Ngôn ngữ đang bật'}</span>
+            <span className="text-xs text-slate-400 block">{t('ngon_ngu_dang_bat_active', 'Ngôn ngữ đang bật')}</span>
             <span className="text-xl font-bold text-amber-300">2 (🇻🇳 VI / 🇬🇧 EN)</span>
           </div>
         </div>
@@ -508,7 +502,7 @@ export const SaaSTranslationsTab: React.FC = () => {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={language === 'en' ? 'Search key code, Vietnamese or English text... (Enter)' : 'Tìm theo mã từ khóa, bản dịch Việt/Anh... (Enter)'}
+              placeholder={t('tim_theo_ma_tu_khoa', 'Tìm theo mã từ khóa, bản dịch Việt/Anh... (Enter)')}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </form>
@@ -520,11 +514,11 @@ export const SaaSTranslationsTab: React.FC = () => {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as TranslationStatusFilter)}
               className="pl-9 pr-8 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer appearance-none"
-              title={language === 'en' ? 'Filter by completion status' : 'Lọc theo trạng thái hoàn thành bản dịch'}
+              title={t('loc_theo_trang_thai_hoan', 'Lọc theo trạng thái hoàn thành bản dịch')}
             >
-              <option value="all">{language === 'en' ? 'All statuses' : 'Mọi trạng thái'}</option>
-              <option value="missing_vi">{language === 'en' ? '⛔ Missing Vietnamese' : '⛔ Thiếu tiếng Việt'}</option>
-              <option value="missing_en">{language === 'en' ? '⛔ Missing English' : '⛔ Thiếu tiếng Anh'}</option>
+              <option value="all">{t('moi_trang_thai_all_statuses', 'Mọi trạng thái')}</option>
+              <option value="missing_vi">{t('thieu_tieng_viet_missing_vietnamese', '⛔ Thiếu tiếng Việt')}</option>
+              <option value="missing_en">{t('thieu_tieng_anh_missing_english', '⛔ Thiếu tiếng Anh')}</option>
             </select>
           </div>
 
@@ -536,13 +530,13 @@ export const SaaSTranslationsTab: React.FC = () => {
               title="Sync translations from JSON locale files"
             >
               <RefreshCw className="w-3.5 h-3.5 text-emerald-500" />
-              <span>{language === 'en' ? 'Sync JSON' : 'Đồng bộ JSON'}</span>
+              <span>{t('dong_bo_json_sync_json', 'Đồng bộ JSON')}</span>
             </button>
 
             <button
               onClick={handleExportJSON}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer"
-              title={language === 'en' ? 'Export dictionary JSON' : 'Xuất file JSON dịch thuật'}
+              title={t('xuat_file_json_dich_thuat', 'Xuất file JSON dịch thuật')}
             >
               <Download className="w-3.5 h-3.5 text-blue-500" />
               <span>JSON Export</span>
@@ -550,26 +544,26 @@ export const SaaSTranslationsTab: React.FC = () => {
 
             <label className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition cursor-pointer ${isImporting ? 'opacity-60 pointer-events-none' : ''}`}>
               {isImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" /> : <Upload className="w-3.5 h-3.5 text-emerald-500" />}
-              <span>{isImporting ? (language === 'en' ? 'Importing...' : 'Đang nhập...') : 'JSON Import'}</span>
+              <span>{isImporting ? (t('dang_nhap_importing', 'Đang nhập...')) : 'JSON Import'}</span>
               <input ref={fileInputRef} type="file" accept=".json" onChange={handleImportJSON} className="hidden" />
             </label>
 
             <button
               onClick={handleResetDefaults}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 transition cursor-pointer border border-amber-200 dark:border-amber-800"
-              title={language === 'en' ? 'Reset dictionary to defaults' : 'Khôi phục từ điển mặc định'}
+              title={t('khoi_phuc_tu_dien_mac', 'Khôi phục từ điển mặc định')}
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>{language === 'en' ? 'Reset Defaults' : 'Khôi phục mặc định'}</span>
+              <span>{t('settings_reset_matching', 'Khôi phục mặc định')}</span>
             </button>
 
             <button
               onClick={handleSaveAllToJSON}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition cursor-pointer border border-emerald-200 dark:border-emerald-800"
-              title={language === 'en' ? 'Save all translations to JSON locale files' : 'Lưu tất cả dịch thuật vào file JSON'}
+              title={t('luu_tat_ca_dich_thuat', 'Lưu tất cả dịch thuật vào file JSON')}
             >
               <Save className="w-3.5 h-3.5 text-emerald-500" />
-              <span>{language === 'en' ? 'Publish to JSON' : 'Xuất bản ra JSON'}</span>
+              <span>{t('xuat_ban_ra_json_publish', 'Xuất bản ra JSON')}</span>
             </button>
           </div>
         </div>
@@ -604,10 +598,10 @@ export const SaaSTranslationsTab: React.FC = () => {
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-blue-500" />
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-              {language === 'en' ? 'Dictionary Term List' : 'Danh sách Từ khóa Dịch thuật Giao diện'}
+              {t('danh_sach_tu_khoa_dich', 'Danh sách Từ khóa Dịch thuật Giao diện')}
             </h3>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-              {formatNumber(totalItems)} {language === 'en' ? 'items' : 'từ khóa'}
+              {formatNumber(totalItems)} {t('tu_khoa_items', 'từ khóa')}
             </span>
           </div>
 
@@ -621,26 +615,16 @@ export const SaaSTranslationsTab: React.FC = () => {
               }`}
               title={
                 isServer
-                  ? language === 'en'
-                    ? 'Paging straight from sys_translations (Supabase)'
-                    : 'Phân trang trực tiếp từ bảng sys_translations (Supabase)'
-                  : language === 'en'
-                    ? 'API unavailable — showing the bundled i18n dictionary'
-                  : 'Không kết nối được API — hiển thị từ điển i18n đóng gói'
+                  ? t('phan_trang_truc_tiep_tu', 'Phân trang trực tiếp từ bảng sys_translations (Supabase)')
+                  : t('khong_ket_noi_duoc_api', 'Không kết nối được API — hiển thị từ điển i18n đóng gói')
               }
             >
               {isServer ? <Database className="w-3 h-3" /> : <HardDrive className="w-3 h-3" />}
               {mode === 'loading'
-                ? language === 'en'
-                  ? 'Loading...'
-                  : 'Đang tải...'
+                ? t('dang_tai_loading', 'Đang tải...')
                 : isServer
-                  ? language === 'en'
-                    ? 'Source: Database (live)'
-                    : 'Nguồn: Database (thời gian thực)'
-                  : language === 'en'
-                    ? 'Source: Local i18n bundle'
-                    : 'Nguồn: Cục bộ (i18n bundle)'}
+                  ? t('nguon_database_thoi_gian_thuc', 'Nguồn: Database (thời gian thực)')
+                  : t('nguon_cuc_bo_i18n_bundle', 'Nguồn: Cục bộ (i18n bundle)')}
             </span>
           </div>
         </div>
@@ -649,9 +633,7 @@ export const SaaSTranslationsTab: React.FC = () => {
           <div className="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-[11px] text-amber-700 dark:text-amber-400 flex items-center gap-2">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             <span>
-              {language === 'en'
-                ? `Could not refresh from server (${fetchError}) — showing the last loaded page.`
-                : `Không làm mới được từ máy chủ (${fetchError}) — đang hiển thị trang vừa tải.`}
+              {t('khong_lam_moi_duoc_tu', 'Không làm mới được từ máy chủ ({{fetcherror}}) — đang hiển thị trang vừa tải.', { fetcherror: fetchError })}
             </span>
           </div>
         )}
@@ -664,9 +646,9 @@ export const SaaSTranslationsTab: React.FC = () => {
                   <button
                     onClick={() => toggleSort('key')}
                     className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
-                    title={language === 'en' ? 'Sort by key code (server-side)' : 'Sắp xếp theo mã từ khóa (trên server)'}
+                    title={t('sap_xep_theo_ma_tu', 'Sắp xếp theo mã từ khóa (trên server)')}
                   >
-                    {language === 'en' ? 'Key Code & Category' : 'Mã từ khóa & Danh mục'}
+                    {t('ma_tu_khoa_danh_muc', 'Mã từ khóa & Danh mục')}
                     {renderSortIcon('key')}
                   </button>
                 </th>
@@ -674,7 +656,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                   <button
                     onClick={() => toggleSort('vi')}
                     className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
-                    title={language === 'en' ? 'Sort by Vietnamese (Vietnamese alphabet order)' : 'Sắp xếp theo tiếng Việt (thứ tự bảng chữ cái tiếng Việt)'}
+                    title={t('sap_xep_theo_tieng_viet', 'Sắp xếp theo tiếng Việt (thứ tự bảng chữ cái tiếng Việt)')}
                   >
                     Tiếng Việt 🇻🇳
                     {renderSortIcon('vi')}
@@ -684,13 +666,13 @@ export const SaaSTranslationsTab: React.FC = () => {
                   <button
                     onClick={() => toggleSort('en')}
                     className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer uppercase"
-                    title={language === 'en' ? 'Sort by English (server-side)' : 'Sắp xếp theo tiếng Anh (trên server)'}
+                    title={t('sap_xep_theo_tieng_anh', 'Sắp xếp theo tiếng Anh (trên server)')}
                   >
                     English 🇬🇧
                     {renderSortIcon('en')}
                   </button>
                 </th>
-                <th className="py-3 px-4 text-right w-24">{language === 'en' ? 'Action' : 'Thao tác'}</th>
+                <th className="py-3 px-4 text-right w-24">{t('actions', 'Thao tác')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -709,7 +691,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                   <td colSpan={4} className="py-8 text-center text-zinc-500 dark:text-zinc-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <AlertCircle className="w-8 h-8 text-zinc-400" />
-                      <span>{language === 'en' ? 'No translation key matched the filters' : 'Không tìm thấy từ khóa dịch thỏa mãn điều kiện lọc'}</span>
+                      <span>{t('khong_tim_thay_tu_khoa', 'Không tìm thấy từ khóa dịch thỏa mãn điều kiện lọc')}</span>
                     </div>
                   </td>
                 </tr>
@@ -780,14 +762,14 @@ export const SaaSTranslationsTab: React.FC = () => {
                             <button
                               onClick={() => handleSaveEdit(item.key)}
                               className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition cursor-pointer"
-                              title={language === 'en' ? 'Save' : 'Lưu'}
+                              title={t('luu_save', 'Lưu')}
                             >
                               <Save className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setEditingRowKey(null)}
                               className="p-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-300 transition cursor-pointer"
-                              title={language === 'en' ? 'Cancel' : 'Hủy'}
+                              title={t('assets_cancel', 'Hủy')}
                             >
                               <RotateCcw className="w-4 h-4" />
                             </button>
@@ -797,14 +779,14 @@ export const SaaSTranslationsTab: React.FC = () => {
                             <button
                               onClick={() => handleStartEdit(item)}
                               className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition cursor-pointer"
-                              title={language === 'en' ? 'Edit translation' : 'Sửa bản dịch'}
+                              title={t('sua_ban_dich_edit_translation', 'Sửa bản dịch')}
                             >
                               <Edit3 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(item.key)}
                               className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition cursor-pointer"
-                              title={language === 'en' ? 'Delete key' : 'Xóa từ khóa'}
+                              title={t('xoa_tu_khoa_delete_key', 'Xóa từ khóa')}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -822,17 +804,17 @@ export const SaaSTranslationsTab: React.FC = () => {
         {/* Pagination Footer */}
         <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-            {language === 'en' ? 'Showing' : 'Hiển thị'}{' '}
+            {t('datatable_showing', 'Hiển thị')}{' '}
             <span className="font-semibold text-zinc-700 dark:text-zinc-200">
               {formatNumber(fromRow)}–{formatNumber(toRow)}
             </span>{' '}
-            {language === 'en' ? 'of' : '/'} <span className="font-semibold text-zinc-700 dark:text-zinc-200">{formatNumber(totalItems)}</span>{' '}
-            {language === 'en' ? 'items' : 'từ khóa'}
+            {t('of', '/')} <span className="font-semibold text-zinc-700 dark:text-zinc-200">{formatNumber(totalItems)}</span>{' '}
+            {t('tu_khoa_items', 'từ khóa')}
           </span>
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-              <label htmlFor="translations-page-size">{language === 'en' ? 'Rows/page' : 'Số dòng/trang'}</label>
+              <label htmlFor="translations-page-size">{t('so_dong_trang_rows_page', 'Số dòng/trang')}</label>
               <select
                 id="translations-page-size"
                 value={pageSize}
@@ -850,7 +832,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                 onClick={() => setPage(1)}
                 disabled={page <= 1 || isFetching}
                 className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                title={language === 'en' ? 'First page' : 'Trang đầu'}
+                title={t('datatable_first_page', 'Trang đầu')}
               >
                 <ChevronsLeft className="w-4 h-4" />
               </button>
@@ -858,7 +840,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1 || isFetching}
                 className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                title={language === 'en' ? 'Previous page' : 'Trang trước'}
+                title={t('catalog_previous_page', 'Trang trước')}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -869,7 +851,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages || isFetching}
                 className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                title={language === 'en' ? 'Next page' : 'Trang sau'}
+                title={t('catalog_next_page', 'Trang sau')}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -877,7 +859,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                 onClick={() => setPage(totalPages)}
                 disabled={page >= totalPages || isFetching}
                 className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                title={language === 'en' ? 'Last page' : 'Trang cuối'}
+                title={t('datatable_last_page', 'Trang cuối')}
               >
                 <ChevronsRight className="w-4 h-4" />
               </button>
@@ -892,7 +874,7 @@ export const SaaSTranslationsTab: React.FC = () => {
           <div className="flex items-center gap-2">
             <Globe className="w-5 h-5 text-indigo-500" />
             <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-              {language === 'en' ? 'System Languages & Locale Settings' : 'Cấu hình Ngôn ngữ Hệ thống & Quốc gia'}
+              {t('cau_hinh_ngon_ngu_he', 'Cấu hình Ngôn ngữ Hệ thống & Quốc gia')}
             </h3>
           </div>
           <span className="text-xs text-zinc-500">Default: 🇻🇳 Tiếng Việt (vi)</span>
@@ -905,11 +887,11 @@ export const SaaSTranslationsTab: React.FC = () => {
               <span className="text-2xl">🇻🇳</span>
               <div>
                 <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Tiếng Việt (Vietnamese)</h4>
-                <p className="text-xs text-zinc-500">Mã: <code className="font-mono text-blue-600">vi</code> | {language === 'en' ? 'System source language' : 'Ngôn ngữ gốc hệ thống'}</p>
+                <p className="text-xs text-zinc-500">Mã: <code className="font-mono text-blue-600">vi</code> | {t('ngon_ngu_goc_he_thong', 'Ngôn ngữ gốc hệ thống')}</p>
               </div>
             </div>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
-              {language === 'en' ? 'Default (Active)' : 'Mặc định (Active)'}
+              {t('mac_dinh_active_default_active', 'Mặc định (Active)')}
             </span>
           </div>
 
@@ -919,11 +901,11 @@ export const SaaSTranslationsTab: React.FC = () => {
               <span className="text-2xl">🇬🇧</span>
               <div>
                 <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">English (Tiếng Anh)</h4>
-                <p className="text-xs text-zinc-500">Mã: <code className="font-mono text-blue-600">en</code> | {language === 'en' ? 'Commercial International' : 'Thương mại quốc tế'}</p>
+                <p className="text-xs text-zinc-500">Mã: <code className="font-mono text-blue-600">en</code> | {t('thuong_mai_quoc_te_commercial', 'Thương mại quốc tế')}</p>
               </div>
             </div>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-              {language === 'en' ? 'Enabled (Active)' : 'Kích hoạt (Active)'}
+              {t('kich_hoat_active_enabled_active', 'Kích hoạt (Active)')}
             </span>
           </div>
         </div>
@@ -937,7 +919,7 @@ export const SaaSTranslationsTab: React.FC = () => {
               <div className="flex items-center gap-2 text-blue-600">
                 <Plus className="w-5 h-5" />
                 <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                  {language === 'en' ? 'Add New Translation Key' : 'Thêm Từ Khóa Dịch Mới Cho Hệ Thống'}
+                  {t('them_tu_khoa_dich_moi_2', 'Thêm Từ Khóa Dịch Mới Cho Hệ Thống')}
                 </h3>
               </div>
               <button
@@ -951,7 +933,7 @@ export const SaaSTranslationsTab: React.FC = () => {
             <form onSubmit={handleAddNewKey} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en' ? 'Key Code Identifier' : 'Mã từ khóa (Key Code Identifier)'} *
+                  {t('ma_tu_khoa_key_code', 'Mã từ khóa (Key Code Identifier)')} *
                 </label>
                 <input
                   type="text"
@@ -965,7 +947,7 @@ export const SaaSTranslationsTab: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en' ? 'Category' : 'Danh mục phân loại (Category)'}
+                  {t('danh_muc_phan_loai_category', 'Danh mục phân loại (Category)')}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <select
@@ -984,7 +966,7 @@ export const SaaSTranslationsTab: React.FC = () => {
                   </select>
                   <input
                     type="text"
-                    placeholder={language === 'en' ? 'Or type a new category...' : 'Hoặc nhập danh mục mới...'}
+                    placeholder={t('hoac_nhap_danh_muc_moi', 'Hoặc nhập danh mục mới...')}
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value.toLowerCase().trim())}
                     className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
@@ -994,7 +976,7 @@ export const SaaSTranslationsTab: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en' ? 'Vietnamese Translation 🇻🇳' : 'Bản dịch Tiếng Việt 🇻🇳'}
+                  {t('ban_dich_tieng_viet_vietnamese', 'Bản dịch Tiếng Việt 🇻🇳')}
                 </label>
                 <textarea
                   rows={2}
@@ -1008,7 +990,7 @@ export const SaaSTranslationsTab: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en' ? 'English Translation 🇬🇧' : 'Bản dịch Tiếng Anh 🇬🇧'}
+                  {t('ban_dich_tieng_anh_english', 'Bản dịch Tiếng Anh 🇬🇧')}
                 </label>
                 <textarea
                   rows={2}
@@ -1025,13 +1007,13 @@ export const SaaSTranslationsTab: React.FC = () => {
                   onClick={() => setIsAddModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
                 >
-                  {language === 'en' ? 'Cancel' : 'Hủy bỏ'}
+                  {t('cancel', 'Hủy bỏ')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-500 transition cursor-pointer shadow-md shadow-blue-600/20"
                 >
-                  {language === 'en' ? 'Save Key' : 'Lưu từ khóa'}
+                  {t('luu_tu_khoa_save_key', 'Lưu từ khóa')}
                 </button>
               </div>
             </form>

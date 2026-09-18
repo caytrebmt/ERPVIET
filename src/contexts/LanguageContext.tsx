@@ -15,7 +15,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
-  t: (key: string, defaultText?: string) => string;
+  t: (key: string, defaultText?: string, vars?: Record<string, unknown>) => string;
   translationsList: TranslationItem[];
   updateTranslation: (key: string, vi: string, en: string, category?: string) => Promise<void>;
   createTranslation: (key: string, vi: string, en: string, category?: string) => Promise<void>;
@@ -165,11 +165,16 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setLanguage(next);
   };
 
-  const t = useCallback((key: string, defaultText?: string): string => {
-    const value = i18n.t(key, { defaultValue: defaultText ?? '' });
-    if (!value) return defaultText || key;
-    return value;
-  }, [language]);
+  // `vars` mở rộng cho i18next interpolation: t('key', 'Đã nâng cấp lên gói {{plan}}', { plan }).
+  // Giữ nguyên text tiếng Việt làm defaultValue để UI không bao giờ hiện key thô khi thiếu bản dịch.
+  const t = useCallback(
+    (key: string, defaultText?: string, vars?: Record<string, unknown>): string => {
+      const value = i18n.t(key, { ...(vars || {}), defaultValue: defaultText ?? '' });
+      if (!value) return defaultText || key;
+      return value;
+    },
+    [language],
+  );
 
   const persistI18nPair = (key: string, vi: string, en: string) => {
     i18n.addResourceBundle('vi', 'translation', { [key]: vi }, true, true);

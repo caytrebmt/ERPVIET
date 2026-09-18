@@ -6,6 +6,7 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import { useTranslation } from "react-i18next";
 import { storage } from "../../utils/storage";
 import { loadGoogleGsi } from "../../utils/loadGoogleGsi";
+import { pickLocalized } from '../../utils/localized';
 
 export const SaaSRegisterPage: React.FC = () => {
   const { showToast } = useToast();
@@ -198,26 +199,22 @@ export const SaaSRegisterPage: React.FC = () => {
             <CheckCircle2 className="w-8 h-8 text-emerald-400" />
           </div>
           <h2 className="text-xl font-extrabold text-white">
-            {isEn ? 'Your business is ready!' : 'Doanh nghiệp của bạn đã sẵn sàng!'}
+            {t('doanh_nghiep_cua_ban_da', 'Doanh nghiệp của bạn đã sẵn sàng!')}
           </h2>
           <p className="text-xs text-zinc-400">
-            {isEn
-              ? `${registrationResult.companyName || 'Your company'} now has its own ERP workspace and a private WebShop storefront.`
-              : `${registrationResult.companyName || 'Doanh nghiệp'} đã có không gian ERP riêng và một cửa hàng WebShop riêng.`}
+            {pickLocalized(isEn, `${registrationResult.companyName || 'Your company'} now has its own ERP workspace and a private WebShop storefront.`, `${registrationResult.companyName || 'Doanh nghiệp'} đã có không gian ERP riêng và một cửa hàng WebShop riêng.`)}
           </p>
 
           {registrationResult.webshopUrl && (
             <div className="bg-zinc-950/70 border border-emerald-800/50 rounded-2xl p-4 space-y-2 text-left">
               <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                {isEn ? 'Your WebShop address' : 'Địa chỉ WebShop của bạn'}
+                {t('dia_chi_webshop_cua_ban', 'Địa chỉ WebShop của bạn')}
               </p>
               <code className="block text-xs font-mono text-emerald-300 break-all select-all">
                 {absoluteWebshopUrl}
               </code>
               <p className="text-[10px] text-zinc-500">
-                {isEn
-                  ? 'Share this link with customers — it only shows YOUR products.'
-                  : 'Chia sẻ link này cho khách hàng — cửa hàng chỉ hiển thị sản phẩm của doanh nghiệp bạn.'}
+                {t('chia_se_link_nay_cho', 'Chia sẻ link này cho khách hàng — cửa hàng chỉ hiển thị sản phẩm của doanh nghiệp bạn.')}
               </p>
             </div>
           )}
@@ -230,14 +227,14 @@ export const SaaSRegisterPage: React.FC = () => {
                 rel="noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-emerald-900/30"
               >
-                {isEn ? 'Open my WebShop' : 'Mở WebShop của tôi'}
+                {t('mo_webshop_cua_toi_open', 'Mở WebShop của tôi')}
               </a>
             )}
             <button
               onClick={() => navigate('/saas/login', { replace: true })}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-zinc-700 hover:bg-zinc-800 text-zinc-200 text-xs font-bold rounded-xl transition-all cursor-pointer"
             >
-              {isEn ? 'Go to ERP admin' : 'Vào trang quản trị ERP'}
+              {t('vao_trang_quan_tri_erp', 'Vào trang quản trị ERP')}
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -266,7 +263,7 @@ export const SaaSRegisterPage: React.FC = () => {
             <Building2 className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-base tracking-tight leading-none text-zinc-100">ERP-VIET</h1>
+            <h1 className="font-bold text-base tracking-tight leading-none text-zinc-100">{t('saas_login_title', 'ERP-VIET')}</h1>
              <span className="text-[10px] text-amber-400 font-semibold">{t('saas_register_subtitle')}</span>
           </div>
         </div>
@@ -311,7 +308,7 @@ export const SaaSRegisterPage: React.FC = () => {
                     required
                     value={form.name_vi}
                     onChange={(e) => update("name_vi", e.target.value)}
-                    placeholder={isEn ? "Công ty TNHH ABC" : "Công ty TNHH ABC"}
+                    placeholder={t('saas_register_cong_ty_tnhh_abc', 'Công ty TNHH ABC')}
                     className={`bg-zinc-950 border ${errors.name_vi ? "border-red-500" : "border-zinc-800"} rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-zinc-100 placeholder-zinc-600`}
                   />
                   {errors.name_vi && <span className="text-[10px] text-red-400">{errors.name_vi}</span>}
@@ -367,7 +364,7 @@ export const SaaSRegisterPage: React.FC = () => {
                   type="text"
                   value={form.address}
                   onChange={(e) => update("address", e.target.value)}
-                  placeholder={isEn ? "123 Nguyen Van Linh, District 7, HCMC" : "123 Nguyễn Văn Linh, Q.7, TP.HCM"}
+                  placeholder={t('ui_mtizie5n', '123 Nguyễn Văn Linh, Q.7, TP.HCM')}
                   className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-zinc-100 placeholder-zinc-600"
                 />
               </div>

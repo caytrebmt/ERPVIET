@@ -696,7 +696,7 @@ jobs:
 | 9 | Rate-limit login | 🟠 | ✅ Xong |
 | 10 | CORS whitelist + giảm payload limit | 🟠 | ✅ Xong |
 | 11 | Logging level-based | 🟡 | ✅ Xong |
-| 12 | Hoàn thiện `en.json` | 🟡 | ⏳ Cần dịch thủ công (fallback vi đã có) |
+| 12 | Hoàn thiện `en.json` + xoá ternary bypass i18n | 🟡 | ✅ Xong (1.317 key EN đã dịch, guard mở rộng, ratchet chống tái phát) |
 | 13 | Gỡ dependency thừa | 🟡 | ✅ Xong |
 | 14 | Dọn file rác | 🟡 | ✅ Xong |
 | 15 | Đồng bộ tài liệu + bỏ secret mẫu trong README | 🟡 | ✅ Xong |
@@ -708,3 +708,39 @@ jobs:
 ---
 
 > **Đề xuất:** 6 issue 🔴 phải đóng **trước khi go-live**. Nếu bạn muốn, tôi có thể **triển khai trực tiếp** các fix bảo mật (Issue #1–#6) ngay trên branch này và chạy lại `lint`/`build` để xác nhận.
+
+---
+
+## 🧾 PHỤ LỤC — KẾT QUẢ ISSUE #12 (2026-09-18)
+
+**Việc đã làm** (branch `arena/01a0b25a-erpviet`):
+
+1. **Từ điển**: `en.json` đủ 1.317/1.317 key, 0 marker `⚠`, 0 giá trị sao chép tiếng Việt;
+   dịch theo `docs/i18n-glossary.md` (GRN, AR/AP, Output VAT, Accumulated Depreciation…).
+2. **Dọn key chết**: xóa 169 key mồ côi do scanner cũ để lại (không còn `t()` nào tham chiếu).
+3. **Sửa bug thật**: `date_filter.*` và `auth_web.*` lưu dạng object lồng trong khi `keySeparator=false`
+   → 13 vị trí trên UI in raw key (`date_filter.label`). Đã làm phẳng về key chấm + backfill 7 key
+   code gọi nhưng từ điển thiếu (`sidebar_suppliers`, `assets_status`, …).
+4. **Sửa bug nội suy**: `t()` dùng `{stock}` / `${plan}` (i18next không hiểu) → chuẩn hoá `{{stock}}`
+   và truyền vars; 3 chỗ hiện `{order_code}` thô trong toast/sản phẩm.
+5. **Codemod**: 434 ternary `isEn ? / language === 'en' ?` → `t(key, 'Tiếng Việt')`;
+   43 chỗ có nội suy → `t(key, default, vars)`; 56 chỗ chọn trường DB song ngữ → `pickLocalized`;
+   10 chỗ Intl locale → `getIntlLocale`; 172 chuỗi hardcode trong JSX text/thuộc tính UI → `t()`.
+   Tổng: **số key đang dùng thật tăng 404 → 940**.
+6. **Guard mở rộng** (`tests/i18n.test.ts`, 8 → 14 test): cấm `language === 'en' ?`, buộc key `t()`
+   phải tồn tại, buộc JSON phẳng, buộc placeholder `{{}}`, cấm EN còn dấu tiếng Việt, và ratchet
+   `tests/i18n-hardcoded-baseline.json` (chuỗi hardcode chỉ được phép giảm).
+7. **Tool mới**: `scripts/refactor-lang-ternary.cjs`, `scripts/i18n-wire-hardcoded.cjs`,
+   `scripts/i18n-prune-and-flatten.cjs`, `scripts/i18n-count-hardcoded.cjs` + `src/utils/localized.ts`.
+
+**Kết quả kiểm thử**: `tsc --noEmit` ✅ 0 lỗi · `npm test` ✅ 85/85 · `npm run build` ✅ (chunk `locales`
+229.6 kB / gzip 68.7 kB — đổi lại là EN đầy đủ; có thể lazy-load ngôn ngữ không hoạt động nếu muốn giảm).
+
+**Còn tồn (đề xuất follow-up, không chặn)**:
+- 1.492 chuỗi VI hardcode ở các trang chưa nối `t()` (ratchet đã khoá, mỗi module giảm dần được).
+- `missing-translations-report.md` + `candidates.json` + `scripts/i18n-replacements.json` là input của
+  đợt cũ, nay đã lỗi thời → nên xóa ở đợt dọn tiếp theo.
+- 14 key vẫn dùng dấu gạch ngang (`dashboard-tong-quan`, `xem-webshop`, `an-mat-khau`…) thay vì
+  snake_case theo chuẩn §2.4 — gộp vào đợt chuẩn hoá tên key (đã có `scripts/normalize-locales.js`).
+- Thông báo trả về từ `saasRouter`/`shopRouter` (key `api_*`) vẫn là chuỗi cứng trong API;
+  dịch chúng cần chọn ngôn ngữ theo request (`Accept-Language` / `preferred_lang`), không thuộc phạm vi từ điển UI.

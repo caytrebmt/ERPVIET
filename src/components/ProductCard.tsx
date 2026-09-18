@@ -7,6 +7,7 @@ import { formatPrice } from "../utils/format";
 import { getProductImageSrc } from "../utils/images";
 import { useCart } from "../contexts/CartContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import { pickLocalized } from '../utils/localized';
 
 interface ProductCardProps {
   product: Product;
@@ -44,8 +45,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const isOutOfStock = product.stock <= 0;
 
   // Active language display fields
-  const displayName = language === 'en' ? (product.name_en || product.name) : (product.name_vi || product.name);
-  const displayUnit = language === 'en' ? (product.unit_en || product.unit || 'Pcs') : (product.unit_vi || product.unit || 'Cái');
+  const displayName = pickLocalized(language === 'en', (product.name_en || product.name), (product.name_vi || product.name));
+  const displayUnit = pickLocalized(language === 'en', (product.unit_en || product.unit || 'Pcs'), (product.unit_vi || product.unit || 'Cái'));
 
   return (
     <Link
@@ -76,7 +77,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         ) : (
           product.stock <= 5 && (
             <span className="absolute top-3 left-3 bg-amber-500 text-white text-[10px] font-bold tracking-wider px-2 py-1 rounded-sm uppercase shadow-xs">
-               {t('product_only_left', `Only ${product.stock} ${displayUnit} left`)}
+               {t('product_only_left', 'Chỉ còn {{stock}} {{unit}}', { stock: product.stock, unit: displayUnit })}
             </span>
           )
         )}

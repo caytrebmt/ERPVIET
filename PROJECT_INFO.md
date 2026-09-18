@@ -145,13 +145,29 @@ thành super admin). Người vận hành khác cần quyền → DBA set thủ 
 ### 2.4 i18n (Internationalization)
 
 - **Thư viện**: `i18next` + `react-i18next`.
-- **Ngôn ngữ**: `vi` (Vietnamese, default) và `en` (English).
-- **Locale files**: `/public/locales/vi.json` và `/public/locales/en.json`.
-- **Lazy loading**: `i18n.ts` khởi tạo với resources rỗng, sau đó fetch JSON files bất đồng bộ, rồi `addResourceBundle`. Tránh top-level await để Vite build không lỗi.
-- **Dynamic translations**: `LanguageContext.tsx` cho phép thêm/sửa/xóa key dịch thời gian thực (qua API `/api/saas/translations`) và lưu vào `localStorage` cache (`saas_translation_dictionary`).
-- **Quy tắc key**: Snake_case từ tiếng Việt, ví dụ: `"đăng nhập"` → `dang_nhap`, `"thành công"` → `thanh_cong`.
-- **Tool scan**: `scripts/scan-translations.ts` — tự động quét TSX files, tạo key, ghi vào locale files.
-
+- **Ngôn ngữ**: `vi` (default) và `en`. `fallbackLng = "vi"`.
+- **Locale files**: `public/locales/vi.json` + `public/locales/en.json` — **map PHẲNG** `"key": "chuỗi"`.
+  `src/i18n.ts` đặt `keySeparator: false` và `nsSeparator: false`, nên:
+  - Key chứa dấu chấm là key **phẳng hợp lệ** (`date_filter.label`), KHÔNG phải object lồng.
+  - **Không được** viết object lồng trong JSON — `toFlatStrings()` sẽ loại bỏ và UI in raw key.
+- **Bundle + overlay**: cả 2 file JSON được import tĩnh (first paint đã có bản dịch, `initAsync:false`).
+  Sau khi render, `applyLocaleOverlay()` fetch `/api/saas/locales/{lng}` để merge bản dịch admin đã publish,
+  có cache `sessionStorage` (`i18n_overlay_cache_v1`, TTL 5 phút) — không chặn request đầu.
+- **`t()` ở 2 nguồn, cùng chữ ký**:
+  - `useLanguage().t(key, defaultVietnamese, vars?)` — wrapper trong `LanguageContext.tsx` (khuyến nghị).
+  - `useTranslation().t(key, defaultVietnamese, vars?)` — trực tiếp i18next.
+  - **Luôn truyền defaultValue là tiếng Việt**: key thiếu → UI hiện tiếng Việt, không hiện key thô.
+  - Nội suy dùng `{{var}}` (i18next), KHÔNG dùng `{var}` hay `${var}`.
+- **Không được** dùng ternary chọn ngôn ngữ (`isEn ? … : …`, `language === 'en' ? … : …`) cho chuỗi UI.
+  Hai trường hợp chính đáng còn lại đã gom vào `src/utils/localized.ts`:
+  - `getIntlLocale(isEnglish)` → `'en-US' | 'vi-VN'` cho `toLocaleString`/`toLocaleDateString`.
+  - `pickLocalized(isEnglish, enValue, viValue)` → chọn **TRƯỜNG DỮ LIỆU song ngữ trong DB** (`name_en`/`name_vi`),
+    tự fallback về VI khi EN trống. Đây là dữ liệu tenant nhập, không phải bản dịch UI.
+- **Quy tắc key**: snake_case ASCII sinh từ tiếng Việt (`"đăng nhập"` → `dang_nhap`, `"thành công"` → `thanh_cong`);
+  cùng một chuỗi → một key duy nhất (dedup theo giá trị VI đã chuẩn hoá).
+- **CI guard**: `tests/i18n.test.ts` (xem §5.5) — parity vi/en, cấm `⚠`, cấm giá trị EN chưa dịch,
+  cấm ternary chọn ngôn ngữ, buộc mọi key `t()` trong code phải có trong từ điển, và ratchet chống hardcode tăng.
+- **Từ điển hiện tại**: ~1.3k key, EN đã dịch 100% theo `docs/i18n-glossary.md`.
 ---
 
 ## 3. Các nghiệp vụ (Business Modules)
@@ -524,6 +540,38 @@ npx tsx scripts/scan-translations.ts "src/pages/saas/SaaS*.tsx" --write
 - Chữ thường, snake_case.
 - Bỏ dấu tiếng Việt.
 - Ví dụ: `"Thành công"` → `thanh_cong`, `"Đơn hàng mới"` → `don_hang_moi`.
+
+---
+
+## 5.5 Bộ công cụ i18n (codemod + guard)
+
+```bash
+# 1) Đo nợ còn lại: số chuỗi tiếng Việt hardcode trong tầng hiển thị (AST, không đếm nhầm data)
+node scripts/i18n-count-hardcoded.cjs
+node scripts/i18n-count-hardcoded.cjs --write-baseline     # sau khi đã giảm nợ → chốt baseline mới
+
+# 2) Nối ternary chọn ngôn ngữ → t() (AST; tự tái dùng key đã có trong vi.json)
+node scripts/refactor-lang-ternary.cjs                 # dry-run + /tmp/i18n-plan.json
+node scripts/refactor-lang-ternary.cjs --write
+
+# 3) Nối chuỗi hardcode trong JSX text / thuộc tính UI → t() theo key đã có trong từ điển
+node scripts/i18n-wire-hardcoded.cjs --write
+
+# 4) Dọn từ điển: flatten key lồng, backfill key code đang gọi, xóa key mồ côi
+node scripts/i18n-prune-and-flatten.cjs
+node scripts/i18n-prune-and-flatten.cjs --write
+
+# 5) Sinh bản dịch EN hàng loạt cho key còn ⚠ (cần OPENAI_API_KEY) rồi người review
+node scripts/translate-en.cjs --dry-run
+node scripts/translate-en.cjs
+
+# 6) Kiểm tra
+npm run lint && npm test && npm run build
+```
+
+**Thứ tự bắt buộc khi refactor i18n một trang**: (2) → (3) → (4) → dịch EN phần còn thiếu → `npm test`.
+Mỗi bước đều chạy được lại (idempotent) và không tự bịa bản dịch: EN lấy từ chính ternary trong code
+hoặc từ `docs/i18n-glossary.md`.
 
 ---
 

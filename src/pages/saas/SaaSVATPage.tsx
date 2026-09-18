@@ -3,6 +3,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Receipt, FileSpreadsheet, Download, Filter, CheckCircle2, ArrowDownLeft, ArrowUpRight, Calculator } from 'lucide-react';
 import { DataTable } from '../../components/DataTable';
 import client from '../../api/client';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface VatRecordItem {
   id: number;
@@ -19,6 +20,7 @@ interface VatRecordItem {
 }
 
 export const SaaSVATPage: React.FC = () => {
+  const { t } = useLanguage();
   const [vatType, setVatType] = useState<'output' | 'input'>('output');
   const now = new Date();
   const [month, setMonth] = useState<number>(now.getMonth() + 1);
@@ -139,8 +141,7 @@ export const SaaSVATPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <button className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-200">
-            <Download className="h-4 w-4" /> Xuất Excel
-          </button>
+            <Download className="h-4 w-4" /> {t('export_excel', 'Xuất Excel')}</button>
           <button className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold">
             <FileSpreadsheet className="h-4 w-4" /> Bảng kê Thuế GTGT
           </button>
@@ -175,8 +176,8 @@ export const SaaSVATPage: React.FC = () => {
           netVatPayable >= 0 ? 'bg-amber-500/10 border-amber-500/20' : 'bg-purple-500/10 border-purple-500/20'
         }`}>
           <div className="flex items-center justify-between text-xs font-bold">
-            <span className="flex items-center gap-1"><Calculator className="h-4 w-4" /> VAT Nghĩa Vụ Thuế Phải Nộp</span>
-            <span>{netVatPayable >= 0 ? 'Phải Nộp' : 'Được Chuyển Kỳ Sau'}</span>
+            <span className="flex items-center gap-1"><Calculator className="h-4 w-4" /> {t('saas_v_a_t_vat_nghia_vu_thue_phai_nop', 'VAT Nghĩa Vụ Thuế Phải Nộp')}</span>
+            <span>{netVatPayable >= 0 ? t('saas_v_a_t_phai_nop', 'Phải Nộp') : t('saas_v_a_t_d_oc_chuyen_ky_sau', 'Được Chuyển Kỳ Sau')}</span>
           </div>
           <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
             {Math.abs(netVatPayable).toLocaleString('vi-VN')} đ
@@ -210,7 +211,7 @@ export const SaaSVATPage: React.FC = () => {
 
         <div className="flex items-center gap-2 text-xs">
           <Filter className="h-4 w-4 text-zinc-400" />
-          <span className="text-zinc-500 font-medium">Tháng:</span>
+          <span className="text-zinc-500 font-medium">{t('saas_v_a_t_thang', 'Tháng:')}</span>
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
@@ -222,7 +223,7 @@ export const SaaSVATPage: React.FC = () => {
               </option>
             ))}
           </select>
-          <span className="text-zinc-500 font-medium">Năm:</span>
+          <span className="text-zinc-500 font-medium">{t('saas_v_a_t_n_m', 'Năm:')}</span>
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
@@ -248,7 +249,7 @@ export const SaaSVATPage: React.FC = () => {
         <div className="flex items-center gap-6">
           <span>Doanh số: <strong className="text-zinc-900 dark:text-zinc-100">{totalTaxable.toLocaleString('vi-VN')} đ</strong></span>
           <span>Tiền VAT: <strong className="text-amber-600 dark:text-amber-400">{totalVat.toLocaleString('vi-VN')} đ</strong></span>
-          <span>Tổng thanh toán: <strong className="text-emerald-600 dark:text-emerald-400">{totalAmount.toLocaleString('vi-VN')} đ</strong></span>
+          <span>{t('saas_stock_out_tong_thanh_toan', 'Tổng thanh toán:')}<strong className="text-emerald-600 dark:text-emerald-400">{totalAmount.toLocaleString('vi-VN')} đ</strong></span>
         </div>
       </div>
     </div>

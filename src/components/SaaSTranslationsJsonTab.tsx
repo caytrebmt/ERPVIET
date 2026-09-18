@@ -75,7 +75,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
             key,
             vi: viData[key] || '',
             en: enData[key] || '',
-            group: groupMap[key] || (language === 'en' ? 'Other' : 'Khác'),
+            group: groupMap[key] || (t('api_fallback_brand', 'Khác')),
           });
         }
         
@@ -164,7 +164,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
       setTranslations(prev => prev.map(t => 
         t.key === entry.key ? { ...t, vi: editValue.vi, en: editValue.en } : t
       ));
-      addToast(language === 'en' ? 'Translation saved!' : 'Đã lưu bản dịch!', 'success');
+      addToast(t('da_luu_ban_dich_translation', 'Đã lưu bản dịch!'), 'success');
       handleCancelEdit();
     } catch (err: any) {
       addToast(err.response?.data?.error || 'Failed to save', 'error');
@@ -185,7 +185,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
         translations: translationsMap,
       });
       if (res.data?.ok) {
-        addToast(language === 'en' ? `Saved ${translations.length} keys to JSON files!` : `Đã lưu ${translations.length} từ khóa vào file JSON!`, 'success');
+        addToast(t('da_luu_tu_khoa_vao', 'Đã lưu {{length}} từ khóa vào file JSON!', { length: translations.length }), 'success');
         loadTranslations();
       } else {
         addToast(res.data?.error || 'Failed to save all translations', 'error');
@@ -198,7 +198,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
   };
 
   const handlePublishFromDB = async () => {
-    if (!window.confirm(language === 'en' ? 'Publish all DB translations to JSON files? This will overwrite existing JSON content.' : 'Xuất bản tất cả bản dịch từ DB ra file JSON? Thao tác này sẽ ghi đè nội dung JSON hiện tại.')) {
+    if (!window.confirm(t('xuat_ban_tat_ca_ban', 'Xuất bản tất cả bản dịch từ DB ra file JSON? Thao tác này sẽ ghi đè nội dung JSON hiện tại.'))) {
       return;
     }
 
@@ -207,9 +207,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
       const res = await client.post('/api/saas/translations/json/publish');
       if (res.data?.ok) {
         addToast(
-          language === 'en'
-            ? `Published ${res.data.data.published} translations from DB to JSON (${res.data.data.viKeys} VI, ${res.data.data.enKeys} EN)!`
-            : `Đã xuất bản ${res.data.data.published} bản dịch từ DB ra JSON (${res.data.data.viKeys} từ VI, ${res.data.data.enKeys} từ EN)!`,
+          t('da_xuat_ban_ban_dich', 'Đã xuất bản {{published}} bản dịch từ DB ra JSON ({{vikeys}} từ VI, {{enkeys}} từ EN)!', { published: res.data.data.published, vikeys: res.data.data.viKeys, enkeys: res.data.data.enKeys }),
           'success'
         );
         loadTranslations();
@@ -227,7 +225,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
     e.preventDefault();
     const formattedKey = newKey.trim().toLowerCase().replace(/\s+/g, '_');
     if (!formattedKey) {
-      addToast(language === 'en' ? 'Please enter a valid key code' : 'Vui lòng nhập mã từ khóa', 'error');
+      addToast(t('vui_long_nhap_ma_tu', 'Vui lòng nhập mã từ khóa'), 'error');
       return;
     }
 
@@ -251,7 +249,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
       }));
 
       setExpandedGroups(prev => ({ ...prev, [newCategory]: true }));
-      addToast(language === 'en' ? `Added key '${formattedKey}' to JSON files!` : `Đã thêm từ khóa '${formattedKey}' vào file JSON!`, 'success');
+      addToast(t('da_them_tu_khoa_vao', 'Đã thêm từ khóa \'{{formattedkey}}\' vào file JSON!', { formattedkey: formattedKey }), 'success');
       setIsAddModalOpen(false);
       setNewKey('');
       setNewVi('');
@@ -273,7 +271,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    addToast(language === 'en' ? 'Copied!' : 'Đã sao chép!', 'success');
+    addToast(t('saas_tenants_da_sao_chep', 'Đã sao chép!'), 'success');
   };
 
   const totalKeys = translations.length;
@@ -285,12 +283,10 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
         <div>
           <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <FileJson className="w-4 h-4 text-emerald-500" />
-            {language === 'en' ? 'JSON Translation Editor' : 'Trình Dịch Thuật JSON'}
+            {t('saas_settings_trinh_dich_thuat_json', 'Trình Dịch Thuật JSON')}
           </h3>
           <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-            {language === 'en' 
-              ? `${totalKeys} keys loaded from vi.json & en.json` 
-              : `Đã tải ${totalKeys} từ khóa từ vi.json & en.json`}
+            {t('da_tai_tu_khoa_tu', 'Đã tải {{totalkeys}} từ khóa từ vi.json & en.json', { totalkeys: totalKeys })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -299,7 +295,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            {language === 'en' ? 'Add Key' : 'Thêm Từ Khóa'}
+            {t('them_tu_khoa_add_key', 'Thêm Từ Khóa')}
           </button>
           <button
             onClick={handleSaveAllToJSON}
@@ -311,7 +307,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
             ) : (
               <Save className="w-3.5 h-3.5" />
             )}
-            {language === 'en' ? 'Save All to JSON' : 'Lưu Tất Cả ra JSON'}
+            {t('luu_tat_ca_ra_json', 'Lưu Tất Cả ra JSON')}
           </button>
 
           <button
@@ -324,14 +320,14 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
             ) : (
               <Upload className="w-3.5 h-3.5" />
             )}
-            {language === 'en' ? 'Publish from DB' : 'Xuất bản từ DB'}
+            {t('xuat_ban_tu_db_publish', 'Xuất bản từ DB')}
           </button>
           <button
             onClick={loadTranslations}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            {language === 'en' ? 'Refresh' : 'Làm mới'}
+            {t('lam_moi_refresh', 'Làm mới')}
           </button>
         </div>
       </div>
@@ -344,7 +340,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={language === 'en' ? 'Search keys or translations...' : 'Tìm kiếm từ khóa hoặc nội dung...'}
+            placeholder={t('tim_kiem_tu_khoa_hoac', 'Tìm kiếm từ khóa hoặc nội dung...')}
             className="w-full pl-9 pr-3 py-2 rounded-lg text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
@@ -353,7 +349,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
           onChange={(e) => setSelectedGroup(e.target.value)}
           className="px-3 py-2 rounded-lg text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
         >
-          <option value="all">{language === 'en' ? 'All Groups' : 'Tất cả nhóm'}</option>
+          <option value="all">{t('tat_ca_nhom_all_groups', 'Tất cả nhóm')}</option>
           {[...groups.keys()].sort().map(group => (
             <option key={group} value={group}>{group}</option>
           ))}
@@ -367,7 +363,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
         </div>
       ) : searchFilteredEntries.size === 0 ? (
         <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-xs">
-          {language === 'en' ? 'No translations found.' : 'Không tìm thấy bản dịch nào.'}
+          {t('khong_tim_thay_ban_dich', 'Không tìm thấy bản dịch nào.')}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -405,7 +401,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
                             <button
                               onClick={() => copyToClipboard(entry.key)}
                               className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                              title={language === 'en' ? 'Copy key' : 'Sao chép từ khóa'}
+                              title={t('sao_chep_tu_khoa_copy', 'Sao chép từ khóa')}
                             >
                               <Copy className="w-3 h-3" />
                             </button>
@@ -413,7 +409,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <div>
                               <label className="text-[10px] font-semibold text-red-600 dark:text-red-400 mb-1 block">
-                                {language === 'en' ? 'Vietnamese' : 'Tiếng Việt'}
+                                {t('tieng_viet_vietnamese', 'Tiếng Việt')}
                               </label>
                               <textarea
                                 value={editValue.vi}
@@ -424,7 +420,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
                             </div>
                             <div>
                               <label className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-1 block">
-                                {language === 'en' ? 'English' : 'Tiếng Anh'}
+                                {t('tieng_anh_english', 'Tiếng Anh')}
                               </label>
                               <textarea
                                 value={editValue.en}
@@ -445,14 +441,14 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
                               ) : (
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                               )}
-                              {language === 'en' ? 'Save' : 'Lưu'}
+                              {t('luu_save', 'Lưu')}
                             </button>
                             <button
                               onClick={handleCancelEdit}
                               disabled={saving === entry.key}
                               className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors cursor-pointer"
                             >
-                              {language === 'en' ? 'Cancel' : 'Hủy'}
+                              {t('assets_cancel', 'Hủy')}
                             </button>
                           </div>
                         </div>
@@ -466,7 +462,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
                             <button
                               onClick={() => copyToClipboard(entry.key)}
                               className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                              title={language === 'en' ? 'Copy key' : 'Sao chép từ khóa'}
+                              title={t('sao_chep_tu_khoa_copy', 'Sao chép từ khóa')}
                             >
                               <Copy className="w-3 h-3" />
                             </button>
@@ -476,24 +472,24 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
                               className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer"
                             >
                               <Edit3 className="w-3 h-3" />
-                              {language === 'en' ? 'Edit' : 'Sửa'}
+                              {t('sua_edit', 'Sửa')}
                             </button>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <div className="bg-red-50/50 dark:bg-red-950/10 rounded-lg px-2.5 py-1.5 border border-red-100 dark:border-red-900/30">
                               <span className="text-[10px] text-red-500 dark:text-red-400 font-semibold block mb-0.5">
-                                {language === 'en' ? 'VI' : 'Tiếng Việt'}
+                                {t('tieng_viet_vi', 'Tiếng Việt')}
                               </span>
                               <span className="text-xs text-gray-800 dark:text-gray-200 line-clamp-2">
-                                {entry.vi || <span className="text-gray-400 italic">{language === 'en' ? '(empty)' : '(trống)'}</span>}
+                                {entry.vi || <span className="text-gray-400 italic">{t('trong_empty', '(trống)')}</span>}
                               </span>
                             </div>
                             <div className="bg-blue-50/50 dark:bg-blue-950/10 rounded-lg px-2.5 py-1.5 border border-blue-100 dark:border-blue-900/30">
                               <span className="text-[10px] text-blue-500 dark:text-blue-400 font-semibold block mb-0.5">
-                                {language === 'en' ? 'EN' : 'Tiếng Anh'}
+                                {t('tieng_anh_en', 'Tiếng Anh')}
                               </span>
                               <span className="text-xs text-gray-800 dark:text-gray-200 line-clamp-2">
-                                {entry.en || <span className="text-gray-400 italic">{language === 'en' ? '(empty)' : '(trống)'}</span>}
+                                {entry.en || <span className="text-gray-400 italic">{t('trong_empty', '(trống)')}</span>}
                               </span>
                             </div>
                           </div>
@@ -516,7 +512,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
               <div className="flex items-center gap-2 text-emerald-600">
                 <Plus className="w-5 h-5" />
                 <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                  {language === 'en' ? 'Add New Key to JSON Files' : 'Thêm Từ Khóa Mới Vào File JSON'}
+                  {t('them_tu_khoa_moi_vao', 'Thêm Từ Khóa Mới Vào File JSON')}
                 </h3>
               </div>
               <button
@@ -530,42 +526,42 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
             <form onSubmit={handleAddNewKey} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en' ? 'Key Code (auto-formatted to snake_case)' : 'Mã từ khóa (tự động chuyển thành snake_case)'} *
+                  {t('ma_tu_khoa_tu_dong', 'Mã từ khóa (tự động chuyển thành snake_case)')} *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder={language === 'en' ? 'e.g.: report_monthly_vat' : 'ví dụ: bao_cao_vat_hang_thang'}
+                  placeholder={t('vi_du_bao_cao_vat', 'ví dụ: bao_cao_vat_hang_thang')}
                   value={newKey}
                   onChange={(e) => setNewKey(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
                 />
                 <p className="text-[10px] text-zinc-400 mt-1">
-                  {language === 'en' ? 'Key will be lowercased and spaces converted to underscores.' : 'Tự động chuyển chữ thường, khoảng trắng thành dấu gạch dưới.'}
+                  {t('tu_dong_chuyen_chu_thuong', 'Tự động chuyển chữ thường, khoảng trắng thành dấu gạch dưới.')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en' ? 'Group / Category' : 'Nhóm phân loại'}
+                  {t('nhom_phan_loai_group_category', 'Nhóm phân loại')}
                 </label>
                 <input
                   type="text"
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value.trim() || 'common')}
-                  placeholder={language === 'en' ? 'e.g.: common, menu, products' : 'ví dụ: common, menu, products'}
+                  placeholder={t('vi_du_common_menu_products', 'ví dụ: common, menu, products')}
                   className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en' ? 'Vietnamese Value' : 'Giá trị Tiếng Việt'} *
+                  {t('gia_tri_tieng_viet_vietnamese', 'Giá trị Tiếng Việt')} *
                 </label>
                 <textarea
                   rows={2}
                   required
-                  placeholder={language === 'en' ? 'Enter Vietnamese translation...' : 'Nhập nội dung tiếng Việt...'}
+                  placeholder={t('nhap_noi_dung_tieng_viet', 'Nhập nội dung tiếng Việt...')}
                   value={newVi}
                   onChange={(e) => setNewVi(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-none"
@@ -574,11 +570,11 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en' ? 'English Value' : 'Giá trị Tiếng Anh'}
+                  {t('gia_tri_tieng_anh_english', 'Giá trị Tiếng Anh')}
                 </label>
                 <textarea
                   rows={2}
-                  placeholder={language === 'en' ? 'Enter English translation (optional - will copy from VI if empty)' : 'Nhập nội dung tiếng Anh (tự động sao chép từ VI nếu để trống)'}
+                  placeholder={t('nhap_noi_dung_tieng_anh', 'Nhập nội dung tiếng Anh (tự động sao chép từ VI nếu để trống)')}
                   value={newEn}
                   onChange={(e) => setNewEn(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-none"
@@ -588,9 +584,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
               <div className="flex items-center gap-2 pt-1">
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {language === 'en'
-                    ? 'This will write directly to public/locales/vi.json and en.json on disk.'
-                    : 'Thao tác này sẽ ghi trực tiếp vào public/locales/vi.json và en.json trên đĩa.'}
+                  {t('thao_tac_nay_se_ghi', 'Thao tác này sẽ ghi trực tiếp vào public/locales/vi.json và en.json trên đĩa.')}
                 </span>
               </div>
 
@@ -600,7 +594,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
                   onClick={() => setIsAddModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
                 >
-                  {language === 'en' ? 'Cancel' : 'Hủy bỏ'}
+                  {t('cancel', 'Hủy bỏ')}
                 </button>
                 <button
                   type="submit"
@@ -610,7 +604,7 @@ export const SaaSTranslationsJsonTab: React.FC = () => {
                   {saving === newKey.trim().toLowerCase().replace(/\s+/g, '_') ? (
                     <RefreshCw className="w-3.5 h-3.5 animate-spin mx-auto" />
                   ) : (
-                    language === 'en' ? 'Add to JSON' : 'Thêm vào JSON'
+                    t('them_vao_json_add_to', 'Thêm vào JSON')
                   )}
                 </button>
               </div>

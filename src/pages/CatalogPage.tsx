@@ -6,6 +6,7 @@ import { Product, Category, Promotion } from "../types";
 import ProductCard from "../components/ProductCard";
 import { useLanguage } from "../contexts/LanguageContext";
 import { motion } from "motion/react";
+import { pickLocalized } from '../utils/localized';
 
 const PAGE_SIZE = 24;
 const VISIBLE_PAGES = 5;
@@ -142,9 +143,7 @@ const CatalogPage: React.FC = () => {
                {t('catalog_all_products')}
             </button>
             {categories.map((cat) => {
-              const catName = language === 'en'
-                ? (cat.name_en || cat.nameEn || cat.name)
-                : (cat.name_vi || cat.name);
+              const catName = pickLocalized(language === 'en', (cat.name_en || cat.nameEn || cat.name), (cat.name_vi || cat.name));
               return (
                 <button
                   key={cat.id}
@@ -239,9 +238,7 @@ const CatalogPage: React.FC = () => {
         {totalPages > 1 && !initialLoading && (
           <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {language === 'en'
-                ? `${t("catalog_showing")} ${Math.min(total, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(total, currentPage * PAGE_SIZE)} ${t("catalog_of")} ${total} ${t("catalog_products")}`
-                : `${t("catalog_showing")} ${Math.min(total, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(total, currentPage * PAGE_SIZE)} ${t("catalog_of")} ${total} ${t("catalog_products")}`}
+              {pickLocalized(language === 'en', `${t("catalog_showing")} ${Math.min(total, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(total, currentPage * PAGE_SIZE)} ${t("catalog_of")} ${total} ${t("catalog_products")}`, `${t("catalog_showing")} ${Math.min(total, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(total, currentPage * PAGE_SIZE)} ${t("catalog_of")} ${total} ${t("catalog_products")}`)}
             </span>
 
             <nav

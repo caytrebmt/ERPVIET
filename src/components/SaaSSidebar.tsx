@@ -71,12 +71,12 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
   const role = erpUser?.role_code || 'ADMIN';
 
   const planLabel = (() => {
-    if (!companyInfo?.plan_type) return isEn ? 'Plan' : 'Gói';
+    if (!companyInfo?.plan_type) return t('goi_plan', 'Gói');
     const p = companyInfo.plan_type;
-    if (p === 'free') return isEn ? 'Free' : 'Miễn phí';
-    if (p === 'starter') return isEn ? 'Starter' : 'Starter';
-    if (p === 'professional') return isEn ? 'Professional' : 'Professional';
-    if (p === 'enterprise') return isEn ? 'Enterprise' : 'Enterprise';
+    if (p === 'free') return t('saas_tenants_mien_phi', 'Miễn phí');
+    if (p === 'starter') return t('saas_register_plan_starter', 'Starter');
+    if (p === 'professional') return t('saas_register_plan_professional', 'Professional');
+    if (p === 'enterprise') return t('saas_register_plan_enterprise', 'Enterprise');
     return p;
   })();
 
@@ -164,7 +164,7 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
     {
         title: t('sidebar_system_online_store'),
       items: [
-        { name: isEn ? 'Tenant Management' : 'Quản lý Doanh nghiệp', path: '/saas/tenants', icon: Building2 },
+        { name: t('saas_tenants_quan_ly_doanh_nghiep', 'Quản lý Doanh nghiệp'), path: '/saas/tenants', icon: Building2 },
         { name: t('sidebar_security_audit'), path: '/saas/audit-logs', icon: ShieldAlert },
         { name: t('sidebar_system_settings'), path: '/saas/settings', icon: Settings },
         { name: t('sidebar_webshop_front'), path: webshopUrl, icon: ShoppingBag, external: true },
@@ -256,7 +256,7 @@ export const SaaSSidebar: React.FC<SaaSSidebarProps> = ({
                 </h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-[10px] text-amber-400 font-medium px-1.5 py-0.5 rounded-xs bg-amber-500/10 border border-amber-500/20">
-                    {companyInfo ? (isEn ? 'Workspace' : 'Không gian làm việc') : 'Enterprise'}
+                    {companyInfo ? (t('khong_gian_lam_viec_workspace', 'Không gian làm việc')) : 'Enterprise'}
                   </span>
                   {companyInfo?.plan_type && (
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-xs bg-zinc-800 text-zinc-300 border border-zinc-700/60">

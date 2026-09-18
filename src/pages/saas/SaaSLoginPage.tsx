@@ -71,8 +71,7 @@ export const SaaSLoginPage: React.FC = () => {
           </div>
           <div>
             <h1 className="font-bold text-base tracking-tight leading-none text-zinc-100">
-              ERP-VIET
-            </h1>
+              {t('saas_login_title', 'ERP-VIET')}</h1>
              <span className="text-[10px] text-amber-400 font-semibold">
                {t('saas_login_subtitle')}
              </span>
