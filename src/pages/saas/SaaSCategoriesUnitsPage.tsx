@@ -5,6 +5,7 @@ import { DataTable } from '../../components/DataTable';
 import { useToast } from '../../contexts/ToastContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import client from '../../api/client';
+import { getIntlLocale, pickLocalized } from '../../utils/localized';
 
 interface CategoryItem {
   id: number;
@@ -114,17 +115,17 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
       const response = await client.get('/api/saas/categories');
       if (response.data?.ok) setCategories(response.data.data.map((item: any) => ({ ...item, name: item.name_vi || item.name, description: item.description || '', productCount: Number(item.product_count || 0), status: item.is_active === false ? 'Tạm khóa' : 'Hoạt động' })));
       setShowCatModal(false);
-      addToast(language === 'en' ? (editingCat ? 'Updated category successfully!' : 'Created new category successfully!') : (editingCat ? 'Cập nhật danh mục hàng hóa thành công!' : 'Thêm danh mục mới thành công!'), 'success');
+      addToast(pickLocalized(language === 'en', (editingCat ? 'Updated category successfully!' : 'Created new category successfully!'), (editingCat ? 'Cập nhật danh mục hàng hóa thành công!' : 'Thêm danh mục mới thành công!')), 'success');
     } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể lưu danh mục vào cơ sở dữ liệu.', 'error'); }
   };
 
   const handleDeleteCategory = async (id: number, cat: CategoryItem) => {
-    const catName = language === 'en' ? (cat.name_en || cat.name) : (cat.name_vi || cat.name);
-    if (!window.confirm(language === 'en' ? `Delete category "${catName}"?` : `Bạn có chắc muốn xóa nhóm danh mục "${catName}"?`)) return;
+    const catName = pickLocalized(language === 'en', (cat.name_en || cat.name), (cat.name_vi || cat.name));
+    if (!window.confirm(t('ban_co_chac_muon_xoa', 'Bạn có chắc muốn xóa nhóm danh mục "{{catname}}"?', { catname: catName }))) return;
     try {
       await client.delete(`/api/saas/categories/${id}`);
       setCategories((current) => current.filter((item) => item.id !== id));
-      addToast(language === 'en' ? `Deleted category "${catName}"` : `Đã xóa danh mục "${catName}"`, 'warning');
+      addToast(t('da_xoa_danh_muc_deleted', 'Đã xóa danh mục "{{catname}}"', { catname: catName }), 'warning');
     } catch (error: any) { addToast(error?.response?.data?.message || 'Không thể xóa danh mục.', 'error'); }
   };
 
@@ -169,7 +170,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
             : u
         )
       );
-      addToast(language === 'en' ? 'Updated unit successfully!' : 'Cập nhật đơn vị tính thành công!', 'success');
+      addToast(t('cap_nhat_don_vi_tinh', 'Cập nhật đơn vị tính thành công!'), 'success');
     } else {
       const newUnit: UnitItem = {
         id: Date.now(),
@@ -183,23 +184,23 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
         isFractional: unitFormData.isFractional,
       };
       setUnits([...units, newUnit]);
-      addToast(language === 'en' ? 'Created new unit successfully!' : 'Thêm đơn vị tính mới thành công!', 'success');
+      addToast(t('them_don_vi_tinh_moi', 'Thêm đơn vị tính mới thành công!'), 'success');
     }
     setShowUnitModal(false);
   };
 
   const handleDeleteUnit = (id: number, u: UnitItem) => {
-    const unitName = language === 'en' ? (u.name_en || u.name) : (u.name_vi || u.name);
-    if (window.confirm(language === 'en' ? `Delete unit "${unitName}"?` : `Bạn có chắc muốn xóa đơn vị tính "${unitName}"?`)) {
+    const unitName = pickLocalized(language === 'en', (u.name_en || u.name), (u.name_vi || u.name));
+    if (window.confirm(t('ban_co_chac_muon_xoa_2', 'Bạn có chắc muốn xóa đơn vị tính "{{unitname}}"?', { unitname: unitName }))) {
       setUnits(units.filter((unit) => unit.id !== id));
-      addToast(language === 'en' ? `Deleted unit "${unitName}"` : `Đã xóa đơn vị tính "${unitName}"`, 'warning');
+      addToast(t('da_xoa_don_vi_tinh', 'Đã xóa đơn vị tính "{{unitname}}"', { unitname: unitName }), 'warning');
     }
   };
 
   const categoryColumns: ColumnDef<CategoryItem>[] = [
     {
       accessorKey: 'code',
-      header: language === 'en' ? 'Category Code' : 'Mã Danh Mục',
+      header: t('saas_categories_units_ma_danh_muc', 'Mã Danh Mục'),
       cell: (info) => (
         <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 ">
           {info.getValue() as string}
@@ -208,11 +209,11 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
     },
     {
       accessorKey: 'name',
-      header: language === 'en' ? 'Category Name' : 'Tên Nhóm Hàng Hóa',
+      header: t('saas_categories_units_ten_nhom_hang_hoa', 'Tên Nhóm Hàng Hóa'),
       cell: ({ row }) => {
         const cat = row.original;
-        const name = language === 'en' ? (cat.name_en || cat.name) : (cat.name_vi || cat.name);
-        const altName = language === 'en' ? cat.name_vi : cat.name_en;
+        const name = pickLocalized(language === 'en', (cat.name_en || cat.name), (cat.name_vi || cat.name));
+        const altName = pickLocalized(language === 'en', cat.name_vi, cat.name_en);
         return (
           <div>
             <span className="font-bold text-zinc-900 dark:text-zinc-100 block">{name}</span>
@@ -225,47 +226,47 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
     },
     {
       accessorKey: 'description',
-      header: language === 'en' ? 'Description' : 'Mô Tả Chi Tiết',
+      header: t('saas_categories_units_mo_ta_chi_tiet', 'Mô Tả Chi Tiết'),
       cell: ({ row }) => {
         const cat = row.original;
-        const desc = language === 'en' ? (cat.description_en || cat.description) : (cat.description_vi || cat.description);
+        const desc = pickLocalized(language === 'en', (cat.description_en || cat.description), (cat.description_vi || cat.description));
         return <span className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm truncate block">{desc}</span>;
       },
     },
     {
       accessorKey: 'productCount',
-      header: language === 'en' ? 'Product Count' : 'Số Sản Phẩm',
+      header: t('saas_categories_units_so_san_pham', 'Số Sản Phẩm'),
       cell: (info) => (
         <span className="font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md text-xs border border-emerald-200 dark:border-emerald-800">
-          {info.getValue() as number} {language === 'en' ? 'Products' : 'Sản phẩm'}
+          {info.getValue() as number} {t('api_fallback_order_item', 'Sản phẩm')}
         </span>
       ),
     },
     {
       accessorKey: 'status',
-      header: language === 'en' ? 'Status' : 'Trạng Thái',
+      header: t('status', 'Trạng Thái'),
       cell: () => (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-          <CheckCircle2 className="h-3 w-3" /> {language === 'en' ? 'Active' : 'Hoạt động'}
+          <CheckCircle2 className="h-3 w-3" /> {t('saas_categories_units_hoat_dong', 'Hoạt động')}
         </span>
       ),
     },
     {
       id: 'actions',
-      header: language === 'en' ? 'Actions' : 'Thao Tác',
+      header: t('actions', 'Thao Tác'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => handleOpenCatEdit(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-            title={language === 'en' ? 'Edit Category' : 'Sửa danh mục'}
+            title={t('saas_categories_units_sua_danh_muc', 'Sửa danh mục')}
           >
             <Edit2 className="h-4 w-4 text-amber-500" />
           </button>
           <button
             onClick={() => handleDeleteCategory(row.original.id, row.original)}
             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors"
-            title={language === 'en' ? 'Delete Category' : 'Xóa danh mục'}
+            title={t('saas_categories_units_xoa_danh_muc', 'Xóa danh mục')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -277,16 +278,16 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
   const unitColumns: ColumnDef<UnitItem>[] = [
     {
       accessorKey: 'code',
-      header: language === 'en' ? 'Unit Code' : 'Mã ĐVT',
+      header: t('saas_categories_units_ma_dvt', 'Mã ĐVT'),
       cell: (info) => <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{info.getValue() as string}</span>,
     },
     {
       accessorKey: 'name',
-      header: language === 'en' ? 'Unit Name' : 'Tên Đơn Vị Tính',
+      header: t('saas_categories_units_ten_d_n_vi_tinh', 'Tên Đơn Vị Tính'),
       cell: ({ row }) => {
         const u = row.original;
-        const name = language === 'en' ? (u.name_en || u.name) : (u.name_vi || u.name);
-        const altName = language === 'en' ? u.name_vi : u.name_en;
+        const name = pickLocalized(language === 'en', (u.name_en || u.name), (u.name_vi || u.name));
+        const altName = pickLocalized(language === 'en', u.name_vi, u.name_en);
         return (
           <div>
             <span className="font-bold text-zinc-900 dark:text-zinc-100 block">{name}</span>
@@ -299,16 +300,16 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
     },
     {
       accessorKey: 'description',
-      header: language === 'en' ? 'Description' : 'Diễn Giải Chuẩn',
+      header: t('saas_categories_units_dien_giai_chuan', 'Diễn Giải Chuẩn'),
       cell: ({ row }) => {
         const u = row.original;
-        const desc = language === 'en' ? (u.description_en || u.description) : (u.description_vi || u.description);
+        const desc = pickLocalized(language === 'en', (u.description_en || u.description), (u.description_vi || u.description));
         return <span className="text-xs text-zinc-500 dark:text-zinc-400">{desc}</span>;
       },
     },
     {
       accessorKey: 'isFractional',
-      header: language === 'en' ? 'Decimal Allowed' : 'Cho Phép Lẻ / Thập Phân',
+      header: t('cho_phep_le_thap_phan', 'Cho Phép Lẻ / Thập Phân'),
       cell: (info) => {
         const frac = info.getValue() as boolean;
         return (
@@ -317,27 +318,27 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
               frac ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
             }`}
           >
-            {frac ? (language === 'en' ? 'Yes (Decimal)' : 'Có (Số thập phân)') : (language === 'en' ? 'No (Integer)' : 'Không (Số nguyên)')}
+            {frac ? (t('co_so_thap_phan_yes', 'Có (Số thập phân)')) : (t('khong_so_nguyen_no_integer', 'Không (Số nguyên)'))}
           </span>
         );
       },
     },
     {
       id: 'actions',
-      header: language === 'en' ? 'Actions' : 'Thao Tác',
+      header: t('actions', 'Thao Tác'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => handleOpenUnitEdit(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-            title={language === 'en' ? 'Edit Unit' : 'Sửa ĐVT'}
+            title={t('saas_categories_units_sua_dvt', 'Sửa ĐVT')}
           >
             <Edit2 className="h-4 w-4 text-amber-500" />
           </button>
           <button
             onClick={() => handleDeleteUnit(row.original.id, row.original)}
             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors"
-            title={language === 'en' ? 'Delete Unit' : 'Xóa ĐVT'}
+            title={t('saas_categories_units_xoa_dvt', 'Xóa ĐVT')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -349,7 +350,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
   const conversionColumns: ColumnDef<UomConversionItem>[] = [
     {
       accessorKey: 'fromUnit',
-      header: language === 'en' ? 'Base Unit' : 'Đơn Vị Gốc',
+      header: t('saas_categories_units_d_n_vi_goc', 'Đơn Vị Gốc'),
       cell: (info) => (
         <span className="font-bold text-amber-700 dark:text-amber-400 ">
           1 {info.getValue() as string}
@@ -358,16 +359,16 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
     },
     {
       accessorKey: 'factor',
-      header: language === 'en' ? 'Conversion Factor' : 'Hệ Số Quy Đổi',
+      header: t('saas_categories_units_he_so_quy_doi', 'Hệ Số Quy Đổi'),
       cell: (info) => (
         <span className="font-mono font-black text-sm text-emerald-600 dark:text-emerald-400">
-          = {(info.getValue() as number).toLocaleString(language === 'en' ? 'en-US' : 'vi-VN')}
+          = {(info.getValue() as number).toLocaleString(getIntlLocale(language === 'en'))}
         </span>
       ),
     },
     {
       accessorKey: 'toUnit',
-      header: language === 'en' ? 'Target Unit' : 'Đơn Vị Quy Đổi',
+      header: t('saas_categories_units_d_n_vi_quy_doi', 'Đơn Vị Quy Đổi'),
       cell: (info) => (
         <span className="font-bold text-blue-700 dark:text-blue-400 ">
           {info.getValue() as string}
@@ -376,26 +377,26 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
     },
     {
       accessorKey: 'note',
-      header: language === 'en' ? 'Note' : 'Ghi Chú Quy Chuẩn',
+      header: t('saas_categories_units_ghi_chu_quy_chuan', 'Ghi Chú Quy Chuẩn'),
       cell: ({ row }) => {
         const c = row.original;
-        const note = language === 'en' ? (c.note_en || c.note) : (c.note_vi || c.note);
+        const note = pickLocalized(language === 'en', (c.note_en || c.note), (c.note_vi || c.note));
         return <span className="text-xs text-zinc-600 dark:text-zinc-400">{note}</span>;
       },
     },
     {
       id: 'actions',
-      header: language === 'en' ? 'Actions' : 'Thao Tác',
+      header: t('actions', 'Thao Tác'),
       cell: ({ row }) => (
         <button
           onClick={() => {
-            if (window.confirm(language === 'en' ? 'Delete this conversion rule?' : 'Bạn có chắc muốn xóa tỷ lệ quy đổi này?')) {
+            if (window.confirm(t('ban_co_chac_muon_xoa_3', 'Bạn có chắc muốn xóa tỷ lệ quy đổi này?'))) {
               setConversions(conversions.filter((c) => c.id !== row.original.id));
-              addToast(language === 'en' ? 'Deleted UOM conversion rule' : 'Đã xóa tỷ lệ quy đổi UOM', 'warning');
+              addToast(t('da_xoa_ty_le_quy', 'Đã xóa tỷ lệ quy đổi UOM'), 'warning');
             }
           }}
           className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors"
-          title={language === 'en' ? 'Delete Conversion' : 'Xóa tỷ lệ quy đổi'}
+          title={t('saas_categories_units_xoa_ty_le_quy_doi', 'Xóa tỷ lệ quy đổi')}
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -409,12 +410,10 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <Tag className="h-6 w-6 text-amber-500" />{' '}
-            {language === 'en' ? 'Product Categories & Units of Measure (UOM)' : 'Danh Mục Nhóm Hàng & Đơn Vị Tính (UOM)'}
+            {t('danh_muc_nhom_hang_don', 'Danh Mục Nhóm Hàng & Đơn Vị Tính (UOM)')}
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            {language === 'en'
-              ? 'Configure product classification categories, measurement unit standards, and flexible UOM conversion tables with full bilingual support.'
-              : 'Thiết lập danh mục phân loại vật tư, quy chuẩn đơn vị tính và bảng quy đổi ĐVT linh hoạt 2 ngôn ngữ.'}
+            {t('thiet_lap_danh_muc_phan', 'Thiết lập danh mục phân loại vật tư, quy chuẩn đơn vị tính và bảng quy đổi ĐVT linh hoạt 2 ngôn ngữ.')}
           </p>
         </div>
 
@@ -423,7 +422,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
             onClick={handleOpenCatAdd}
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all cursor-pointer"
           >
-            <Plus className="h-4 w-4" /> {language === 'en' ? 'Add New Category' : 'Thêm danh mục mới'}
+            <Plus className="h-4 w-4" /> {t('saas_categories_units_them_danh_muc_moi', 'Thêm danh mục mới')}
           </button>
         )}
         {activeTab === 'units' && (
@@ -431,7 +430,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
             onClick={handleOpenUnitAdd}
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all cursor-pointer"
           >
-            <Plus className="h-4 w-4" /> {language === 'en' ? 'Add New Unit' : 'Thêm đơn vị tính mới'}
+            <Plus className="h-4 w-4" /> {t('them_don_vi_tinh_moi_2', 'Thêm đơn vị tính mới')}
           </button>
         )}
         {activeTab === 'conversions' && (
@@ -442,7 +441,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
             }}
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all cursor-pointer"
           >
-            <Plus className="h-4 w-4" /> {language === 'en' ? 'Add UOM Conversion' : 'Thêm quy đổi UOM mới'}
+            <Plus className="h-4 w-4" /> {t('them_quy_doi_uom_moi', 'Thêm quy đổi UOM mới')}
           </button>
         )}
       </div>
@@ -457,7 +456,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
           }`}
         >
           <Tag className="h-4 w-4" />{' '}
-          {language === 'en' ? `Categories (${categories.length})` : `Nhóm Danh Mục Hàng (${categories.length})`}
+          {t('nhom_danh_muc_hang_categories', 'Nhóm Danh Mục Hàng ({{length}})', { length: categories.length })}
         </button>
         <button
           onClick={() => setActiveTab('units')}
@@ -468,7 +467,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
           }`}
         >
           <Scale className="h-4 w-4" />{' '}
-          {language === 'en' ? `Units of Measure (${units.length})` : `Chuẩn Đơn Vị Tính (${units.length})`}
+          {t('chuan_don_vi_tinh_units', 'Chuẩn Đơn Vị Tính ({{length}})', { length: units.length })}
         </button>
         <button
           onClick={() => setActiveTab('conversions')}
@@ -479,7 +478,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
           }`}
         >
           <RefreshCw className="h-4 w-4" />{' '}
-          {language === 'en' ? `UOM Conversions (${conversions.length})` : `Tỷ Lệ Quy Đổi UOM (${conversions.length})`}
+          {t('ty_le_quy_doi_uom', 'Tỷ Lệ Quy Đổi UOM ({{length}})', { length: conversions.length })}
         </button>
       </div>
 
@@ -487,21 +486,21 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
         <DataTable
           columns={categoryColumns}
           data={categories}
-          searchPlaceholder={language === 'en' ? 'Search category name, code...' : 'Tìm tên nhóm hàng, mã danh mục...'}
+          searchPlaceholder={t('tim_ten_nhom_hang_ma', 'Tìm tên nhóm hàng, mã danh mục...')}
         />
       )}
       {activeTab === 'units' && (
         <DataTable
           columns={unitColumns}
           data={units}
-          searchPlaceholder={language === 'en' ? 'Search unit code, description...' : 'Tìm đơn vị tính, diễn giải...'}
+          searchPlaceholder={t('tim_don_vi_tinh_dien', 'Tìm đơn vị tính, diễn giải...')}
         />
       )}
       {activeTab === 'conversions' && (
         <DataTable
           columns={conversionColumns}
           data={conversions}
-          searchPlaceholder={language === 'en' ? 'Search conversion rule, note...' : 'Tìm đơn vị quy đổi, ghi chú...'}
+          searchPlaceholder={t('tim_don_vi_quy_doi', 'Tìm đơn vị quy đổi, ghi chú...')}
         />
       )}
 
@@ -513,12 +512,8 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <Tag className="h-5 w-5 text-amber-500" />
                 {editingCat
-                  ? language === 'en'
-                    ? 'Edit Category'
-                    : 'Chỉnh Sửa Nhóm Hàng'
-                  : language === 'en'
-                  ? 'Create New Category'
-                  : 'Tạo Nhóm Danh Mục Mới'}
+                  ? t('chinh_sua_nhom_hang_edit', 'Chỉnh Sửa Nhóm Hàng')
+                  : t('tao_nhom_danh_muc_moi', 'Tạo Nhóm Danh Mục Mới')}
               </h3>
               <button
                 onClick={() => setShowCatModal(false)}
@@ -531,7 +526,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
             <form onSubmit={handleSaveCategory} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en' ? 'Category Code *' : 'Mã Nhóm *'}
+                  {t('saas_categories_units_ma_nhom', 'Mã Nhóm *')}
                 </label>
                 <input
                   type="text"
@@ -549,14 +544,13 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    🇻🇳 Tên tiếng Việt *
-                  </label>
+                    {t('saas_products_ten_tieng_viet', '🇻🇳 Tên tiếng Việt *')}</label>
                   <input
                     type="text"
                     required
                     value={catFormData.name_vi}
                     onChange={(e) => setCatFormData({ ...catFormData, name_vi: e.target.value })}
-                    placeholder="VD: Văn Phòng Phẩm"
+                    placeholder={t('saas_categories_units_vd_v_n_phong_pham', 'VD: Văn Phòng Phẩm')}
                     className="w-full px-3 py-2 text-sm font-semibold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -580,8 +574,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    🇻🇳 Mô tả tiếng Việt
-                  </label>
+                    {t('saas_products_mo_ta_tieng_viet', '🇻🇳 Mô tả tiếng Việt')}</label>
                   <textarea
                     rows={2}
                     value={catFormData.description_vi}
@@ -610,19 +603,15 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                   onClick={() => setShowCatModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer"
                 >
-                  {language === 'en' ? 'Cancel' : 'Hủy Bỏ'}
+                  {t('cancel', 'Hủy Bỏ')}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg shadow-xs cursor-pointer"
                 >
                   {editingCat
-                    ? language === 'en'
-                      ? 'Update Category'
-                      : 'Cập Nhật Danh Mục'
-                    : language === 'en'
-                    ? 'Save Category'
-                    : 'Lưu Danh Mục'}
+                    ? t('saas_categories_units_cap_nhat_danh_muc', 'Cập Nhật Danh Mục')
+                    : t('saas_categories_units_l_u_danh_muc', 'Lưu Danh Mục')}
                 </button>
               </div>
             </form>
@@ -638,12 +627,8 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <Scale className="h-5 w-5 text-amber-500" />
                 {editingUnit
-                  ? language === 'en'
-                    ? 'Edit Unit of Measure'
-                    : 'Chỉnh Sửa Đơn Vị Tính'
-                  : language === 'en'
-                  ? 'Add New Unit of Measure'
-                  : 'Thêm Đơn Vị Tính Mới'}
+                  ? t('chinh_sua_don_vi_tinh', 'Chỉnh Sửa Đơn Vị Tính')
+                  : t('them_don_vi_tinh_moi_2', 'Thêm Đơn Vị Tính Mới')}
               </h3>
               <button
                 onClick={() => setShowUnitModal(false)}
@@ -656,7 +641,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
             <form onSubmit={handleSaveUnit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en' ? 'Unit Code *' : 'Mã ĐVT *'}
+                  {t('saas_categories_units_ma_dvt_1', 'Mã ĐVT *')}
                 </label>
                 <input
                   type="text"
@@ -674,14 +659,13 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    🇻🇳 Tên tiếng Việt *
-                  </label>
+                    {t('saas_products_ten_tieng_viet', '🇻🇳 Tên tiếng Việt *')}</label>
                   <input
                     type="text"
                     required
                     value={unitFormData.name_vi}
                     onChange={(e) => setUnitFormData({ ...unitFormData, name_vi: e.target.value })}
-                    placeholder="VD: Cái / Thùng / Hộp"
+                    placeholder={t('saas_categories_units_vd_cai_thung_hop', 'VD: Cái / Thùng / Hộp')}
                     className="w-full px-3 py-2 text-sm font-semibold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -738,9 +722,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                   className="rounded text-amber-500 focus:ring-amber-500 cursor-pointer"
                 />
                 <label htmlFor="isFractional" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                  {language === 'en'
-                    ? 'Allow decimals/fractional quantities (e.g. 1.5 kg, 2.7 meters)'
-                    : 'Cho phép nhập số lẻ / thập phân (VD: 1.5 kg, 2.7 mét)'}
+                  {t('cho_phep_nhap_so_le', 'Cho phép nhập số lẻ / thập phân (VD: 1.5 kg, 2.7 mét)')}
                 </label>
               </div>
 
@@ -750,19 +732,15 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                   onClick={() => setShowUnitModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer"
                 >
-                  {language === 'en' ? 'Cancel' : 'Hủy Bỏ'}
+                  {t('cancel', 'Hủy Bỏ')}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg shadow-xs cursor-pointer"
                 >
                   {editingUnit
-                    ? language === 'en'
-                      ? 'Update Unit'
-                      : 'Cập Nhật ĐVT'
-                    : language === 'en'
-                    ? 'Save Unit'
-                    : 'Lưu ĐVT'}
+                    ? t('saas_categories_units_cap_nhat_dvt', 'Cập Nhật ĐVT')
+                    : t('saas_categories_units_l_u_dvt', 'Lưu ĐVT')}
                 </button>
               </div>
             </form>
@@ -777,7 +755,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <RefreshCw className="h-5 w-5 text-amber-500" />
-                {language === 'en' ? 'Configure UOM Conversion Rule' : 'Cấu Hình Quy Đổi Đơn Vị Tính (UOM)'}
+                {t('cau_hinh_quy_doi_don', 'Cấu Hình Quy Đổi Đơn Vị Tính (UOM)')}
               </h3>
               <button onClick={() => setShowConvModal(false)} className="p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 cursor-pointer">
                 <X className="h-5 w-5" />
@@ -799,7 +777,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                   note_en: noteEn,
                 };
                 setConversions([newC, ...conversions]);
-                addToast(language === 'en' ? 'Added new UOM conversion rule!' : 'Thêm công thức quy đổi UOM mới thành công!', 'success');
+                addToast(t('them_cong_thuc_quy_doi', 'Thêm công thức quy đổi UOM mới thành công!'), 'success');
                 setShowConvModal(false);
               }}
               className="space-y-4"
@@ -807,27 +785,27 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    {language === 'en' ? 'Base Unit (Large) *' : 'Đơn Vị Gốc (Lớn) *'}
+                    {t('don_vi_goc_lon_base', 'Đơn Vị Gốc (Lớn) *')}
                   </label>
                   <input
                     type="text"
                     required
                     value={convFormData.fromUnit}
                     onChange={(e) => setConvFormData({ ...convFormData, fromUnit: e.target.value })}
-                    placeholder="VD: Thùng, Ream"
+                    placeholder={t('saas_categories_units_vd_thung_ream', 'VD: Thùng, Ream')}
                     className="w-full px-3 py-2 text-sm font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    {language === 'en' ? 'Target Unit (Small) *' : 'Đơn Vị Quy Đổi (Nhỏ) *'}
+                    {t('don_vi_quy_doi_nho', 'Đơn Vị Quy Đổi (Nhỏ) *')}
                   </label>
                   <input
                     type="text"
                     required
                     value={convFormData.toUnit}
                     onChange={(e) => setConvFormData({ ...convFormData, toUnit: e.target.value })}
-                    placeholder="VD: Hộp, Tờ, Cái"
+                    placeholder={t('saas_categories_units_vd_hop_to_cai', 'VD: Hộp, Tờ, Cái')}
                     className="w-full px-3 py-2 text-sm font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
@@ -835,9 +813,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {language === 'en'
-                    ? `Conversion Factor (1 ${convFormData.fromUnit || 'Large Unit'} = ? ${convFormData.toUnit || 'Small Unit'}) *`
-                    : `Hệ Số Quy Đổi (1 ${convFormData.fromUnit || 'ĐVT lớn'} = ? ${convFormData.toUnit || 'ĐVT nhỏ'}) *`}
+                  {pickLocalized(language === 'en', `Conversion Factor (1 ${convFormData.fromUnit || 'Large Unit'} = ? ${convFormData.toUnit || 'Small Unit'}) *`, `Hệ Số Quy Đổi (1 ${convFormData.fromUnit || 'ĐVT lớn'} = ? ${convFormData.toUnit || 'ĐVT nhỏ'}) *`)}
                 </label>
                 <input
                   type="number"
@@ -856,8 +832,7 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    🇻🇳 Ghi chú tiếng Việt
-                  </label>
+                    {t('saas_categories_units_ghi_chu_tieng_viet', '🇻🇳 Ghi chú tiếng Việt')}</label>
                   <input
                     type="text"
                     value={convFormData.note_vi}
@@ -886,13 +861,13 @@ export const SaaSCategoriesUnitsPage: React.FC = () => {
                   onClick={() => setShowConvModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer"
                 >
-                  {language === 'en' ? 'Cancel' : 'Hủy Bỏ'}
+                  {t('cancel', 'Hủy Bỏ')}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg shadow-xs cursor-pointer"
                 >
-                  {language === 'en' ? 'Save UOM Rule' : 'Lưu Tỷ Lệ Quy Đổi UOM'}
+                  {t('luu_ty_le_quy_doi', 'Lưu Tỷ Lệ Quy Đổi UOM')}
                 </button>
               </div>
             </form>

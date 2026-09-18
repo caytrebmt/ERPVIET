@@ -126,7 +126,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
       });
 
       if (res.data?.ok) {
-        addToast(t('saas_web_orders_da_duyet_d_n_order_code_va_tu_dong_chuyen_thanh_phieu_xuat_kho_pxcode', { order_code: order.code, pxCode }), 'success');
+        addToast(t('saas_web_orders_da_duyet_d_n_order_code_va_tu_dong_chuyen_thanh_phieu_xuat_kho_pxcode', 'Đã phê duyệt đơn hàng {{order_code}} và tự động tạo phiếu xuất kho {{pxCode}}', { order_code: order.code, pxCode }), 'success');
         await fetchWebOrders();
       } else {
         addToast(t('saas_web_orders_khong_the_duyet_don_hang_webshop'), 'error');
@@ -145,7 +145,7 @@ export const SaaSWebOrdersPage: React.FC = () => {
       });
 
       if (res.data?.ok) {
-        addToast(t('saas_web_orders_da_cap_nhat_d_n_order_code_giao_hang_thanh_cong_da_chuyen_trang_thai_hoan_tat_finish', { order_code: order.code }), 'success');
+        addToast(t('saas_web_orders_da_cap_nhat_d_n_order_code_giao_hang_thanh_cong_da_chuyen_trang_thai_hoan_tat_finish', 'Đã cập nhật đơn hàng {{order_code}} - giao hàng thành công, trạng thái chuyển sang Hoàn tất', { order_code: order.code }), 'success');
         await fetchWebOrders();
         if (detailModalOpen) setDetailModalOpen(false);
       } else {

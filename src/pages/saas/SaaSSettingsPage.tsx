@@ -148,7 +148,7 @@ export const SaaSSettingsPage: React.FC = () => {
         phone: companyInfo.phone, email: companyInfo.email, website: companyInfo.website,
         settings: { ...(companyInfo.settings || {}), bankName: companyInfo.bankName, bankAccount: companyInfo.bankAccount, bankOwner: companyInfo.bankOwner, pdfPaperSize: companyInfo.pdfPaperSize, pdfHeaderTitle: companyInfo.pdfHeaderTitle, pdfFooterNote: companyInfo.pdfFooterNote, logoUrl: companyInfo.logoUrl },
       });
-      addToast(language === 'en' ? 'Company profile saved successfully!' : 'Đã lưu thông tin doanh nghiệp vào PostgreSQL!', 'success');
+      addToast(t('da_luu_thong_tin_doanh', 'Đã lưu thông tin doanh nghiệp vào PostgreSQL!'), 'success');
     } catch (error: any) { addToast(error?.response?.data?.message || error.message || 'Không thể lưu thông tin doanh nghiệp.', 'error'); }
   };
 
@@ -215,9 +215,9 @@ export const SaaSSettingsPage: React.FC = () => {
     const startedAt = performance.now();
     try {
       await client.get('/api/saas/tenants/me');
-      setPingStatus(language === 'en' ? `Connection successful. Server latency: ${Math.round(performance.now() - startedAt)}ms` : `Kết nối thành công. Độ trễ máy chủ: ${Math.round(performance.now() - startedAt)}ms`);
+      setPingStatus(t('ket_noi_thanh_cong_do', 'Kết nối thành công. Độ trễ máy chủ: {{startedat}}ms', { startedat: Math.round(performance.now() - startedAt) }));
     } catch (error: any) {
-      setPingStatus(error?.response?.data?.message || (language === 'en' ? 'Connection failed.' : 'Kết nối thất bại.'));
+      setPingStatus(error?.response?.data?.message || (t('ket_noi_that_bai_connection', 'Kết nối thất bại.')));
     } finally { setIsPinging(false); }
   };
 
@@ -265,9 +265,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
   const handleResetDefaults = () => {
     const confirmMsg =
-      language === 'en'
-        ? 'Are you sure you want to restore default initial configuration?'
-        : 'Bạn có chắc chắn muốn khôi phục lại cấu hình mặc định ban đầu không?';
+      t('ban_co_chac_chan_muon', 'Bạn có chắc chắn muốn khôi phục lại cấu hình mặc định ban đầu không?');
     if (window.confirm(confirmMsg)) {
       window.location.reload();
     }
@@ -280,14 +278,10 @@ export const SaaSSettingsPage: React.FC = () => {
         <div>
           <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <Settings className="h-6 w-6 text-amber-500" />{' '}
-            {language === 'en'
-              ? 'System Settings & Enterprise Configuration'
-              : 'Cài Đặt Hệ Thống & Cấu Hình Doanh Nghiệp'}
+            {t('cai_dat_he_thong_cau', 'Cài Đặt Hệ Thống & Cấu Hình Doanh Nghiệp')}
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            {language === 'en'
-              ? 'Manage enterprise parameters, database menu schema, role permissions, PDF print templates, warehouse rules & backend APIs.'
-              : 'Quản lý toàn bộ cấu hình thông tin doanh nghiệp, bảng menu DB, phân quyền, mẫu in PDF, quy trình kho & API backend.'}
+            {t('quan_ly_toan_bo_cau', 'Quản lý toàn bộ cấu hình thông tin doanh nghiệp, bảng menu DB, phân quyền, mẫu in PDF, quy trình kho & API backend.')}
           </p>
         </div>
 
@@ -316,7 +310,7 @@ export const SaaSSettingsPage: React.FC = () => {
             {/* Group 1: Quản Trị & Nhân Sự */}
             <div>
               <h3 className="px-3 text-[11px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">
-                {language === 'en' ? 'Administration & HR' : 'Quản Trị & Nhân Sự'}
+                {t('saas_settings_quan_tri_nhan_su', 'Quản Trị & Nhân Sự')}
               </h3>
               <nav className="space-y-1">
                 <button
@@ -352,7 +346,7 @@ export const SaaSSettingsPage: React.FC = () => {
                       }`}
                     >
                       <FileJson className="h-4 w-4 shrink-0" />
-                      {language === 'en' ? 'JSON Translation Editor' : 'Trình Dịch Thuật JSON'}
+                      {t('saas_settings_trinh_dich_thuat_json', 'Trình Dịch Thuật JSON')}
                     </button>
                   </>
                 )}
@@ -362,7 +356,7 @@ export const SaaSSettingsPage: React.FC = () => {
             {/* Group 2: Hệ Thống & Doanh Nghiệp */}
             <div>
               <h3 className="px-3 text-[11px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">
-                {language === 'en' ? 'System & Enterprise' : 'Hệ Thống & Doanh Nghiệp'}
+                {t('saas_settings_he_thong_doanh_nghiep', 'Hệ Thống & Doanh Nghiệp')}
               </h3>
               <nav className="space-y-1">
                 <button
@@ -395,7 +389,7 @@ export const SaaSSettingsPage: React.FC = () => {
             {/* Group 3: Nghiệp Vụ & Kết Nối */}
             <div>
               <h3 className="px-3 text-[11px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">
-                {language === 'en' ? 'Operations & Integration' : 'Nghiệp Vụ & Kết Nối'}
+                {t('saas_settings_nghiep_vu_ket_noi', 'Nghiệp Vụ & Kết Nối')}
               </h3>
               <nav className="space-y-1">
                 <button
@@ -428,7 +422,7 @@ export const SaaSSettingsPage: React.FC = () => {
             {/* Group 4: Vận Hành & Dữ Liệu */}
             <div>
               <h3 className="px-3 text-[11px] font-extrabold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">
-                {language === 'en' ? 'Operations & Data' : 'Vận Hành & Dữ Liệu'}
+                {t('saas_settings_van_hanh_du_lieu', 'Vận Hành & Dữ Liệu')}
               </h3>
               <nav className="space-y-1">
                 <button
@@ -465,24 +459,24 @@ export const SaaSSettingsPage: React.FC = () => {
             onChange={(e) => setActiveTab(e.target.value as any)}
             className="w-full px-3 py-2.5 text-xs font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 cursor-pointer"
           >
-            <optgroup label={language === 'en' ? 'Administration & HR' : 'Quản Trị & Nhân Sự'}>
+            <optgroup label={t('saas_settings_quan_tri_nhan_su', 'Quản Trị & Nhân Sự')}>
               <option value="users_rbac">{t('settings_users_rbac')}</option>
               {isSuperAdmin && (
                 <>
                   <option value="translations">{t('settings_translations_languages')}</option>
-                  <option value="translations_json">{language === 'en' ? 'JSON Translation Editor' : 'Trình Dịch Thuật JSON'}</option>
+                  <option value="translations_json">{t('saas_settings_trinh_dich_thuat_json', 'Trình Dịch Thuật JSON')}</option>
                 </>
               )}
             </optgroup>
-            <optgroup label={language === 'en' ? 'System & Enterprise' : 'Hệ Thống & Doanh Nghiệp'}>
+            <optgroup label={t('saas_settings_he_thong_doanh_nghiep', 'Hệ Thống & Doanh Nghiệp')}>
               <option value="company">{t('settings_company_templates')}</option>
               {isSuperAdmin && <option value="menu">{t('settings_db_menu')}</option>}
             </optgroup>
-            <optgroup label={language === 'en' ? 'Operations & Integration' : 'Nghiệp Vụ & Kết Nối'}>
+            <optgroup label={t('saas_settings_nghiep_vu_ket_noi', 'Nghiệp Vụ & Kết Nối')}>
               <option value="inventory">{t('settings_warehouse_rules')}</option>
               {isSuperAdmin && <option value="api">{t('settings_backend_api')}</option>}
             </optgroup>
-            <optgroup label={language === 'en' ? 'Operations & Data' : 'Vận Hành & Dữ Liệu'}>
+            <optgroup label={t('saas_settings_van_hanh_du_lieu', 'Vận Hành & Dữ Liệu')}>
               <option value="notifications">{t('settings_alerts_notifications')}</option>
               <option value="backup">{t('settings_backup_restore')}</option>
             </optgroup>
@@ -515,7 +509,7 @@ export const SaaSSettingsPage: React.FC = () => {
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
-                      {isEn ? 'Your WebShop storefront' : 'WebShop của doanh nghiệp bạn'}
+                      {t('webshop_cua_doanh_nghiep_ban', 'WebShop của doanh nghiệp bạn')}
                     </h3>
                     <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5">
                       {companyInfo.webshop.name_vi || companyInfo.webshop.name_en || 'WebShop'}
@@ -533,18 +527,18 @@ export const SaaSSettingsPage: React.FC = () => {
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    {isEn ? 'Open WebShop' : 'Mở WebShop'}
+                    {t('saas_tenants_mo_webshop', 'Mở WebShop')}
                   </a>
                   <button
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}${companyInfo.webshop.url}`);
-                      addToast(isEn ? 'WebShop URL copied!' : 'Đã sao chép URL WebShop!', 'success');
+                      addToast(t('da_sao_chep_url_webshop', 'Đã sao chép URL WebShop!'), 'success');
                     }}
                     className="inline-flex items-center gap-1.5 px-4 py-2 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 text-xs font-bold rounded-xl transition-all cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
-                    {isEn ? 'Copy URL' : 'Sao chép URL'}
+                    {t('saas_tenants_sao_chep_url', 'Sao chép URL')}
                   </button>
                 </div>
               </div>
@@ -584,8 +578,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Địa Chỉ Đăng Ký Kinh Doanh
-                </label>
+                  {t('saas_settings_dia_chi_d_ng_ky_kinh_doanh', 'Địa Chỉ Đăng Ký Kinh Doanh')}</label>
                 <input
                   type="text"
                   value={companyInfo.address}
@@ -597,8 +590,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Điện Thoại Hotline
-                </label>
+                  {t('saas_settings_dien_thoai_hotline', 'Điện Thoại Hotline')}</label>
                 <input
                   type="text"
                   value={companyInfo.phone}
@@ -609,8 +601,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Email Công Ty
-                </label>
+                  {t('saas_register_company_email', 'Email Công Ty')}</label>
                 <input
                   type="email"
                   value={companyInfo.email}
@@ -629,8 +620,7 @@ export const SaaSSettingsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Tên Ngân Hàng
-                </label>
+                  {t('saas_settings_ten_ngan_hang', 'Tên Ngân Hàng')}</label>
                 <input
                   type="text"
                   value={companyInfo.bankName}
@@ -641,8 +631,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Số Tài Khoản
-                </label>
+                  {t('saas_settings_so_tai_khoan', 'Số Tài Khoản')}</label>
                 <input
                   type="text"
                   value={companyInfo.bankAccount}
@@ -653,8 +642,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Chủ Tài Khoản
-                </label>
+                  {t('saas_settings_chu_tai_khoan', 'Chủ Tài Khoản')}</label>
                 <input
                   type="text"
                   value={companyInfo.bankOwner}
@@ -673,8 +661,7 @@ export const SaaSSettingsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Khổ Giấy In Mặc Định
-                </label>
+                  {t('saas_settings_kho_giay_in_m_c_dinh', 'Khổ Giấy In Mặc Định')}</label>
                 <select
                   value={companyInfo.pdfPaperSize}
                   onChange={(e) => setCompanyInfo({ ...companyInfo, pdfPaperSize: e.target.value })}
@@ -688,8 +675,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Tiêu Đề Header Mẫu In
-                </label>
+                  {t('saas_settings_tieu_de_header_m_u_in', 'Tiêu Đề Header Mẫu In')}</label>
                 <input
                   type="text"
                   value={companyInfo.pdfHeaderTitle}
@@ -717,8 +703,7 @@ export const SaaSSettingsPage: React.FC = () => {
               type="submit"
               className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-xl shadow-md shadow-amber-500/20 flex items-center gap-2 text-xs transition-all"
             >
-              <Save className="h-4 w-4" /> Lưu Cấu Hình Doanh Nghiệp
-            </button>
+              <Save className="h-4 w-4" /> {t('saas_settings_l_u_cau_hinh_doanh_nghiep', 'Lưu Cấu Hình Doanh Nghiệp')}</button>
           </div>
         </form>
       )}
@@ -742,8 +727,7 @@ export const SaaSSettingsPage: React.FC = () => {
             <form onSubmit={handleAddMenu} className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700/80 flex flex-col md:flex-row items-end gap-3">
               <div className="flex-1">
                 <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 mb-1">
-                  Tên Menu Mới
-                </label>
+                  {t('saas_settings_ten_menu_moi', 'Tên Menu Mới')}</label>
                 <input
                   type="text"
                   placeholder="Ví dụ: Báo Cáo Doanh Thu Theo Vùng"
@@ -768,19 +752,18 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div className="w-full md:w-40">
                 <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 mb-1">
-                  Nhóm Menu
-                </label>
+                  {t('saas_settings_nhom_menu', 'Nhóm Menu')}</label>
                 <select
                   value={newMenuGroup}
                   onChange={(e) => setNewMenuGroup(e.target.value)}
                   className="w-full px-3 py-2 text-xs font-semibold bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 >
-                  <option value="Tổng Quan">Tổng Quan</option>
-                  <option value="Bán Hàng & Kho">Bán Hàng & Kho</option>
-                  <option value="Quản Lý Kho">Quản Lý Kho</option>
-                  <option value="Thương Mại">Thương Mại</option>
-                  <option value="Tài Chính">Tài Chính</option>
-                  <option value="Khác">Khác</option>
+                  <option value="Tổng Quan">{t('saas_settings_tong_quan', 'Tổng Quan')}</option>
+                  <option value="Bán Hàng & Kho">{t('saas_settings_ban_hang_kho', 'Bán Hàng & Kho')}</option>
+                  <option value="Quản Lý Kho">{t('saas_settings_quan_ly_kho', 'Quản Lý Kho')}</option>
+                  <option value="Thương Mại">{t('saas_settings_th_ng_mai', 'Thương Mại')}</option>
+                  <option value="Tài Chính">{t('saas_settings_tai_chinh', 'Tài Chính')}</option>
+                  <option value="Khác">{t('api_fallback_brand', 'Khác')}</option>
                 </select>
               </div>
 
@@ -788,8 +771,7 @@ export const SaaSSettingsPage: React.FC = () => {
                 type="submit"
                 className="w-full md:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 shadow-2xs shrink-0"
               >
-                <Plus className="h-4 w-4" /> Thêm Menu
-              </button>
+                <Plus className="h-4 w-4" /> {t('saas_settings_them_menu', 'Thêm Menu')}</button>
             </form>
 
             {/* Menu List Table */}
@@ -797,12 +779,12 @@ export const SaaSSettingsPage: React.FC = () => {
               <table className="w-full text-left text-xs">
                 <thead className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold uppercase">
                   <tr>
-                    <th className="px-4 py-3">Tên Menu Chức Năng</th>
-                    <th className="px-4 py-3">Đường Dẫn URL</th>
-                    <th className="px-4 py-3">Nhóm</th>
-                    <th className="px-4 py-3">Phân Quyền Vai Trò</th>
-                    <th className="px-4 py-3 text-center">Trạng Thái</th>
-                    <th className="px-4 py-3 text-right">Thao Tác</th>
+                    <th className="px-4 py-3">{t('saas_settings_ten_menu_chuc_n_ng', 'Tên Menu Chức Năng')}</th>
+                    <th className="px-4 py-3">{t('saas_settings_d_ong_d_n_url', 'Đường Dẫn URL')}</th>
+                    <th className="px-4 py-3">{t('saas_settings_nhom', 'Nhóm')}</th>
+                    <th className="px-4 py-3">{t('saas_settings_phan_quyen_vai_tro', 'Phân Quyền Vai Trò')}</th>
+                    <th className="px-4 py-3 text-center">{t('status', 'Trạng Thái')}</th>
+                    <th className="px-4 py-3 text-right">{t('actions', 'Thao Tác')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 font-medium">
@@ -839,7 +821,7 @@ export const SaaSSettingsPage: React.FC = () => {
                         <button
                           onClick={() => handleDeleteMenu(item.id)}
                           className="p-1 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-600 transition-colors"
-                          title="Xóa menu"
+                          title={t('saas_settings_xoa_menu', 'Xóa menu')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -858,8 +840,7 @@ export const SaaSSettingsPage: React.FC = () => {
         <form onSubmit={handleSavePolicy} className="space-y-6">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-5 shadow-xs">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <Boxes className="h-5 w-5 text-amber-500" /> Phương Pháp Tính Giá Vốn & Quy Định Kho
-            </h3>
+              <Boxes className="h-5 w-5 text-amber-500" /> {t('saas_settings_phuongphaptinhgiavon', 'Phương Pháp Tính Giá Vốn & Quy Định Kho')}</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
@@ -873,7 +854,7 @@ export const SaaSSettingsPage: React.FC = () => {
                 >
                   <option value="Bình quân gia quyền ròng">Bình Quân Gia Quyền Ròng (Chuẩn TT200)</option>
                   <option value="FIFO">Nhập Trước Xuất Trước (FIFO)</option>
-                  <option value="Đích danh">Giá Đích Danh Lô Hàng</option>
+                  <option value="Đích danh">{t('saas_settings_gia_dich_danh_lo_hang', 'Giá Đích Danh Lô Hàng')}</option>
                 </select>
                 <p className="text-[11px] text-zinc-500 mt-1">
                   Giá vốn tự động tính lại ngay khi phát sinh phiếu nhập kho mới.
@@ -1040,8 +1021,7 @@ export const SaaSSettingsPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Độ Dài Số Thứ Tự Tự Động
-                </label>
+                  {t('saas_settings_do_dai_so_thu_tu_tu_dong', 'Độ Dài Số Thứ Tự Tự Động')}</label>
                 <select
                   value={policySettings.numberPaddingLength || 3}
                   onChange={(e) => setPolicySettings({ ...policySettings, numberPaddingLength: Number(e.target.value) })}
@@ -1079,8 +1059,7 @@ export const SaaSSettingsPage: React.FC = () => {
               type="submit"
               className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-xl shadow-md shadow-amber-500/20 flex items-center gap-2 text-xs transition-all"
             >
-              <Save className="h-4 w-4" /> Lưu Cấu Hình Quy Trình
-            </button>
+              <Save className="h-4 w-4" /> {t('saas_settings_l_u_cau_hinh_quy_trinh', 'Lưu Cấu Hình Quy Trình')}</button>
           </div>
         </form>
       )}
@@ -1160,8 +1139,7 @@ export const SaaSSettingsPage: React.FC = () => {
               type="submit"
               className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-xl shadow-md shadow-amber-500/20 flex items-center gap-2 text-xs transition-all"
             >
-              <Save className="h-4 w-4" /> Lưu Cấu Hình API
-            </button>
+              <Save className="h-4 w-4" /> {t('saas_settings_l_u_cau_hinh_api', 'Lưu Cấu Hình API')}</button>
           </div>
         </form>
       )}
@@ -1233,8 +1211,7 @@ export const SaaSSettingsPage: React.FC = () => {
               type="submit"
               className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-xl shadow-md shadow-amber-500/20 flex items-center gap-2 text-xs transition-all"
             >
-              <Save className="h-4 w-4" /> Lưu Cấu Hình Thông Báo
-            </button>
+              <Save className="h-4 w-4" /> {t('saas_settings_l_u_cau_hinh_thong_bao', 'Lưu Cấu Hình Thông Báo')}</button>
           </div>
         </form>
       )}
@@ -1264,8 +1241,7 @@ export const SaaSSettingsPage: React.FC = () => {
                 onClick={handleExportBackup}
                 className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-xs shrink-0"
               >
-                <Download className="h-4 w-4" /> Tải File Backup JSON
-              </button>
+                <Download className="h-4 w-4" /> {t('saas_settings_tai_file_backup_json', 'Tải File Backup JSON')}</button>
             </div>
           </div>
          </div>

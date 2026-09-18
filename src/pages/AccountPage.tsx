@@ -106,8 +106,7 @@ const AccountPage: React.FC = () => {
             onClick={logout}
             className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <LogOut className="w-4 h-4 shrink-0" /> Đăng xuất
-          </button>
+            <LogOut className="w-4 h-4 shrink-0" /> {t('nav_logout', 'Đăng xuất')}</button>
         </div>
       </div>
 
@@ -133,7 +132,7 @@ const AccountPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Nguyễn Văn A"
+                  placeholder={t('suppliers_ph_contact', 'Nguyễn Văn A')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg pl-10 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-900 w-full text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -143,7 +142,7 @@ const AccountPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-1.5 text-xs">
-              <label className="font-semibold text-gray-600 dark:text-gray-400">Số điện thoại</label>
+              <label className="font-semibold text-gray-600 dark:text-gray-400">{t('saas_register_company_phone', 'Số điện thoại')}</label>
               <div className="relative">
                 <input
                   type="tel"

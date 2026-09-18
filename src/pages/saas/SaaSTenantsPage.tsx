@@ -25,6 +25,7 @@ import { DataTable } from '../../components/DataTable';
 import { useToast } from '../../contexts/ToastContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import client from '../../api/client';
+import { getIntlLocale, pickLocalized } from '../../utils/localized';
 
 export interface TenantDetail {
   id: number;
@@ -85,7 +86,7 @@ export const SaaSTenantsPage: React.FC = () => {
         setTenants(res.data.data || []);
       }
     } catch {
-      showToast(isEn ? 'Failed to load tenants' : 'Không thể tải danh sách doanh nghiệp', 'error');
+      showToast(t('khong_the_tai_danh_sach', 'Không thể tải danh sách doanh nghiệp'), 'error');
     } finally {
       setLoading(false);
     }
@@ -101,13 +102,13 @@ export const SaaSTenantsPage: React.FC = () => {
       await client.post(`/api/saas/tenants/${tenant.id}/pause`, { paused: !tenant.is_paused });
       showToast(
         !tenant.is_paused
-          ? (isEn ? 'Tenant paused' : 'Đã tạm dừng doanh nghiệp')
-          : (isEn ? 'Tenant activated' : 'Đã kích hoạt lại doanh nghiệp'),
+          ? (t('saas_tenants_da_tam_d_ng_doanh_nghiep', 'Đã tạm dừng doanh nghiệp'))
+          : (t('da_kich_hoat_lai_doanh', 'Đã kích hoạt lại doanh nghiệp')),
         'success'
       );
       loadTenants();
     } catch {
-      showToast(isEn ? 'Action failed' : 'Thao tác thất bại', 'error');
+      showToast(t('saas_tenants_thao_tac_that_bai', 'Thao tác thất bại'), 'error');
     } finally {
       setActionLoading(null);
     }
@@ -117,10 +118,10 @@ export const SaaSTenantsPage: React.FC = () => {
     setActionLoading(`upgrade-${tenant.id}`);
     try {
       await client.post(`/api/saas/tenants/${tenant.id}/upgrade`, { plan_type: plan });
-      showToast(isEn ? `Upgraded to ${plan}` : `Đã nâng cấp lên gói ${plan}`, 'success');
+      showToast(t('da_nang_cap_len_goi', 'Đã nâng cấp lên gói {{plan}}', { plan: plan }), 'success');
       loadTenants();
     } catch {
-      showToast(isEn ? 'Upgrade failed' : 'Nâng cấp thất bại', 'error');
+      showToast(t('saas_tenants_nang_cap_that_bai', 'Nâng cấp thất bại'), 'error');
     } finally {
       setActionLoading(null);
     }
@@ -143,7 +144,7 @@ export const SaaSTenantsPage: React.FC = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    showToast(isEn ? 'Copied!' : 'Đã sao chép!', 'success');
+    showToast(t('saas_tenants_da_sao_chep', 'Đã sao chép!'), 'success');
   };
 
   const columns: ColumnDef<TenantDetail>[] = [
@@ -154,7 +155,7 @@ export const SaaSTenantsPage: React.FC = () => {
     },
     {
       accessorKey: 'name_vi',
-      header: isEn ? 'Company Name' : 'Tên doanh nghiệp',
+      header: t('saas_register_company_name', 'Tên doanh nghiệp'),
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
@@ -169,7 +170,7 @@ export const SaaSTenantsPage: React.FC = () => {
     },
     {
       accessorKey: 'code',
-      header: isEn ? 'Code' : 'Mã',
+      header: t('ma_code', 'Mã'),
       cell: ({ row }) => (
         <span className="font-mono text-[10px] text-gray-600 dark:text-gray-400">{row.original.code}</span>
       ),
@@ -190,7 +191,7 @@ export const SaaSTenantsPage: React.FC = () => {
     },
     {
       accessorKey: 'plan_type',
-      header: isEn ? 'Plan' : 'Gói',
+      header: t('goi_plan', 'Gói'),
       cell: ({ row }) => {
         const plan = row.original.plan_type;
         const config = PLAN_CONFIG[plan] || PLAN_CONFIG.free;
@@ -198,14 +199,14 @@ export const SaaSTenantsPage: React.FC = () => {
         return (
           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold ${config.color}`}>
             <Icon className="w-3 h-3" />
-            {isEn ? config.labelEn : config.labelVi}
+            {pickLocalized(isEn, config.labelEn, config.labelVi)}
           </span>
         );
       },
     },
     {
       accessorKey: 'subscription_status',
-      header: isEn ? 'Status' : 'Trạng thái',
+      header: t('status', 'Trạng thái'),
       cell: ({ row }) => {
         const status = row.original.subscription_status;
         const config = STATUS_CONFIG[status] || STATUS_CONFIG.active;
@@ -213,31 +214,31 @@ export const SaaSTenantsPage: React.FC = () => {
         return (
           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-bold ${config.color}`}>
             <Icon className="w-3 h-3" />
-            {isEn ? config.labelEn : config.labelVi}
+            {pickLocalized(isEn, config.labelEn, config.labelVi)}
           </span>
         );
       },
     },
     {
       accessorKey: 'is_paused',
-      header: isEn ? 'Paused' : 'Tạm dừng',
+      header: t('saas_tenants_tam_d_ng', 'Tạm dừng'),
       cell: ({ row }) => (
         row.original.is_paused ? (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-red-500/30 bg-red-500/10 text-red-600 text-[10px] font-bold">
             <Ban className="w-3 h-3" />
-            {isEn ? 'Paused' : 'Đã tạm dừng'}
+            {t('saas_tenants_da_tam_d_ng', 'Đã tạm dừng')}
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">
             <CheckCircle2 className="w-3 h-3" />
-            {isEn ? 'Active' : 'Đang hoạt động'}
+            {t('saas_settings_dang_hoat_dong', 'Đang hoạt động')}
           </span>
         )
       ),
     },
     {
       accessorKey: 'max_users',
-      header: isEn ? 'Users' : 'Người dùng',
+      header: t('saas_tenants_ng_oi_dung', 'Người dùng'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
           <Users className="w-3.5 h-3.5" />
@@ -247,7 +248,7 @@ export const SaaSTenantsPage: React.FC = () => {
     },
     {
       accessorKey: 'max_warehouses',
-      header: isEn ? 'Warehouses' : 'Kho',
+      header: t('kho_warehouses', 'Kho'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
           <Warehouse className="w-3.5 h-3.5" />
@@ -257,7 +258,7 @@ export const SaaSTenantsPage: React.FC = () => {
     },
     {
       accessorKey: 'trial_ends_at',
-      header: isEn ? 'Trial Ends' : 'Hạn dùng thử',
+      header: t('saas_tenants_han_dung_thu', 'Hạn dùng thử'),
       cell: ({ row }) => {
         if (!row.original.trial_ends_at) return <span className="text-xs text-gray-400">-</span>;
         const date = new Date(row.original.trial_ends_at);
@@ -266,7 +267,7 @@ export const SaaSTenantsPage: React.FC = () => {
           <div className="flex items-center gap-1 text-xs">
             <Calendar className="w-3.5 h-3.5 text-gray-400" />
             <span className={isExpired ? 'text-red-600 font-semibold' : 'text-gray-600 dark:text-gray-400'}>
-              {date.toLocaleDateString(isEn ? 'en-US' : 'vi-VN')}
+              {date.toLocaleDateString(getIntlLocale(isEn))}
             </span>
           </div>
         );
@@ -274,22 +275,22 @@ export const SaaSTenantsPage: React.FC = () => {
     },
     {
       accessorKey: 'created_at',
-      header: isEn ? 'Created' : 'Ngày tạo',
+      header: t('crm_date', 'Ngày tạo'),
       cell: ({ row }) => (
         <span className="text-xs text-gray-500">
-          {new Date(row.original.created_at).toLocaleDateString(isEn ? 'en-US' : 'vi-VN')}
+          {new Date(row.original.created_at).toLocaleDateString(getIntlLocale(isEn))}
         </span>
       ),
     },
     {
       id: 'actions',
-      header: isEn ? 'Actions' : 'Thao tác',
+      header: t('actions', 'Thao tác'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => openDetail(row.original)}
             className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-600 cursor-pointer"
-            title={isEn ? 'View details' : 'Xem chi tiết'}
+            title={t('saas_tenants_xem_chi_tiet', 'Xem chi tiết')}
           >
             <Eye className="w-3.5 h-3.5" />
           </button>
@@ -298,7 +299,7 @@ export const SaaSTenantsPage: React.FC = () => {
             target="_blank"
             rel="noreferrer"
             className="p-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600 cursor-pointer"
-            title={isEn ? 'Open this tenant\'s WebShop' : 'Mở WebShop của doanh nghiệp này'}
+            title={t('mo_webshop_cua_doanh_nghiep', 'Mở WebShop của doanh nghiệp này')}
           >
             <ShoppingBag className="w-3.5 h-3.5" />
           </a>
@@ -306,7 +307,7 @@ export const SaaSTenantsPage: React.FC = () => {
             onClick={() => handlePauseToggle(row.original)}
             disabled={!!actionLoading}
             className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-600 cursor-pointer disabled:opacity-50"
-            title={row.original.is_paused ? (isEn ? 'Activate' : 'Kích hoạt') : (isEn ? 'Pause' : 'Tạm dừng')}
+            title={row.original.is_paused ? (t('saas_tenants_kich_hoat', 'Kích hoạt')) : (t('saas_tenants_tam_d_ng', 'Tạm dừng'))}
           >
             {actionLoading === `pause-${row.original.id}` ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -323,7 +324,7 @@ export const SaaSTenantsPage: React.FC = () => {
             }}
             disabled={!!actionLoading}
             className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 cursor-pointer disabled:opacity-50"
-            title={isEn ? 'Change plan' : 'Đổi gói'}
+            title={t('saas_tenants_doi_goi', 'Đổi gói')}
           >
             {actionLoading === `upgrade-${row.original.id}` ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -342,12 +343,10 @@ export const SaaSTenantsPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-extrabold text-gray-900 dark:text-gray-100">
-            {isEn ? 'Tenant Management' : 'Quản lý Doanh nghiệp'}
+            {t('saas_tenants_quan_ly_doanh_nghiep', 'Quản lý Doanh nghiệp')}
           </h2>
           <p className="text-xs text-gray-500">
-            {isEn
-              ? 'Manage registered companies, plans, subscriptions and access controls'
-              : 'Quản lý doanh nghiệp đăng ký, gói dịch vụ, trạng thái thuê bao và phân quyền truy cập'}
+            {t('quan_ly_doanh_nghiep_dang', 'Quản lý doanh nghiệp đăng ký, gói dịch vụ, trạng thái thuê bao và phân quyền truy cập')}
           </p>
         </div>
         <button
@@ -355,7 +354,7 @@ export const SaaSTenantsPage: React.FC = () => {
           className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          {isEn ? 'Register New Tenant' : 'Đăng ký Doanh nghiệp'}
+          {t('dang_ky_doanh_nghiep_register', 'Đăng ký Doanh nghiệp')}
         </button>
       </div>
 
@@ -365,7 +364,7 @@ export const SaaSTenantsPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                {isEn ? 'Total Tenants' : 'Tổng doanh nghiệp'}
+                {t('saas_tenants_tong_doanh_nghiep', 'Tổng doanh nghiệp')}
               </p>
               <p className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mt-1">{tenants.length}</p>
             </div>
@@ -378,7 +377,7 @@ export const SaaSTenantsPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                {isEn ? 'Active' : 'Đang hoạt động'}
+                {t('saas_settings_dang_hoat_dong', 'Đang hoạt động')}
               </p>
               <p className="text-2xl font-extrabold text-emerald-600 mt-1">
                 {tenants.filter((t) => t.subscription_status === 'active' && !t.is_paused).length}
@@ -393,7 +392,7 @@ export const SaaSTenantsPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                {isEn ? 'Trial' : 'Dùng thử'}
+                {t('saas_tenants_dung_thu', 'Dùng thử')}
               </p>
               <p className="text-2xl font-extrabold text-blue-600 mt-1">
                 {tenants.filter((t) => t.subscription_status === 'trial').length}
@@ -408,7 +407,7 @@ export const SaaSTenantsPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                {isEn ? 'Suspended/Paused' : 'Tạm dừng'}
+                {t('saas_tenants_tam_d_ng', 'Tạm dừng')}
               </p>
               <p className="text-2xl font-extrabold text-red-600 mt-1">
                 {tenants.filter((t) => t.is_paused || t.subscription_status === 'suspended').length}
@@ -426,7 +425,7 @@ export const SaaSTenantsPage: React.FC = () => {
         <DataTable
           columns={columns}
           data={tenants}
-          searchPlaceholder={isEn ? 'Search tenants...' : 'Tìm kiếm doanh nghiệp...'}
+          searchPlaceholder={t('saas_tenants_tim_kiem_doanh_nghiep', 'Tìm kiếm doanh nghiệp...')}
           pageSize={10}
           actionButton={
             <button
@@ -434,7 +433,7 @@ export const SaaSTenantsPage: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              {isEn ? 'Register Tenant' : 'Đăng ký Doanh nghiệp'}
+              {t('dang_ky_doanh_nghiep_register_2', 'Đăng ký Doanh nghiệp')}
             </button>
           }
           enableRowSelection={false}
@@ -465,15 +464,15 @@ export const SaaSTenantsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                    {isEn ? 'Basic Information' : 'Thông tin cơ bản'}
+                    {t('saas_tenants_thong_tin_c_ban', 'Thông tin cơ bản')}
                   </h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{isEn ? 'Code' : 'Mã'}</span>
+                      <span className="text-gray-500">{t('ma_code', 'Mã')}</span>
                       <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">{selectedTenant.code}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{isEn ? 'Tax Code' : 'Mã số thuế'}</span>
+                      <span className="text-gray-500">{t('saas_register_tax_code', 'Mã số thuế')}</span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedTenant.tax_code}</span>
                     </div>
                     <div className="flex justify-between text-xs">
@@ -481,11 +480,11 @@ export const SaaSTenantsPage: React.FC = () => {
                       <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedTenant.email || '-'}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{isEn ? 'Phone' : 'Điện thoại'}</span>
+                      <span className="text-gray-500">{t('saas_tenants_dien_thoai', 'Điện thoại')}</span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedTenant.phone || '-'}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{isEn ? 'Address' : 'Địa chỉ'}</span>
+                      <span className="text-gray-500">{t('saas_tenants_dia_chi', 'Địa chỉ')}</span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100 text-right max-w-[60%]">{selectedTenant.address || '-'}</span>
                     </div>
                   </div>
@@ -493,30 +492,30 @@ export const SaaSTenantsPage: React.FC = () => {
 
                 <div className="space-y-3">
                   <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                    {isEn ? 'Subscription' : 'Thuê bao'}
+                    {t('saas_tenants_thue_bao', 'Thuê bao')}
                   </h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{isEn ? 'Plan' : 'Gói'}</span>
+                      <span className="text-gray-500">{t('goi_plan', 'Gói')}</span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">{selectedTenant.plan_type}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{isEn ? 'Status' : 'Trạng thái'}</span>
+                      <span className="text-gray-500">{t('status', 'Trạng thái')}</span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">{selectedTenant.subscription_status}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{isEn ? 'Trial Ends' : 'Hạn dùng thử'}</span>
+                      <span className="text-gray-500">{t('saas_tenants_han_dung_thu', 'Hạn dùng thử')}</span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100">
-                        {selectedTenant.trial_ends_at ? new Date(selectedTenant.trial_ends_at).toLocaleDateString(isEn ? 'en-US' : 'vi-VN') : '-'}
+                        {selectedTenant.trial_ends_at ? new Date(selectedTenant.trial_ends_at).toLocaleDateString(getIntlLocale(isEn)) : '-'}
                       </span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{isEn ? 'Paused' : 'Tạm dừng'}</span>
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedTenant.is_paused ? (isEn ? 'Yes' : 'Có') : (isEn ? 'No' : 'Không')}</span>
+                      <span className="text-gray-500">{t('saas_tenants_tam_d_ng', 'Tạm dừng')}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedTenant.is_paused ? (t('co_yes', 'Có')) : (t('saas_tenants_khong', 'Không'))}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">{isEn ? 'Onboarding' : 'Hoàn tất thiết lập'}</span>
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedTenant.onboarding_completed ? (isEn ? 'Completed' : 'Hoàn tất') : (isEn ? 'Pending' : 'Chưa hoàn tất')}</span>
+                      <span className="text-gray-500">{t('saas_tenants_hoan_tat_thiet_lap', 'Hoàn tất thiết lập')}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedTenant.onboarding_completed ? (t('saas_purchasing_hoan_tat', 'Hoàn tất')) : (t('saas_tenants_ch_a_hoan_tat', 'Chưa hoàn tất'))}</span>
                     </div>
                   </div>
                 </div>
@@ -525,20 +524,20 @@ export const SaaSTenantsPage: React.FC = () => {
               {/* Limits */}
               <div>
                 <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-3">
-                  {isEn ? 'Limits & Resources' : 'Giới hạn & Tài nguyên'}
+                  {t('saas_tenants_gioi_han_tai_nguyen', 'Giới hạn & Tài nguyên')}
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 flex items-center gap-3">
                     <Users className="w-5 h-5 text-indigo-500" />
                     <div>
-                      <p className="text-[10px] text-gray-500">{isEn ? 'Max Users' : 'Tối đa người dùng'}</p>
+                      <p className="text-[10px] text-gray-500">{t('saas_tenants_toi_da_ng_oi_dung', 'Tối đa người dùng')}</p>
                       <p className="text-sm font-extrabold text-gray-900 dark:text-gray-100">{selectedTenant.max_users}</p>
                     </div>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 flex items-center gap-3">
                     <Warehouse className="w-5 h-5 text-amber-500" />
                     <div>
-                      <p className="text-[10px] text-gray-500">{isEn ? 'Max Warehouses' : 'Tối đa kho'}</p>
+                      <p className="text-[10px] text-gray-500">{t('saas_tenants_toi_da_kho', 'Tối đa kho')}</p>
                       <p className="text-sm font-extrabold text-gray-900 dark:text-gray-100">{selectedTenant.max_warehouses}</p>
                     </div>
                   </div>
@@ -549,7 +548,7 @@ export const SaaSTenantsPage: React.FC = () => {
               {selectedTenant.settings && Object.keys(selectedTenant.settings).length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-3">
-                    {isEn ? 'Settings' : 'Cấu hình'}
+                    {t('saas_tenants_cau_hinh', 'Cấu hình')}
                   </h4>
                   <pre className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-[10px] text-gray-700 dark:text-gray-300 overflow-x-auto">
                     {JSON.stringify(selectedTenant.settings, null, 2)}
@@ -572,14 +571,14 @@ export const SaaSTenantsPage: React.FC = () => {
                         className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-gray-800 hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                        {isEn ? 'Open WebShop' : 'Mở WebShop'}
+                        {t('saas_tenants_mo_webshop', 'Mở WebShop')}
                       </a>
                       <button
                         onClick={() => copyToClipboard(webshopUrl)}
                         className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs font-bold rounded-xl transition-all cursor-pointer"
                       >
                         <Copy className="w-3.5 h-3.5" />
-                        {isEn ? 'Copy URL' : 'Sao chép URL'}
+                        {t('saas_tenants_sao_chep_url', 'Sao chép URL')}
                       </button>
                       <code className="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1.5 rounded-lg break-all">
                         {webshopUrl}

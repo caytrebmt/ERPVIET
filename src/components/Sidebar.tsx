@@ -19,6 +19,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useShopTenant } from "../contexts/ShopTenantContext";
 import client from "../api/client";
 import { Category } from "../types";
+import { pickLocalized } from '../utils/localized';
 
 const SIDEBAR_KEY = "webshop_sidebar_collapsed";
 
@@ -157,9 +158,7 @@ const SidebarBody: React.FC<{
             </button>
             {categories.map((cat) => {
               const active = String(cat.id) === activeCategory;
-              const catDisplayName = language === 'en'
-                ? (cat.name_en || cat.nameEn || cat.name)
-                : (cat.name_vi || cat.name);
+              const catDisplayName = pickLocalized(language === 'en', (cat.name_en || cat.nameEn || cat.name), (cat.name_vi || cat.name));
               return (
                 <button
                   key={cat.id}
@@ -293,6 +292,7 @@ const SidebarBody: React.FC<{
 };
 
 const Sidebar: React.FC = () => {
+  const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem(SIDEBAR_KEY) === "1"
@@ -365,7 +365,7 @@ const Sidebar: React.FC = () => {
           />
           <div className="w-72 max-w-[80%] bg-white dark:bg-gray-900 h-full shadow-xl animate-[slide-in_0.2s_ease-out] flex flex-col">
             <div className="flex items-center justify-between px-4 h-14 border-b border-gray-100 dark:border-gray-800">
-              <span className="font-bold text-gray-900 dark:text-white">Menu</span>
+              <span className="font-bold text-gray-900 dark:text-white">{t('sidebar_menu_groups', 'Menu')}</span>
               <button
                 onClick={() => setMobileOpen(false)}
                 className="p-2 text-gray-500 hover:text-gray-900 dark:hover:text-white cursor-pointer"

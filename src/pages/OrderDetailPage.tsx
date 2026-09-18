@@ -212,10 +212,10 @@ const OrderDetailPage: React.FC = () => {
 
             {/* Headers Desktop */}
             <div className="hidden md:grid grid-cols-12 gap-2 bg-gray-50/30 dark:bg-gray-850/10 px-4 py-2 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase border-b border-gray-50 dark:border-gray-800">
-              <div className="col-span-6">Sản phẩm</div>
-              <div className="col-span-2 text-center">Đơn giá</div>
-              <div className="col-span-2 text-center">Số lượng</div>
-              <div className="col-span-2 text-right">Thành tiền</div>
+              <div className="col-span-6">{t('api_fallback_order_item', 'Sản phẩm')}</div>
+              <div className="col-span-2 text-center">{t('saas_web_orders_d_n_gia', 'Đơn giá')}</div>
+              <div className="col-span-2 text-center">{t('saas_stock_in_so_l_ong', 'Số lượng')}</div>
+              <div className="col-span-2 text-right">{t('saas_stock_in_thanh_tien', 'Thành tiền')}</div>
             </div>
 
             {/* List */}
@@ -256,7 +256,7 @@ const OrderDetailPage: React.FC = () => {
               <div className="relative">
                 <span className={`absolute -left-[17px] top-1.5 w-2 h-2 rounded-full ring-4 ${order.status === "cancelled" ? "bg-red-500 ring-red-100 dark:ring-red-950" : "bg-indigo-600 ring-indigo-50 dark:ring-indigo-950"}`}></span>
                 <p className="font-bold text-gray-850 dark:text-white m-0 leading-tight">Ghi nhận đơn hàng trên WebShop</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 m-0">Thời gian: {formatDate(order.createdAt)}</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 m-0">{t('date_filter.label', 'Thời gian:')}{formatDate(order.createdAt)}</p>
               </div>
 
               {/* Point 2 */}
@@ -332,7 +332,7 @@ const OrderDetailPage: React.FC = () => {
                 <Phone className="w-4 h-4 text-gray-400 dark:text-gray-550 shrink-0" /> Điện thoại: <strong className="text-gray-800 dark:text-gray-200">{order.customerPhone}</strong>
               </p>
               <p className="m-0 flex items-start gap-1.5">
-                <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-550 shrink-0 mt-0.5" /> Địa chỉ: <span className="text-gray-700 dark:text-gray-300 leading-normal">{order.shippingAddress}</span>
+                <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-550 shrink-0 mt-0.5" /> {t('saas_purchasing_dia_chi', 'Địa chỉ:')}<span className="text-gray-700 dark:text-gray-300 leading-normal">{order.shippingAddress}</span>
               </p>
               {order.note && (
                 <div className="bg-gray-50 dark:bg-gray-850 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800 text-[11px] text-gray-500 italic">
@@ -355,7 +355,7 @@ const OrderDetailPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span>Phí vận chuyển:</span>
-                <span className="text-green-600 font-semibold">Miễn phí</span>
+                <span className="text-green-600 font-semibold">{t('saas_tenants_mien_phi', 'Miễn phí')}</span>
               </div>
               {order.promo_code && (
                 <div className="flex justify-between text-green-600 font-semibold">
@@ -364,7 +364,7 @@ const OrderDetailPage: React.FC = () => {
                 </div>
               )}
               <div className="border-t border-gray-100 dark:border-gray-800 pt-3 flex justify-between items-baseline">
-                <span className="text-sm font-bold text-gray-900 dark:text-white">Tổng thanh toán:</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{t('saas_stock_out_tong_thanh_toan', 'Tổng thanh toán:')}</span>
                 <span className="text-base font-black text-indigo-600 dark:text-indigo-400">
                   {formatPrice(order.total_amount)}
                 </span>

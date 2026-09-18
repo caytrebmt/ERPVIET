@@ -84,7 +84,7 @@ export const SaaSCRMPage: React.FC = () => {
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLead.contact_name || !newLead.phone) {
-      showToast(isEn ? 'Please fill contact name and phone number' : 'Vui lòng điền tên người liên hệ và SĐT', 'error');
+      showToast(t('crm_please_fill_contact', 'Vui lòng điền tên người liên hệ và SĐT'), 'error');
       return;
     }
     try {
@@ -92,7 +92,7 @@ export const SaaSCRMPage: React.FC = () => {
       await loadLeads();
       setShowAddModal(false);
       setNewLead({ contact_name: '', company_name: '', email: '', phone: '', status: 'NEW', source: 'Website', estimated_value: 0 });
-      showToast(isEn ? 'Created CRM Lead successfully' : 'Tạo Lead CRM thành công!', 'success');
+      showToast(t('crm_lead_created', 'Tạo Lead CRM thành công!'), 'success');
     } catch (error: any) {
       showToast(error?.response?.data?.message || 'Không thể lưu Lead vào cơ sở dữ liệu.', 'error');
     }
@@ -129,7 +129,7 @@ export const SaaSCRMPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              {isEn ? 'Total Leads' : 'Tổng Cơ Hội Kinh Doanh'}
+              {t('crm_total_leads', 'Tổng Cơ Hội Kinh Doanh')}
             </p>
             <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{leads.length}</p>
           </div>
@@ -141,7 +141,7 @@ export const SaaSCRMPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              {isEn ? 'Pipeline Value' : 'Giá Trị Tiềm Năng (Pipeline)'}
+              {t('crm_pipeline_value', 'Giá Trị Tiềm Năng (Pipeline)')}
             </p>
             <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
               {totalPipelineValue.toLocaleString('vi-VN')} đ
@@ -155,7 +155,7 @@ export const SaaSCRMPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              {isEn ? 'Won Deals' : 'Hợp Đồng Đã Chốt (WON)'}
+              {t('crm_won_deals', 'Hợp Đồng Đã Chốt (WON)')}
             </p>
             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
               {leads.filter((l) => l.status === 'WON').length}
@@ -169,7 +169,7 @@ export const SaaSCRMPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-              {isEn ? 'Conversion Rate' : 'Tỷ Lệ Chuyển Đổi'}
+              {t('crm_conversion_rate', 'Tỷ Lệ Chuyển Đổi')}
             </p>
             <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
               {leads.length ? Math.round((leads.filter((l) => l.status === 'WON').length / leads.length) * 100) : 0}%
@@ -187,7 +187,7 @@ export const SaaSCRMPage: React.FC = () => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={isEn ? 'Search leads, company, code...' : 'Tìm kiếm Lead, Công ty, Mã...'}
+              placeholder={t('crm_search_placeholder', 'Tìm kiếm Lead, Công ty, Mã...')}
               className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500/50"
             />
           </div>
@@ -197,7 +197,7 @@ export const SaaSCRMPage: React.FC = () => {
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="w-full sm:w-auto px-3 py-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100"
           >
-            <option value="ALL">{isEn ? 'All Statuses' : 'Tất cả Trạng thái'}</option>
+            <option value="ALL">{t('crm_all_statuses', 'Tất cả Trạng thái')}</option>
             <option value="NEW">NEW (Mới tạo)</option>
             <option value="CONTACTED">CONTACTED (Đã liên hệ)</option>
             <option value="QUALIFIED">QUALIFIED (Đánh giá tiềm năng)</option>
@@ -212,7 +212,7 @@ export const SaaSCRMPage: React.FC = () => {
           className="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-medium rounded-lg text-sm flex items-center justify-center gap-2 transition-colors shadow-xs"
         >
           <Plus className="h-4 w-4" />
-          <span>{isEn ? 'Add CRM Lead' : 'Thêm Lead Mới'}</span>
+          <span>{t('crm_add_lead', 'Thêm Lead Mới')}</span>
         </button>
       </div>
 
@@ -224,13 +224,13 @@ export const SaaSCRMPage: React.FC = () => {
           <table className="w-full text-left text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 uppercase text-xs">
               <tr>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Lead Code' : 'Mã Lead'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Contact / Company' : 'Liên Hệ / Công Ty'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Phone / Email' : 'SĐT / Email'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Estimated Value' : 'Giá Trị Dụ Kiến'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Source' : 'Nguồn Tiềm Năng'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Status' : 'Trạng Thái'}</th>
-                <th className="px-4 py-3 font-semibold">{isEn ? 'Date' : 'Ngày Tạo'}</th>
+                <th className="px-4 py-3 font-semibold">{t('crm_lead_code', 'Mã Lead')}</th>
+                <th className="px-4 py-3 font-semibold">{t('crm_contact_company', 'Liên Hệ / Công Ty')}</th>
+                <th className="px-4 py-3 font-semibold">{t('crm_phone_email', 'SĐT / Email')}</th>
+                <th className="px-4 py-3 font-semibold">{t('crm_estimated_value', 'Giá Trị Dụ Kiến')}</th>
+                <th className="px-4 py-3 font-semibold">{t('crm_source', 'Nguồn Tiềm Năng')}</th>
+                <th className="px-4 py-3 font-semibold">{t('status', 'Trạng Thái')}</th>
+                <th className="px-4 py-3 font-semibold">{t('crm_date', 'Ngày Tạo')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -282,7 +282,7 @@ export const SaaSCRMPage: React.FC = () => {
               {filteredLeads.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-zinc-500 dark:text-zinc-400">
-                    {isEn ? 'No CRM Leads match your query.' : 'Không tìm thấy dữ liệu Lead CRM.'}
+                    {t('crm_no_leads', 'Không tìm thấy dữ liệu Lead CRM.')}
                   </td>
                 </tr>
               )}
@@ -297,27 +297,27 @@ export const SaaSCRMPage: React.FC = () => {
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 max-w-lg w-full space-y-4 shadow-xl">
             <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
               <Users className="h-5 w-5 text-amber-500" />
-              <span>{isEn ? 'Create CRM Lead' : 'Thêm Lead Khách Hàng CRM'}</span>
+              <span>{t('crm_create_lead', 'Thêm Lead Khách Hàng CRM')}</span>
             </h3>
 
             <form onSubmit={handleCreateLead} className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  {isEn ? 'Contact Person Name *' : 'Tên Người Liên Hệ *'}
+                  {t('crm_contact_name', 'Tên Người Liên Hệ *')}
                 </label>
                 <input
                   type="text"
                   required
                   value={newLead.contact_name}
                   onChange={(e) => setNewLead({ ...newLead, contact_name: e.target.value })}
-                  placeholder="Ví dụ: Nguyễn Văn A"
+                  placeholder={t('saas_c_r_m_vi_du_nguyen_v_n_a', 'Ví dụ: Nguyễn Văn A')}
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  {isEn ? 'Company Name' : 'Tên Tên Công Ty / Doanh Nghiệp'}
+                  {t('crm_company_name', 'Tên Tên Công Ty / Doanh Nghiệp')}
                 </label>
                 <input
                   type="text"
@@ -331,7 +331,7 @@ export const SaaSCRMPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    {isEn ? 'Phone *' : 'Số Điện Thoại *'}
+                    {t('crm_phone', 'Số Điện Thoại *')}
                   </label>
                   <input
                     type="text"
@@ -359,7 +359,7 @@ export const SaaSCRMPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    {isEn ? 'Estimated Value (VND)' : 'Giá Trị Dự Kiến (VNĐ)'}
+                    {t('crm_estimated_value_label', 'Giá Trị Dự Kiến (VNĐ)')}
                   </label>
                   <input
                     type="number"
@@ -370,7 +370,7 @@ export const SaaSCRMPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    {isEn ? 'Source' : 'Nguồn Nguồn Tiềm Năng'}
+                    {t('crm_source_label', 'Nguồn Nguồn Tiềm Năng')}
                   </label>
                   <select
                     value={newLead.source}
@@ -379,8 +379,8 @@ export const SaaSCRMPage: React.FC = () => {
                   >
                     <option value="Website">Website Form</option>
                     <option value="Hotline">Hotline / Zalo</option>
-                    <option value="Event">Triển Lãm / Event</option>
-                    <option value="Referral">Người quen Giới thiệu</option>
+                    <option value="Event">{t('saas_c_r_m_trien_lam_event', 'Triển Lãm / Event')}</option>
+                    <option value="Referral">{t('saas_c_r_m_ng_oi_quen_gioi_thieu', 'Người quen Giới thiệu')}</option>
                   </select>
                 </div>
               </div>
@@ -391,13 +391,13 @@ export const SaaSCRMPage: React.FC = () => {
                   onClick={() => setShowAddModal(false)}
                   className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm"
                 >
-                  {isEn ? 'Cancel' : 'Hủy bỏ'}
+                  {t('cancel', 'Hủy bỏ')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-medium rounded-lg text-sm"
                 >
-                  {isEn ? 'Save Lead' : 'Lưu Lead'}
+                  {t('crm_save_lead', 'Lưu Lead')}
                 </button>
               </div>
             </form>

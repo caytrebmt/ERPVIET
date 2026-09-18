@@ -1,31 +1,35 @@
 # 🚀 HƯỚNG DẪN TRIỂN KHAI I18N — ERPVIET
 
 > Tài liệu thực hành từng bước. Đọc hết trước khi chạy bất kỳ lệnh nào.
+>
+> **Cập nhật 2026-09-18 (issue `#12` + `#14`)**: từ điển đã đủ **1.373 key / 2 ngôn ngữ**, `isEn ?` = **0**,
+> nợ hardcode còn **684** và bị khoá bởi ratchet `tests/i18n-hardcoded-baseline.json`. Phần 3–4 dưới đây là
+> **quy trình chạy lại cho module còn nợ** (không còn là kế hoạch 977 key như bản gốc). Các script một lần của
+> đợt cũ (`refactor-isen.cjs`, `extract-strings.cjs`, `generate-report.cjs`, `codemods/`…) đã xoá — xem
+> `ISSUES_AND_FIXES.md` issue `#14`.
 
 ---
 
 ## ⚡ TÓM TẮT NHANH (cho người vội)
 
 ```bash
-# Bước 0: xem tình trạng hiện tại
-npm test -- --reporter=verbose 2>&1 | grep -A5 "Statistics"
+# Bước 0: nợ dịch còn bao nhiêu (toàn repo + theo từng file)
+node scripts/i18n-count-hardcoded.cjs
 
-# Bước 1: check 2 nguồn JSON vs DB có lệch không
+# Bước 1: JSON và DB `sys_translations` có lệch nhau không
 node scripts/sync-sources.cjs --check
 
-# Bước 2: dịch 977 key còn thiếu (cần OPENAI_API_KEY)
-export OPENAI_API_KEY=sk-...
-node scripts/translate-en.cjs --dry-run   # xem trước
-node scripts/translate-en.cjs             # dịch thật
+# Bước 2: nối một module còn hardcode sang t() (dry-run trước!)
+node scripts/i18n-wire-hardcoded.cjs --create-keys --files=src/pages/saas/SaaSQuotationsPage.tsx
+node scripts/i18n-wire-hardcoded.cjs --create-keys --write --files=src/pages/saas/SaaSQuotationsPage.tsx
 
-# Bước 3: xem báo cáo isEn? cần refactor
-node scripts/refactor-isen.cjs
+# Bước 3: key mới sinh có en="" → PHẢI dịch theo docs/i18n-glossary.md
+#         (hoặc chạy translate-en.cjs nếu có OPENAI_API_KEY), rồi chốt baseline:
+node scripts/i18n-count-hardcoded.cjs --write-baseline
 
-# Bước 4: chạy test kiểm tra
-npm test
+# Bước 4: kiểm tra
+npx tsc --noEmit -p tsconfig.json && npm test && npm run build
 ```
-
----
 
 ## PHẦN 1: HIỂU VẤN ĐỀ "2 NGUỒN DỊCH SONG SONG"
 
@@ -132,7 +136,10 @@ node scripts/sync-sources.cjs --db-to-json
 
 ---
 
-## PHẦN 3: DỊCH 977 KEY (scripts/translate-en.cjs)
+## PHẦN 3: DỊCH KEY CÒN THIẾU (scripts/translate-en.cjs)
+
+> **Tình trạng 2026-09-18:** 977 key trong bản kế hoạch đã dịch xong (dịch tay + theo glossary),
+> `en.json` = 1.373/1.373 key, 0 giá trị rỗng. Phần này còn dùng khi `--create-keys` sinh batch key mới.
 
 ### 3.1 Yêu cầu
 
@@ -240,57 +247,57 @@ console.log('Done!');
 
 ---
 
-## PHẦN 4: REFACTOR `isEn ?` (138 chỗ / 7 file)
+## PHẦN 4: NỐI MODULE CÒN NỢ VÀO `t()` (codemod AST)
 
-### 4.1 Xem báo cáo đầy đủ
+`isEn ?` / `language === 'en' ?` hiện bằng **0** và bị test guard chặn. Việc còn lại là **độ phủ**:
+684 chuỗi tiếng Việt chưa đi qua từ điển, dồn ở 5 module:
+
+| Module | Chuỗi hardcode | Ghi chú |
+|---|---|---|
+| `src/pages/saas/SaaSSettingsPage.tsx` | 64 | cài đặt, admin thấy nhiều |
+| `src/pages/OrderDetailPage.tsx` | 42 | khách vãng lai |
+| `src/pages/saas/SaaSPurchasingPage.tsx` | 41 | mua hàng |
+| `src/pages/saas/SaaSWebOrdersPage.tsx` | 40 | đơn WebShop |
+| `src/pages/saas/SaaSWarehousesPage.tsx` | 37 | kho |
+
+Đầy đủ: `node scripts/i18n-count-hardcoded.cjs`.
+
+### 4.1 Hai codemod (đều AST, idempotent, mặc định là dry-run)
 
 ```bash
-node scripts/refactor-isen.cjs
-# → In danh sách 138 chỗ cần sửa, kèm key gợi ý và snippet
-# → Ghi scripts/isen-report.json để tooling
+# (a) ternary chọn ngôn ngữ → t() / pickLocalized / getIntlLocale
+node scripts/refactor-lang-ternary.cjs            # dry-run + /tmp/i18n-plan.json
+node scripts/refactor-lang-ternary.cjs --write
 
-# Xem 1 file cụ thể
-node scripts/refactor-isen.cjs --file=src/pages/saas/SaaSCRMPage.tsx
+# (b) chuỗi hardcode → t(); --create-keys sinh key MỚI cho chuỗi chưa có trong từ điển,
+#     tự chèn useLanguage() nếu component thiếu hook
+node scripts/i18n-wire-hardcoded.cjs --files=src/pages/saas/SaaSSettingsPage.tsx          # xem kế hoạch
+node scripts/i18n-wire-hardcoded.cjs --create-keys --files=src/pages/saas/SaaSSettingsPage.tsx
+node scripts/i18n-wire-hardcoded.cjs --create-keys --write --files=src/pages/saas/SaaSSettingsPage.tsx
 ```
 
-### 4.2 Quy trình refactor từng file (làm TỪ TỪNG FILE, không làm cùng lúc)
+### 4.2 Quy trình cho MỘT module (làm từng file, không làm toàn repo)
 
 ```bash
-# Ví dụ: refactor SaaSCRMPage.tsx
+F=src/pages/saas/SaaSSettingsPage.tsx
+node scripts/i18n-wire-hardcoded.cjs --create-keys --write --files=$F
+npx tsc --noEmit -p tsconfig.json          # bắt buộc: phát hiện t() ngoài scope / mất cú pháp
 
-# 1. Xem báo cáo file này
-node scripts/refactor-isen.cjs --file=src/pages/saas/SaaSCRMPage.tsx
-
-# 2. Mở file, tìm và thay thế từng pattern:
-#    TRƯỚC:  {isEn ? 'Total Leads' : 'Tổng Cơ Hội Kinh Doanh'}
-#    SAU:    {t('crm_total_leads', 'Tổng Cơ Hội Kinh Doanh')}
-
-# 3. Thêm key vào vi.json:
-#    "crm_total_leads": "Tổng Cơ Hội Kinh Doanh"
-
-# 4. Thêm key vào en.json:
-#    "crm_total_leads": "Total Leads"
-
-# 5. Build + test
-npm run build 2>&1 | tail -5
-npm test
-
-# 6. Commit FILE này (không commit nhiều file cùng lúc)
-git add src/pages/saas/SaaSCRMPage.tsx public/locales/
-git commit -m "refactor(i18n): replace isEn? with t() in SaaSCRMPage"
+# các key mới có en="" → đọc /tmp/i18n-new-keys.json, dịch theo docs/i18n-glossary.md, rồi:
+node scripts/i18n-count-hardcoded.cjs --write-baseline
+npm test && npm run build
+git add $F public/locales/ tests/i18n-hardcoded-baseline.json
+git commit -m "refactor(i18n): nối $F vào từ điển"
 ```
 
-### 4.3 Thứ tự file ưu tiên
+### 4.3 Quy tắc bắt buộc (lý do từng điều)
 
-| # | File | isEn? count | Ưu tiên vì |
-|---|---|---|---|
-| 1 | `SaaSCRMPage.tsx` | ~30 | User hay xem |
-| 2 | `SaaSDashboardPage.tsx` | ~20 | Trang đầu tiên sau login |
-| 3 | `SaaSSidebar.tsx` | ~15 | Hiển thị mọi trang |
-| 4 | `SaaSSettingsPage.tsx` | ~25 | Cài đặt quan trọng |
-| 5 | `SaaSTenantsPage.tsx` | ~15 | Admin platform |
-| 6 | `SaaSPurchasingPage.tsx` | ~20 | Mua hàng |
-| 7 | `SaaSRegisterPage.tsx` | ~13 | Đăng ký |
+- **Không** wrap chuỗi là dữ liệu: `value`, `id`, `accessorKey`, `className`, payload API — codemod đã whitelist
+  theo `UI_ATTRS` (`label`/`title`/`placeholder`/`alt`/`aria-label`…) và **không** tạo key cho `description`/`notes`/`reason`.
+- **Không tự bịa bản dịch**: giá trị VI được giữ nguyên làm defaultValue; EN phải do người dịch theo glossary.
+- Một chuỗi VI → **một key** (script tái dùng key có giá trị VI khớp tuyệt đối trước khi tạo key mới).
+- Tên key: snake_case ASCII, ≤ 5 từ / 44 ký tự, `_2` khi trùng; chạy `scripts/normalize-locales.js` nếu cần chuẩn hoá hàng loạt.
+
 
 ---
 
@@ -348,33 +355,18 @@ Sau đó kiểm tra theo checklist:
 
 ---
 
-## PHẦN 7: TIMELINE VÀ PHÂN CÔNG
+## PHẦN 7: TRẠNG THÁI THEO TỪNG BƯỚC
 
-```
-Ngày 1 — Setup & Sync (0.5 ngày)
-  ├── Cài OPENAI_API_KEY
-  ├── Chạy sync-sources.cjs --check
-  └── Review I18N_DEPLOY_GUIDE.md + glossary
+| Bước | Trạng thái | Ghi chú |
+|---|---|---|
+| Đồng bộ JSON ↔ DB (`sync-sources.cjs --check`) | ✅ | JSON là nguồn sự thật, overlay admin vẫn merge lúc chạy |
+| Dịch `en.json` | ✅ | 1.373/1.373 key, 0 `⚠`, 0 EN còn dấu tiếng Việt (guard chặn) |
+| Dọn key mồ côi / flatten | ✅ | xoá 169 key chết, backfill 7 key thiếu, làm phẳng `date_filter.*`/`auth_web.*` |
+| Refactor ternary ngôn ngữ | ✅ | 543 điểm sửa; `isEn ?` = 0, `language === 'en' ?` = 0 |
+| Nối hardcode → `t()` | 🟡 theo module | `SaaSAssets`/`SaaSStockIn`/`SaaSStockOut` xong; còn **684** chuỗi |
+| CI guard | ✅ | `tests/i18n.test.ts` 14 test + ratchet baseline |
+| CI thật (GitHub Actions) | ⬜ | chưa có workflow (issue `#19`) → verify bằng `npm test` local |
 
-Ngày 1-2 — Dịch bulk (1 ngày)
-  ├── Chạy translate-en.cjs (toàn bộ 977 key, ~30 phút runtime)
-  ├── Review nhóm A (thuật ngữ kế toán) — khoảng 3-4 giờ
-  └── Commit: "feat(i18n): translate 977 missing en.json keys"
-
-Ngày 2-3 — Refactor isEn? (1 ngày)
-  ├── SaaSCRMPage + SaaSDashboardPage + SaaSSidebar
-  └── Mỗi file = 1 commit riêng
-
-Ngày 3-4 — Refactor tiếp (1 ngày)
-  ├── SaaSSettingsPage + SaaSTenantsPage + SaaSPurchasingPage + SaaSRegisterPage
-  └── Mỗi file = 1 commit riêng
-
-Ngày 4-5 — QA + Sync DB (0.5 ngày)
-  ├── npm test → tất cả pass
-  ├── Runtime test (checklist ở Phần 6)
-  ├── node scripts/sync-sources.cjs --json-to-db
-  └── Commit final: "feat(i18n): complete EN translation + i18n CI guard"
-```
 
 ---
 
@@ -404,14 +396,28 @@ cat .env | grep DATABASE
 cp public/locales/en.json.bak public/locales/en.json
 ```
 
-### Test fail: "X keys still untranslated"
+### Test fail: "X keys still untranslated" / en thiếu key
 ```bash
-# Chạy lại translate script
-node scripts/translate-en.cjs
+node scripts/translate-en.cjs            # cần OPENAI_API_KEY, hoặc dịch tay theo docs/i18n-glossary.md
 ```
 
 ### Test fail: "X chỗ còn dùng isEn ? inline"
 ```bash
-# Xem báo cáo và refactor
-node scripts/refactor-isen.cjs
+node scripts/refactor-lang-ternary.cjs --write    # codemod thay ternary bằng t()/pickLocalized/getIntlLocale
+```
+
+### Test fail: "chuỗi hardcode tăng so với baseline"
+```bash
+node scripts/i18n-count-hardcoded.cjs              # xem file nào tăng
+# hoặc, nếu đợt này thật sự đã nối thêm t():
+node scripts/i18n-count-hardcoded.cjs --write-baseline
+```
+
+### Chuỗi trên UI in ra `undefined` / key thô
+```bash
+# key rỗng hoặc thiếu trong từ điển — kiểm tra 2 nguồn:
+grep -rn "t(''" src | head        # codemod tạo key lỗi
+node -e "const vi=require('./public/locales/vi.json'),en=require('./public/locales/en.json');
+console.log('vi',Object.keys(vi).length,'en',Object.keys(en).length,
+  '| thiếu:',Object.keys(vi).filter(k=>!(k in en)).slice(0,10))"
 ```

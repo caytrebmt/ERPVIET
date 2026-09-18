@@ -510,9 +510,13 @@ export async function query(text: string, params?: any[]) {
 
 ---
 
-## 🟡 ISSUE #12 — i18n tiếng Anh chưa hoàn thiện (481/1402 key)
+## ✅ ISSUE #12 — i18n tiếng Anh chưa hoàn thiện (481/1402 key) — ĐÃ TRẢ XONG 2026-09-18
 
-**Vị trí:** `public/locales/en.json` thiếu ~66% key; `missing-translations-report.md` ghi nhận 1,031 chuỗi hardcode.
+> Kết quả + cách tái sử dụng tool: xem **PHỤ LỤC — KẾT QUẢ ISSUE #12** và **PHỤ LỤC — ĐỢT 2** ở cuối file.
+
+**Vị trí (khi mở issue):** `public/locales/en.json` thiếu ~66% key; `missing-translations-report.md` ghi nhận 1,031 chuỗi hardcode.
+
+*(Báo cáo scan đó đã bị xoá ở đợt dọn #14 vì số liệu không còn đúng; công cụ đo hiện tại là `scripts/i18n-count-hardcoded.cjs`.)*
 
 **Fix:**
 1. Chạy scanner để extract chuỗi hardcode:
@@ -545,17 +549,28 @@ Và sửa `metadata.json` (bỏ `MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API`) nếu
 
 ---
 
-## 🟡 ISSUE #14 — File rác bị commit
+## ✅ ISSUE #14 — File rác bị commit — ĐÃ DỌN 2026-09-18
 
 **Vị trí (root):** `--extensions`, `-d`, `npx`, `i18n-replacements.json` (rỗng), `check_toasts.js`, `extract-strings.cjs`, `generate-report.cjs`, `codemods/`... (các artifact quá trình i18n).
 
-**Fix:**
-```bash
-git rm --cached -- "--extensions" "-d" npx i18n-replacements.json
-# rà soát các script tạm còn dùng hay không trước khi xóa
-```
+**Đã dọn** (16 path — không còn reference sống nào trong repo):
 
-**Kiểm tra:** `git status` sạch; root chỉ còn file cần thiết.
+| Nhóm | Path đã xoá | Lý do |
+|---|---|---|
+| Báo cáo/input đợt scan cũ | `missing-translations-report.md` (80 kB) · `candidates.json` (43 kB) · `scripts/i18n-replacements.json` | số liệu lỗi thời; jscodeshift không còn dùng |
+| Producer của 2 file trên | `extract-strings.cjs` · `generate-report.cjs` | thay bằng `scripts/i18n-count-hardcoded.cjs` (AST, bỏ cả data & payload) |
+| Codemod cũ | `codemods/replace-with-i18n-ast-i18next.js` (xóa cả thư mục) · `scripts/replace-with-i18n-ast.js` | cần `jscodeshift` + file replacements; thay bằng `scripts/i18n-wire-hardcoded.cjs` |
+| Script một lần | `scripts/fix-i18n.cjs` · `scripts/add-khong-the-duyet-key.cjs` · `scripts/compare-groups.cjs` · `scripts/extract-vi-strings.js` · `scripts/extract-vi-strings-debug.js` · `check_toasts.js` | không file nào tham chiếu |
+| Tool đã bị thay | `scripts/optimize-keys.cjs` + `scripts/key-report.json` · `scripts/refactor-isen.cjs` | prune do `i18n-prune-and-flatten.cjs` lo; báo cáo `isEn ?` do guard + `refactor-lang-ternary.cjs` lo |
+
+File rác `--extensions`, `-d`, `npx` đã ra khỏi repo từ trước (`git ls-files` xác nhận).
+
+**Giữ lại vì vẫn còn dùng:** `scripts/scan-translations.ts`, `analyze-i18n.cjs`, `cleanup-duplicate-keys.ts`,
+`find-missing-keys.cjs`, `add-missing-keys.ts`, `normalize-locales.js` (dùng cho đợt chuẩn hoá tên key),
+`sync-sources.cjs` (JSON ↔ `sys_translations`), `translate-en.cjs`, `e2e-multitenant.mjs`.
+
+**Kiểm tra:** `git status` sạch · `grep -rn "refactor-isen\|candidates.json\|missing-translations-report" src tests scripts`
+không còn pointer nào chạy được · `npm test` + `npm run build` vẫn pass.
 
 ---
 
@@ -696,7 +711,7 @@ jobs:
 | 9 | Rate-limit login | 🟠 | ✅ Xong |
 | 10 | CORS whitelist + giảm payload limit | 🟠 | ✅ Xong |
 | 11 | Logging level-based | 🟡 | ✅ Xong |
-| 12 | Hoàn thiện `en.json` | 🟡 | ⏳ Cần dịch thủ công (fallback vi đã có) |
+| 12 | Hoàn thiện `en.json` + xoá ternary bypass i18n | 🟡 | ✅ Xong (1.317 key EN đã dịch, guard mở rộng, ratchet chống tái phát) |
 | 13 | Gỡ dependency thừa | 🟡 | ✅ Xong |
 | 14 | Dọn file rác | 🟡 | ✅ Xong |
 | 15 | Đồng bộ tài liệu + bỏ secret mẫu trong README | 🟡 | ✅ Xong |
@@ -708,3 +723,94 @@ jobs:
 ---
 
 > **Đề xuất:** 6 issue 🔴 phải đóng **trước khi go-live**. Nếu bạn muốn, tôi có thể **triển khai trực tiếp** các fix bảo mật (Issue #1–#6) ngay trên branch này và chạy lại `lint`/`build` để xác nhận.
+
+---
+
+## 🧾 PHỤ LỤC — KẾT QUẢ ISSUE #12 (2026-09-18)
+
+**Việc đã làm** (branch `arena/01a0b25a-erpviet`):
+
+1. **Từ điển**: `en.json` đủ 1.317/1.317 key, 0 marker `⚠`, 0 giá trị sao chép tiếng Việt;
+   dịch theo `docs/i18n-glossary.md` (GRN, AR/AP, Output VAT, Accumulated Depreciation…).
+2. **Dọn key chết**: xóa 169 key mồ côi do scanner cũ để lại (không còn `t()` nào tham chiếu).
+3. **Sửa bug thật**: `date_filter.*` và `auth_web.*` lưu dạng object lồng trong khi `keySeparator=false`
+   → 13 vị trí trên UI in raw key (`date_filter.label`). Đã làm phẳng về key chấm + backfill 7 key
+   code gọi nhưng từ điển thiếu (`sidebar_suppliers`, `assets_status`, …).
+4. **Sửa bug nội suy**: `t()` dùng `{stock}` / `${plan}` (i18next không hiểu) → chuẩn hoá `{{stock}}`
+   và truyền vars; 3 chỗ hiện `{order_code}` thô trong toast/sản phẩm.
+5. **Codemod**: 434 ternary `isEn ? / language === 'en' ?` → `t(key, 'Tiếng Việt')`;
+   43 chỗ có nội suy → `t(key, default, vars)`; 56 chỗ chọn trường DB song ngữ → `pickLocalized`;
+   10 chỗ Intl locale → `getIntlLocale`; 172 chuỗi hardcode trong JSX text/thuộc tính UI → `t()`.
+   Tổng: **số key đang dùng thật tăng 404 → 940**.
+6. **Guard mở rộng** (`tests/i18n.test.ts`, 8 → 14 test): cấm `language === 'en' ?`, buộc key `t()`
+   phải tồn tại, buộc JSON phẳng, buộc placeholder `{{}}`, cấm EN còn dấu tiếng Việt, và ratchet
+   `tests/i18n-hardcoded-baseline.json` (chuỗi hardcode chỉ được phép giảm).
+7. **Tool mới**: `scripts/refactor-lang-ternary.cjs`, `scripts/i18n-wire-hardcoded.cjs`,
+   `scripts/i18n-prune-and-flatten.cjs`, `scripts/i18n-count-hardcoded.cjs` + `src/utils/localized.ts`.
+
+**Kết quả kiểm thử**: `tsc --noEmit` ✅ 0 lỗi · `npm test` ✅ 85/85 · `npm run build` ✅ (chunk `locales`
+229.6 kB / gzip 68.7 kB — đổi lại là EN đầy đủ; có thể lazy-load ngôn ngữ không hoạt động nếu muốn giảm).
+
+**Còn tồn (đề xuất follow-up, không chặn)**:
+- Chuỗi VI hardcode ở các trang chưa nối `t()`: theo metric lúc đó là 1.492, nhưng bộ đếm tính nhầm cả
+  giá trị mặc định trong `t(key, 'Tiếng Việt')`; metric đúng (đã sửa trong `scripts/i18n-count-hardcoded.cjs`)
+  là **790**. Đợt 2 bên dưới đã kéo xuống **684** và baseline ratchet đã ghi theo số mới.
+- ~~`missing-translations-report.md` + `candidates.json` + `scripts/i18n-replacements.json`~~ — **đã xoá**
+  cùng 13 artifact/script chết khác trong đợt dọn issue `#14` (2026-09-18).
+- 14 key vẫn dùng dấu gạch ngang (`dashboard-tong-quan`, `xem-webshop`, `an-mat-khau`…) thay vì
+  snake_case theo chuẩn §2.4 — gộp vào đợt chuẩn hoá tên key (đã có `scripts/normalize-locales.js`).
+- Thông báo trả về từ `saasRouter`/`shopRouter` (key `api_*`) vẫn là chuỗi cứng trong API;
+  dịch chúng cần chọn ngôn ngữ theo request (`Accept-Language` / `preferred_lang`), không thuộc phạm vi từ điển UI.
+
+---
+
+## 🧾 PHỤ LỤC — ĐỢT 2 CỦA ISSUE #12 (2026-09-18)
+
+Phạm vi: nối `t()` cho 3 module chưa có ai dịch — `SaaSAssetsPage`, `SaaSStockInPage`, `SaaSStockOutPage`
+(chọn theo mức độ hiển thị: trang tài sản + 2 phiếu nhập/xuất kho).
+
+| Hạng mục | Kết quả |
+|---|---|
+| Điểm gọi `t()` mới trong 3 trang | **132** (StockOut 74 · StockIn 57 · Assets 1) — JSX text, attribute UI, tham số toast, `label:`/`title:`; tổng `t()` của 3 trang: **162** |
+| Key mới vào từ điển | **56** (tổng **1.373** key đang dùng; vi/en bằng nhau; **0** giá trị EN rỗng; **0** EN còn dấu tiếng Việt) |
+| Ternary còn lại ở 3 trang | `isEn ?` = **0**, `language === 'en' ?` = **0** |
+| Chuỗi UI thật còn hardcode ở 3 trang | **7** — đều là ký hiệu tiền `đ` ghép trong JSX (`t()` đã phủ phần còn lại) |
+| Nợ hardcode toàn repo (metric đúng) | **790 → 684**; baseline ratchet ghi lại = **684** |
+| Kiểm thử | `tsc` 0 lỗi · `npm test` **85/85** · `npm run lint` sạch · `npm run build` OK · dev server trả 200 + transform OK cho `/saas/assets`, `/saas/stock-in`, `/saas/stock-out` |
+
+Thuật ngữ mới chốt theo `docs/i18n-glossary.md`: Phiếu nhập kho → *Goods Receipt / receipt note* ·
+Phiếu xuất kho → *Delivery Note* · Sổ Nhập Kho → *Stock-In Register* · Tồn kho → *Inventory Balance* ·
+VAT đầu vào/đầu ra → *Input VAT* / *Output VAT* · Đơn vị tính (ĐVT) → *UOM* · Công nợ phải thu →
+*Accounts Receivable* · “Thu tiền ngay” → *cash on delivery* · “Không thuế” → *Tax exempt*.
+
+**Ba lỗi công cụ đã vấp và cách sửa** (đọc trước khi chạy codemod trên module khác):
+
+1. `NEVER_ATTRS` chứa `'className'` trong khi script so sánh tên attribute đã `.toLowerCase()`
+   → bộ lọc không khớp, 21 class Tailwind (`p-6 space-y-6 p-2`) bị biến thành key.
+   *Sửa:* chuẩn hoá danh sách cấm về chữ thường và **chỉ** tạo key cho attribute nằm trong whitelist
+   `UI_ATTRS` (`label`, `title`, `placeholder`, `alt`, `aria-label`…), thêm `to`/`href`/`path`/`accessorKey`… vào nhóm cấm.
+2. Bộ đếm nợ tính cả chuỗi mặc định trong `t('key','Tiếng Việt')` → sau khi nối `t()` hàng loạt, “nợ”
+   tăng 1.492 → 1.515 dù thực tế đã dịch thêm. *Sửa:* bỏ 2 tham số của `t(...)` khỏi thống kê.
+3. `SaaSStockInPage`/`SaaSStockOutPage` **không khai báo** `const { t } = useLanguage()` nên codemod
+   bỏ qua im lặng (đúng, để không sinh code lỗi) → phải chèn hook trước.
+   Codemod giờ tự chèn `import { useLanguage }` + hook nếu component thiếu.
+
+Cách chạy (idempotent, có dry-run):
+
+```bash
+node scripts/i18n-wire-hardcoded.cjs --create-keys --files=src/pages/saas/SaaSAssetsPage.tsx[,…]        # xem kế hoạch
+node scripts/i18n-wire-hardcoded.cjs --create-keys --write --files=… && npx tsc --noEmit                # áp dụng + kiểm tra
+# các key mới có en="" → dịch tay theo docs/i18n-glossary.md rồi:
+node scripts/i18n-count-hardcoded.cjs --write-baseline && npm test
+```
+
+**Còn tồn sau đợt 2 (đề xuất, không chặn):**
+- 127 key di sản bị **mất dấu trong tên** (kiểu `..._duyet_d_n_hang` thay vì `..._don_hang`) do bộ sinh
+  key cũ không Việt→ASCII được `ơ/ư`; giá trị & bản dịch vẫn đúng, chỉ tên key xấu. Nên gộp vào đợt
+  chuẩn hoá tên key (cùng 14 key gạch ngang đã ghi ở trên) — rename hàng loạt bằng cách tính lại
+  `slugOf()` từ giá trị VI rồi cập nhật `src` + 2 file JSON.
+- 684 chuỗi VI chưa nối `t()`, tập trung ở `SaaSSettingsPage` (64), `OrderDetailPage` (42),
+  `SaaSPurchasingPage` (41), `SaaSWebOrdersPage` (40), `SaaSWarehousesPage` (37) → chạy đúng lệnh ở trên theo module.
+- Vài giá trị VI/EN là **mảnh JSX** (`chi_tiet_mat_hang_nhap` = "Chi Tiết Mặt Hàng Nhập Kho (" + số dòng + `dong` = "dòng)")
+  vì text bị `{}` chia cắt. Dịch được, nhưng đẹp hơn là gộp thành `t(key, '… ({{count}} dòng)')`;
+  codemod không tự làm vì phải sửa cấu trúc JSX.

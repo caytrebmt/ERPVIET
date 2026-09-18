@@ -5,6 +5,7 @@ import { useSaaSAuth } from '../contexts/SaaSAuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import client from '../api/client';
+import { getIntlLocale, pickLocalized } from '../utils/localized';
 
 interface SaaSTopbarProps {
   onOpenSidebar: () => void;
@@ -48,9 +49,9 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
       const res = await client.get('/api/saas/notifications');
       if (res.data?.ok) setNotifications(res.data.data.map((item: any) => ({
         id: String(item.id), type: 'system',
-        title: language === 'en' ? (item.title_en || item.title_vi) : item.title_vi,
-        message: language === 'en' ? (item.content_en || item.content_vi || '') : (item.content_vi || ''),
-        time: item.created_at ? new Date(item.created_at).toLocaleString(language === 'en' ? 'en-US' : 'vi-VN') : '',
+        title: pickLocalized(language === 'en', (item.title_en || item.title_vi), item.title_vi),
+        message: pickLocalized(language === 'en', (item.content_en || item.content_vi || ''), (item.content_vi || '')),
+        time: item.created_at ? new Date(item.created_at).toLocaleString(getIntlLocale(language === 'en')) : '',
         read: Boolean(item.is_read), link: item.link_url || '/saas/dashboard',
       })));
     };
@@ -255,9 +256,7 @@ export const SaaSTopbar: React.FC<SaaSTopbarProps> = ({
               <div className="inline-flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" /> 
               <span>
-    {language === 'en' 
-      ? (erpUser?.role_name_en || erpUser?.role_name_vi || 'ROLE') 
-      : (erpUser?.role_name_vi || erpUser?.role_name_en || 'ROLE')}
+    {pickLocalized(language === 'en', (erpUser?.role_name_en || erpUser?.role_name_vi || 'ROLE'), (erpUser?.role_name_vi || erpUser?.role_name_en || 'ROLE'))}
   </span>
 </div>
               </p>

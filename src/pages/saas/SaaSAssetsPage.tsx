@@ -191,7 +191,7 @@ export const SaaSAssetsPage: React.FC = () => {
         </div>
       </div>
 
-      {loading && <p className="text-xs text-zinc-500">Đang tải tài sản từ PostgreSQL...</p>}
+      {loading && <p className="text-xs text-zinc-500">{t('dang_tai_tai_san_tu', 'Đang tải tài sản từ PostgreSQL...')}</p>}
 
       {/* Assets Table */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-2xs">
@@ -265,7 +265,7 @@ export const SaaSAssetsPage: React.FC = () => {
                   required
                   value={newAsset.asset_name}
                   onChange={(e) => setNewAsset({ ...newAsset, asset_name: e.target.value })}
-                  placeholder="Ví dụ: Máy Tính Server Dell..."
+                  placeholder={t('saas_assets_vi_du_may_tinh_server_dell', 'Ví dụ: Máy Tính Server Dell...')}
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100"
                 />
               </div>
@@ -279,10 +279,10 @@ export const SaaSAssetsPage: React.FC = () => {
                   onChange={(e) => setNewAsset({ ...newAsset, category_code: e.target.value })}
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100"
                 >
-                  <option value="MÁY MÓC THIẾT BỊ">Máy Móc Thiết Bị</option>
-                  <option value="PHƯƠNG TIỆN VẬN TẢI">Phương Tiện Vận Tải</option>
-                  <option value="NHÀ CỬA VẬT KIẾN TRÚC">Nhà Cửa Vật Kiến Trúc</option>
-                  <option value="THIẾT BỊ VĂN PHÒNG">Thiết Bị Văn Phòng</option>
+                  <option value="MÁY MÓC THIẾT BỊ">{t('saas_assets_may_moc_thiet_bi', 'Máy Móc Thiết Bị')}</option>
+                  <option value="PHƯƠNG TIỆN VẬN TẢI">{t('saas_assets_ph_ng_tien_van_tai', 'Phương Tiện Vận Tải')}</option>
+                  <option value="NHÀ CỬA VẬT KIẾN TRÚC">{t('saas_assets_nha_cua_vat_kien_truc', 'Nhà Cửa Vật Kiến Trúc')}</option>
+                  <option value="THIẾT BỊ VĂN PHÒNG">{t('saas_assets_thiet_bi_v_n_phong', 'Thiết Bị Văn Phòng')}</option>
                 </select>
               </div>
 

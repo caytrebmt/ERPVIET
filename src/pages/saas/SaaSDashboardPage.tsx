@@ -12,6 +12,7 @@ import {
 import { DataTable } from '../../components/DataTable';
 import { useLanguage } from '../../contexts/LanguageContext';
 import client from '../../api/client';
+import { getIntlLocale, pickLocalized } from '../../utils/localized';
 
 interface StockAlertItem {
   id: number;
@@ -100,7 +101,7 @@ export const SaaSDashboardPage: React.FC = () => {
     fetchData();
   }, []);
 
-  const fmt = (n: number) => n.toLocaleString(isEn ? 'en-US' : 'vi-VN');
+  const fmt = (n: number) => n.toLocaleString(getIntlLocale(isEn));
   const fmtVnd = (n: number) => `${fmt(n)} đ`;
 
   // Card values: real numbers when loaded, "—" on error, 0 while loading skeleton.
@@ -113,7 +114,7 @@ export const SaaSDashboardPage: React.FC = () => {
   const alertColumns: ColumnDef<StockAlertItem>[] = [
     {
       accessorKey: 'sku',
-      header: isEn ? 'SKU Code' : 'Mã SKU',
+      header: t('saas_reports_ma_sku', 'Mã SKU'),
       cell: (info) => (
         <span className="font-mono text-xs font-semibold text-amber-600 dark:text-amber-400">
           {info.getValue() as string}
@@ -122,34 +123,28 @@ export const SaaSDashboardPage: React.FC = () => {
     },
     {
       accessorKey: 'name',
-      header: isEn ? 'Product Name' : 'Tên Sản Phẩm',
+      header: t('dashboard_product_name', 'Tên Sản Phẩm'),
       cell: (info) => (
         <span className="font-medium text-zinc-900 dark:text-zinc-100">
-          {isEn
-            ? info.row.original.nameEn || (info.getValue() as string)
-            : (info.getValue() as string)}
+          {pickLocalized(isEn, info.row.original.nameEn || (info.getValue() as string), (info.getValue() as string))}
         </span>
       ),
     },
     {
       accessorKey: 'category',
-      header: isEn ? 'Category' : 'Danh Mục',
+      header: t('category', 'Danh Mục'),
       cell: (info) => (
         <span className="text-zinc-700 dark:text-zinc-300">
-          {isEn
-            ? info.row.original.categoryEn || (info.getValue() as string)
-            : (info.getValue() as string)}
+          {pickLocalized(isEn, info.row.original.categoryEn || (info.getValue() as string), (info.getValue() as string))}
         </span>
       ),
     },
     {
       accessorKey: 'stock',
-      header: isEn ? 'Current Stock' : 'Tồn Kho Hiện Tại',
+      header: t('dashboard_current_stock', 'Tồn Kho Hiện Tại'),
       cell: (info) => {
         const stock = info.getValue() as number;
-        const unitLabel = isEn
-          ? info.row.original.unitEn || (info.row.original.unit === 'Cái' ? 'Pcs' : 'Pack')
-          : info.row.original.unit;
+        const unitLabel = pickLocalized(isEn, info.row.original.unitEn || (info.row.original.unit === 'Cái' ? 'Pcs' : 'Pack'), info.row.original.unit);
         return (
           <span className="inline-flex items-center gap-1 font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/60 px-2.5 py-1 rounded-md text-xs border border-red-200 dark:border-red-800">
             <AlertTriangle className="h-3 w-3" /> {stock} {unitLabel}
@@ -159,18 +154,16 @@ export const SaaSDashboardPage: React.FC = () => {
     },
     {
       accessorKey: 'minStock',
-      header: isEn ? 'Min Safety Stock' : 'Định Mức Tối Thiểu',
+      header: t('dashboard_min_stock', 'Định Mức Tối Thiểu'),
       cell: (info) => {
-        const unitLabel = isEn
-          ? info.row.original.unitEn || (info.row.original.unit === 'Cái' ? 'Pcs' : 'Pack')
-          : info.row.original.unit;
+        const unitLabel = pickLocalized(isEn, info.row.original.unitEn || (info.row.original.unit === 'Cái' ? 'Pcs' : 'Pack'), info.row.original.unit);
         return `${info.getValue() as number} ${unitLabel}`;
       },
     },
     {
       accessorKey: 'salePrice',
-      header: isEn ? 'Selling Price' : 'Đơn Giá Bán',
-      cell: (info) => `${(info.getValue() as number).toLocaleString(isEn ? 'en-US' : 'vi-VN')} đ`,
+      header: t('dashboard_selling_price', 'Đơn Giá Bán'),
+      cell: (info) => `${(info.getValue() as number).toLocaleString(getIntlLocale(isEn))} đ`,
     },
   ];
 
@@ -186,12 +179,10 @@ export const SaaSDashboardPage: React.FC = () => {
             </span>
           */}  
             <h2 className="text-2xl font-bold mt-2">
-              {isEn ? 'Enterprise Operations Overview' : 'Tổng quan hoạt động doanh nghiệp'}
+              {t('dashboard_enterprise_overview', 'Tổng quan hoạt động doanh nghiệp')}
             </h2>
             <p className="text-sm text-zinc-300 mt-1 max-w-2xl">
-              {isEn
-                ? 'Automated real-time inventory, general ledger, VAT invoices, and accounts receivable sync via Python JWT backend.'
-                : 'Hệ thống tự động đồng bộ kho, kế toán, hóa đơn VAT và công nợ.'}
+              {t('he_thong_tu_dong_dong', 'Hệ thống tự động đồng bộ kho, kế toán, hóa đơn VAT và công nợ.')}
             </p>
           </div>
         </div>
@@ -203,7 +194,7 @@ export const SaaSDashboardPage: React.FC = () => {
         <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-              {isEn ? 'Monthly Revenue' : 'Doanh Thu Tháng Này'}
+              {t('dashboard_monthly_revenue', 'Doanh Thu Tháng Này')}
             </span>
             <div className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <TrendingUp className="h-5 w-5" />
@@ -216,25 +207,25 @@ export const SaaSDashboardPage: React.FC = () => {
             {loading ? (
               <div className="h-3.5 w-40 mt-2 rounded bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
             ) : summaryError ? (
-              <p className="text-xs text-red-500 mt-1">{isEn ? 'Could not load data' : 'Không tải được dữ liệu'}</p>
+              <p className="text-xs text-red-500 mt-1">{t('khong_tai_duoc_du_lieu', 'Không tải được dữ liệu')}</p>
             ) : growthPct !== null ? (
               <div
                 className={`flex items-center gap-1 mt-1 text-xs font-medium ${
                   revenueUp ? 'text-emerald-600' : 'text-red-600 dark:text-red-400'
                 }`}
-                title={isEn ? `Last month: ${fmtVnd(revenue?.lastMonth ?? 0)}` : `Tháng trước: ${fmtVnd(revenue?.lastMonth ?? 0)}`}
+                title={t('thang_truoc_last_month', 'Tháng trước: {{lastmonth}}', { lastmonth: fmtVnd(revenue?.lastMonth ?? 0) })}
               >
                 {revenueUp ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
                 <span>
-                  {revenueUp ? '+' : ''}{fmt(growthPct)}% {isEn ? 'vs last month' : 'so với tháng trước'}
+                  {revenueUp ? '+' : ''}{fmt(growthPct)}% {t('dashboard_vs_last_month', 'so với tháng trước')}
                 </span>
               </div>
             ) : (revenue?.thisMonth ?? 0) > 0 ? (
               <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">
-                {isEn ? 'First revenue this month' : 'Doanh thu mới phát sinh trong tháng'}
+                {t('doanh_thu_moi_phat_sinh', 'Doanh thu mới phát sinh trong tháng')}
               </p>
             ) : (
-              <p className="text-xs text-zinc-500 mt-1">{isEn ? 'No revenue recorded this month' : 'Chưa có doanh thu trong tháng này'}</p>
+              <p className="text-xs text-zinc-500 mt-1">{t('chua_co_doanh_thu_trong', 'Chưa có doanh thu trong tháng này')}</p>
             )}
           </div>
         </div>
@@ -243,7 +234,7 @@ export const SaaSDashboardPage: React.FC = () => {
         <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-              {isEn ? 'Total Inventory Value' : 'Tổng Giá Trị Tồn Kho'}
+              {t('dashboard_total_inventory', 'Tổng Giá Trị Tồn Kho')}
             </span>
             <div className="h-9 w-9 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <PackageCheck className="h-5 w-5" />
@@ -255,12 +246,12 @@ export const SaaSDashboardPage: React.FC = () => {
             </h3>
             <p className="text-xs text-zinc-500 mt-1">
               {summaryError
-                ? isEn ? 'Could not load data' : 'Không tải được dữ liệu'
+                ? t('khong_tai_duoc_du_lieu', 'Không tải được dữ liệu')
                 : loading
                   ? ''
                   : (summary?.inventory.categoriesWithStock ?? 0) > 0
-                    ? `${fmt(summary?.inventory.categoriesWithStock ?? 0)} ${isEn ? 'product categories in warehouse' : 'danh mục hàng hóa đang lưu kho'}`
-                    : isEn ? 'No stock in warehouse' : 'Chưa có hàng tồn kho'}
+                    ? `${fmt(summary?.inventory.categoriesWithStock ?? 0)} ${t('danh_muc_hang_hoa_dang', 'danh mục hàng hóa đang lưu kho')}`
+                    : t('chua_co_hang_ton_kho', 'Chưa có hàng tồn kho')}
             </p>
           </div>
         </div>
@@ -269,7 +260,7 @@ export const SaaSDashboardPage: React.FC = () => {
         <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-              {isEn ? 'Accounts Receivable' : 'Phải Thu Khách Hàng'}
+              {t('dashboard_accounts_receivable', 'Phải Thu Khách Hàng')}
             </span>
             <div className="h-9 w-9 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <DollarSign className="h-5 w-5" />
@@ -282,12 +273,12 @@ export const SaaSDashboardPage: React.FC = () => {
             <div className="flex items-center gap-1 mt-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
               <span>
                 {summaryError
-                  ? isEn ? 'Could not load data' : 'Không tải được dữ liệu'
+                  ? t('khong_tai_duoc_du_lieu', 'Không tải được dữ liệu')
                   : loading
                     ? ''
                     : (summary?.receivables.debtors ?? 0) > 0
-                      ? `${fmt(summary?.receivables.debtors ?? 0)} ${isEn ? 'customers with outstanding balance' : 'khách hàng có nợ đọng'}`
-                      : isEn ? 'No outstanding customer debt' : 'Không có khách hàng nợ đọng'}
+                      ? `${fmt(summary?.receivables.debtors ?? 0)} ${t('khach_hang_co_no_dong', 'khách hàng có nợ đọng')}`
+                      : t('khong_co_khach_hang_no', 'Không có khách hàng nợ đọng')}
               </span>
             </div>
           </div>
@@ -297,7 +288,7 @@ export const SaaSDashboardPage: React.FC = () => {
         <div className="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-              {isEn ? 'Accounts Payable' : 'Phải Trả Nhà Cung Cấp'}
+              {t('dashboard_accounts_payable', 'Phải Trả Nhà Cung Cấp')}
             </span>
             <div className="h-9 w-9 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center">
               <FileText className="h-5 w-5" />
@@ -309,12 +300,12 @@ export const SaaSDashboardPage: React.FC = () => {
             </h3>
             <p className="text-xs text-zinc-500 mt-1">
               {summaryError
-                ? isEn ? 'Could not load data' : 'Không tải được dữ liệu'
+                ? t('khong_tai_duoc_du_lieu', 'Không tải được dữ liệu')
                 : loading
                   ? ''
                   : (summary?.payables.suppliers ?? 0) > 0
-                    ? `${fmt(summary?.payables.suppliers ?? 0)} ${isEn ? 'suppliers awaiting payment' : 'nhà cung cấp chưa thanh toán hết'}`
-                    : isEn ? 'No outstanding supplier debt' : 'Không còn nợ nhà cung cấp'}
+                    ? `${fmt(summary?.payables.suppliers ?? 0)} ${t('nha_cung_cap_chua_thanh', 'nhà cung cấp chưa thanh toán hết')}`
+                    : t('khong_con_no_nha_cung', 'Không còn nợ nhà cung cấp')}
             </p>
           </div>
         </div>
@@ -326,12 +317,10 @@ export const SaaSDashboardPage: React.FC = () => {
           <div>
             <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />{' '}
-              {isEn ? 'Low Stock Product Alert' : 'Cảnh Báo Sản Phẩm Sắp Hết Hàng'}
+              {t('canh_bao_san_pham_sap', 'Cảnh Báo Sản Phẩm Sắp Hết Hàng')}
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              {isEn
-                ? 'Products with stock below minimum safety threshold requiring immediate stock-in replenishment.'
-                : 'Sản phẩm có tồn kho dưới định mức tối thiểu cần bổ sung phiếu nhập ngay.'}
+              {t('san_pham_co_ton_kho', 'Sản phẩm có tồn kho dưới định mức tối thiểu cần bổ sung phiếu nhập ngay.')}
             </p>
           </div>
         </div>
@@ -340,7 +329,7 @@ export const SaaSDashboardPage: React.FC = () => {
           columns={alertColumns}
           data={alerts}
           searchPlaceholder={
-            isEn ? 'Search SKU code or product alert name...' : 'Tìm kiếm mã SKU hoặc tên sản phẩm cảnh báo...'
+            t('tim_kiem_ma_sku_hoac', 'Tìm kiếm mã SKU hoặc tên sản phẩm cảnh báo...')
           }
         />
       </div>

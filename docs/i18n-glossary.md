@@ -27,6 +27,10 @@
 | Khấu hao lũy kế | Accumulated Depreciation | TK 214 | |
 | Tài sản cố định | Fixed Asset | TK 211 | |
 | Giá trị còn lại | Net Book Value (NBV) | — | |
+| Diễn giải (trên chứng từ kho) | Explanation | — | Cột nhập liệu phiếu nhập/xuất |
+| Thu tiền ngay | Cash on delivery | — | Trạng thái thanh toán trên phiếu xuất |
+| Còn nợ (ghi sổ công nợ) | Outstanding | — | Ghi vào AR/AP |
+| Không thuế / Giảm thuế VAT | Tax exempt / Reduced VAT | — | Nhãn tùy chọn thuế suất 0% · 8% |
 | Sổ cái | General Ledger | — | |
 | Bút toán | Journal Entry | — | |
 | Hạch toán | Post / Book (a transaction) | — | |

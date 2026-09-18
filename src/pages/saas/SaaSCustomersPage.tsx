@@ -283,7 +283,7 @@ export const SaaSCustomersPage: React.FC = () => {
                 handleCopyPassword(cust.password, cust.name);
               }}
               className="p-1 text-zinc-400 hover:text-blue-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
-              title="Sao chép mật khẩu"
+              title={t('saas_customers_sao_chep_mat_khau', 'Sao chép mật khẩu')}
             >
               <Copy className="w-3.5 h-3.5" />
             </button>
@@ -337,14 +337,14 @@ export const SaaSCustomersPage: React.FC = () => {
           <button
             onClick={() => handleOpenEdit(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-            title="Chỉnh sửa thông tin"
+            title={t('suppliers_edit_info', 'Chỉnh sửa thông tin')}
           >
             <Edit2 className="h-4 w-4 text-amber-500" />
           </button>
           <button
             onClick={() => handleDelete(row.original.id, row.original.name)}
             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors cursor-pointer"
-            title="Xóa khách hàng"
+            title={t('saas_customers_xoa_khach_hang', 'Xóa khách hàng')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -358,8 +358,7 @@ export const SaaSCustomersPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Users className="h-6 w-6 text-amber-500" /> Hồ Sơ & Tài Khoản Khách Hàng
-          </h2>
+            <Users className="h-6 w-6 text-amber-500" /> {t('saas_customers_ho_s_tai_khoan_khach_hang', 'Hồ Sơ & Tài Khoản Khách Hàng')}</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
             Quản lý danh sách khách hàng, tài khoản đăng nhập WebShop, xem mắt thần mật khẩu (Eye View) và cấp lại mật khẩu.
           </p>
@@ -368,8 +367,7 @@ export const SaaSCustomersPage: React.FC = () => {
           onClick={handleOpenAdd}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all cursor-pointer"
         >
-          <UserPlus className="h-4 w-4" /> Thêm khách hàng mới
-        </button>
+          <UserPlus className="h-4 w-4" /> {t('saas_customers_them_khach_hang_moi', 'Thêm khách hàng mới')}</button>
       </div>
 
       <DataTable columns={columns} data={customers} searchPlaceholder="Tìm tên khách hàng, SĐT, mã số thuế..." />
@@ -395,32 +393,32 @@ export const SaaSCustomersPage: React.FC = () => {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Tên Khách Hàng / Công ty *</label>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_customers_ten_khach_hang_cong_ty', 'Tên Khách Hàng / Công ty *')}</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Nhập tên khách hàng"
+                  placeholder={t('saas_customers_nhap_ten_khach_hang', 'Nhập tên khách hàng')}
                   className="w-full px-3 py-2 text-sm font-semibold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Phân Loại Khách Hàng</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_customers_phan_loai_khach_hang', 'Phân Loại Khách Hàng')}</label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
                     className="w-full px-3 py-2 text-sm font-semibold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   >
-                    <option value="Khách sỉ">Khách sỉ</option>
-                    <option value="Khách lẻ">Khách lẻ</option>
-                    <option value="Đại lý">Đại lý</option>
+                    <option value="Khách sỉ">{t('saas_customers_khach_si', 'Khách sỉ')}</option>
+                    <option value="Khách lẻ">{t('saas_customers_khach_le', 'Khách lẻ')}</option>
+                    <option value="Đại lý">{t('saas_customers_dai_ly', 'Đại lý')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Số điện thoại</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_register_company_phone', 'Số điện thoại')}</label>
                   <input
                     type="text"
                     value={formData.phone}
@@ -432,7 +430,7 @@ export const SaaSCustomersPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Email đăng nhập WebShop</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_customers_email_d_ng_nhap_webshop', 'Email đăng nhập WebShop')}</label>
                   <input
                     type="email"
                     value={formData.email}
@@ -441,13 +439,13 @@ export const SaaSCustomersPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Mật khẩu WebShop</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_customers_mat_khau_webshop', 'Mật khẩu WebShop')}</label>
                   <div className="relative">
                     <input
                       type={showModalPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="Mật khẩu WebShop"
+                      placeholder={t('saas_customers_mat_khau_webshop', 'Mật khẩu WebShop')}
                       className="w-full pl-3 pr-9 py-2 text-sm font-mono bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                     />
                     <button
@@ -464,7 +462,7 @@ export const SaaSCustomersPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Mã Số Thuế</label>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_register_tax_code', 'Mã Số Thuế')}</label>
                   <input
                     type="text"
                     value={formData.taxCode}
@@ -489,8 +487,7 @@ export const SaaSCustomersPage: React.FC = () => {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer"
                 >
-                  Hủy Bỏ
-                </button>
+                  {t('cancel', 'Hủy Bỏ')}</button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg shadow-xs cursor-pointer"
@@ -546,7 +543,7 @@ export const SaaSCustomersPage: React.FC = () => {
                     className="text-amber-600 dark:text-amber-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <RefreshCw className="w-3 h-3" />
-                    <span>Tạo ngẫu nhiên</span>
+                    <span>{t('saas_customers_tao_ng_u_nhien', 'Tạo ngẫu nhiên')}</span>
                   </button>
                 </div>
 
@@ -575,8 +572,7 @@ export const SaaSCustomersPage: React.FC = () => {
                   onClick={() => setIsResetModalOpen(false)}
                   className="px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold cursor-pointer"
                 >
-                  Hủy
-                </button>
+                  {t('assets_cancel', 'Hủy')}</button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-md flex items-center gap-1.5 cursor-pointer"

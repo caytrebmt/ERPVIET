@@ -41,7 +41,7 @@ import {
 } from '../../services/procurementStore';
 
 export const SaaSPurchasingPage: React.FC = () => {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const isEn = language === 'en';
@@ -100,21 +100,21 @@ export const SaaSPurchasingPage: React.FC = () => {
   const updatePRList = (newPRs: PurchaseRequest[]) => {
     setPRs(newPRs);
     savePRs(newPRs).catch(() => {
-      showToast(isEn ? 'Failed to save PR' : 'Lưu Yêu Cầu Mua Hàng thất bại', 'error');
+      showToast(t('luu_yeu_cau_mua_hang', 'Lưu Yêu Cầu Mua Hàng thất bại'), 'error');
     });
   };
 
   const updateRFQList = (newRFQs: RequestForQuotation[]) => {
     setRFQs(newRFQs);
     saveRFQs(newRFQs).catch(() => {
-      showToast(isEn ? 'Failed to save RFQ' : 'Lưu Yêu Cầu Báo Giá thất bại', 'error');
+      showToast(t('luu_yeu_cau_bao_gia', 'Lưu Yêu Cầu Báo Giá thất bại'), 'error');
     });
   };
 
   const updatePOList = (newPOs: PurchaseOrder[]) => {
     setPOs(newPOs);
     savePOs(newPOs).catch(() => {
-      showToast(isEn ? 'Failed to save PO' : 'Lưu Đơn Mua Hàng thất bại', 'error');
+      showToast(t('luu_don_mua_hang_that', 'Lưu Đơn Mua Hàng thất bại'), 'error');
     });
   };
 
@@ -122,7 +122,7 @@ export const SaaSPurchasingPage: React.FC = () => {
   const handleCreatePR = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPR.reason || newPR.items.length === 0) {
-      showToast(isEn ? 'Please provide reason and items' : 'Vui lòng điền lý do và danh mục vật tư', 'error');
+      showToast(t('vui_long_dien_ly_do', 'Vui lòng điền lý do và danh mục vật tư'), 'error');
       return;
     }
 
@@ -150,7 +150,7 @@ export const SaaSPurchasingPage: React.FC = () => {
 
     updatePRList([created, ...prs]);
     setShowCreatePRModal(false);
-    showToast(isEn ? 'Purchase Request (PR) created' : 'Tạo Yêu Cầu Mua Hàng (PR) thành công!', 'success');
+    showToast(t('tao_yeu_cau_mua_hang', 'Tạo Yêu Cầu Mua Hàng (PR) thành công!'), 'success');
   };
 
   const handleApprovePR = (prId: number) => {
@@ -164,7 +164,7 @@ export const SaaSPurchasingPage: React.FC = () => {
         : p
     );
     updatePRList(updated);
-    showToast(isEn ? 'Approved Purchase Request (PR)' : 'Đã duyệt Yêu Cầu Mua Hàng (PR)!', 'success');
+    showToast(t('da_duyet_yeu_cau_mua', 'Đã duyệt Yêu Cầu Mua Hàng (PR)!'), 'success');
   };
 
   const handleConvertPRToRFQ = (pr: PurchaseRequest) => {
@@ -208,9 +208,7 @@ export const SaaSPurchasingPage: React.FC = () => {
 
     setActiveTab('RFQ');
     showToast(
-      isEn
-        ? `Generated RFQ (${rfqCreated.code}) from PR (${pr.code})`
-        : `Đã tự động tạo Yêu Cầu Báo Giá (${rfqCreated.code}) từ PR (${pr.code})!`,
+      t('da_tu_dong_tao_yeu', 'Đã tự động tạo Yêu Cầu Báo Giá ({{code}}) từ PR ({{code2}})!', { code: rfqCreated.code, code2: pr.code }),
       'success'
     );
   };
@@ -231,13 +229,13 @@ export const SaaSPurchasingPage: React.FC = () => {
       };
     });
     updateRFQList(updatedRFQs);
-    showToast(isEn ? 'Selected winning supplier for RFQ' : 'Đã chọn Nhà Cung Cấp thắng thầu cho RFQ!', 'success');
+    showToast(t('da_chon_nha_cung_cap', 'Đã chọn Nhà Cung Cấp thắng thầu cho RFQ!'), 'success');
   };
 
   const handleConvertRFQToPO = (rfq: RequestForQuotation) => {
     const selectedQuote = rfq.supplier_quotes.find((q) => q.isSelected) || rfq.supplier_quotes[0];
     if (!selectedQuote) {
-      showToast(isEn ? 'Please select a supplier quote first' : 'Vui lòng chọn báo giá Nhà Cung Cấp trước', 'error');
+      showToast(t('vui_long_chon_bao_gia', 'Vui lòng chọn báo giá Nhà Cung Cấp trước'), 'error');
       return;
     }
 
@@ -279,9 +277,7 @@ export const SaaSPurchasingPage: React.FC = () => {
     updatePOList([poCreated, ...pos]);
     setActiveTab('PO');
     showToast(
-      isEn
-        ? `Created PO (${poCreated.po_number}) from RFQ (${rfq.code})`
-        : `Tạo Đơn Mua Hàng (${poCreated.po_number}) từ RFQ (${rfq.code}) thành công!`,
+      t('tao_don_mua_hang_tu', 'Tạo Đơn Mua Hàng ({{po_number}}) từ RFQ ({{code}}) thành công!', { po_number: poCreated.po_number, code: rfq.code }),
       'success'
     );
   };
@@ -290,7 +286,7 @@ export const SaaSPurchasingPage: React.FC = () => {
   const handleApprovePO = (poId: number) => {
     const updated = pos.map((p) => (p.id === poId ? { ...p, status: 'DA_DUYET' as const } : p));
     updatePOList(updated);
-    showToast(isEn ? 'Approved Purchase Order (PO)' : 'Đã duyệt Đơn Mua Hàng (PO)!', 'success');
+    showToast(t('da_duyet_don_mua_hang', 'Đã duyệt Đơn Mua Hàng (PO)!'), 'success');
   };
 
   const handleCreateStockInFromPO = (po: PurchaseOrder) => {
@@ -301,9 +297,7 @@ export const SaaSPurchasingPage: React.FC = () => {
       },
     });
     showToast(
-      isEn
-        ? `Transferring PO ${po.po_number} to Stock-In Receipt...`
-        : `Chuyển đơn PO ${po.po_number} sang Phiếu Nhập Kho...`,
+      t('chuyen_don_po_sang_phieu', 'Chuyển đơn PO {{po_number}} sang Phiếu Nhập Kho...', { po_number: po.po_number }),
       'info'
     );
   };
@@ -348,7 +342,7 @@ export const SaaSPurchasingPage: React.FC = () => {
 
     updatePOList([poCreated, ...pos]);
     setShowCreatePOModal(false);
-    showToast(isEn ? 'Created PO successfully' : 'Lập Đơn Mua Hàng (PO) thành công!', 'success');
+    showToast(t('lap_don_mua_hang_po', 'Lập Đơn Mua Hàng (PO) thành công!'), 'success');
   };
 
   // Status badge styling
@@ -395,13 +389,11 @@ export const SaaSPurchasingPage: React.FC = () => {
             <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
               <Truck className="h-5 w-5 text-amber-400" />
               <span>
-                {isEn ? 'Closed-Loop Procurement & Goods Receipt Lifecycle' : 'Quy Trình Mua Hàng & Nhập Kho Khép Kín (PR ➔ RFQ ➔ PO ➔ Stock-In)'}
+                {t('quy_trinh_mua_hang_nhap', 'Quy Trình Mua Hàng & Nhập Kho Khép Kín (PR ➔ RFQ ➔ PO ➔ Stock-In)')}
               </span>
             </h2>
             <p className="text-xs text-zinc-400 mt-0.5">
-              {isEn
-                ? 'Seamless workflow: Purchase Request (PR) ➔ Supplier Quotation (RFQ) ➔ Purchase Order (PO) ➔ Goods Receipt (Stock-In).'
-                : 'Quy trình hoàn chỉnh: Đề xuất mua hàng (PR) ➔ Yêu cầu báo giá (RFQ) ➔ Đơn mua hàng (PO) ➔ Nhập kho lưu kho tự động.'}
+              {t('quy_trinh_hoan_chinh_de', 'Quy trình hoàn chỉnh: Đề xuất mua hàng (PR) ➔ Yêu cầu báo giá (RFQ) ➔ Đơn mua hàng (PO) ➔ Nhập kho lưu kho tự động.')}
             </p>
           </div>
           
@@ -411,7 +403,7 @@ export const SaaSPurchasingPage: React.FC = () => {
               className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold rounded-lg flex items-center gap-1.5 border border-zinc-700 transition-colors"
             >
               <ArrowDownLeft className="h-4 w-4 text-emerald-400" />
-              <span>{isEn ? 'View Goods Receipts' : 'Xem Sổ Nhập Kho'}</span>
+              <span>{t('saas_purchasing_xem_so_nhap_kho', 'Xem Sổ Nhập Kho')}</span>
             </button>
           </div>
         </div>
@@ -429,8 +421,7 @@ export const SaaSPurchasingPage: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                BƯỚC 1
-              </span>
+                {t('saas_purchasing_b_oc_1', 'BƯỚC 1')}</span>
               <FileSpreadsheet className="h-4 w-4 text-amber-400" />
             </div>
             <div className="font-bold text-sm text-zinc-100 mt-2">1. Yêu Cầu Mua Hàng (PR)</div>
@@ -448,8 +439,7 @@ export const SaaSPurchasingPage: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
-                BƯỚC 2
-              </span>
+                {t('saas_purchasing_b_oc_2', 'BƯỚC 2')}</span>
               <Send className="h-4 w-4 text-purple-400" />
             </div>
             <div className="font-bold text-sm text-zinc-100 mt-2">2. Yêu Cầu Báo Giá (RFQ)</div>
@@ -467,8 +457,7 @@ export const SaaSPurchasingPage: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
-                BƯỚC 3
-              </span>
+                {t('saas_purchasing_b_oc_3', 'BƯỚC 3')}</span>
               <ShoppingCart className="h-4 w-4 text-blue-400" />
             </div>
             <div className="font-bold text-sm text-zinc-100 mt-2">3. Đơn Mua Hàng (PO)</div>
@@ -482,8 +471,7 @@ export const SaaSPurchasingPage: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                BƯỚC 4
-              </span>
+                {t('saas_purchasing_b_oc_4', 'BƯỚC 4')}</span>
               <PackageCheck className="h-4 w-4 text-emerald-400 group-hover:scale-110 transition-transform" />
             </div>
             <div className="font-bold text-sm text-zinc-100 mt-2 flex items-center justify-between">
@@ -553,7 +541,7 @@ export const SaaSPurchasingPage: React.FC = () => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm kiếm theo mã, từ khóa..."
+              placeholder={t('saas_purchasing_tim_kiem_theo_ma_t_khoa', 'Tìm kiếm theo mã, từ khóa...')}
               className="w-full pl-9 pr-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500/50"
             />
           </div>
@@ -564,7 +552,7 @@ export const SaaSPurchasingPage: React.FC = () => {
               className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-zinc-950 text-xs font-bold rounded-lg flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
             >
               <Plus className="h-4 w-4" />
-              <span>Lập Yêu Cầu PR</span>
+              <span>{t('saas_purchasing_lap_yeu_cau_pr', 'Lập Yêu Cầu PR')}</span>
             </button>
           )}
 
@@ -574,7 +562,7 @@ export const SaaSPurchasingPage: React.FC = () => {
               className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-zinc-950 text-xs font-bold rounded-lg flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
             >
               <Plus className="h-4 w-4" />
-              <span>Lập Đơn Mua PO</span>
+              <span>{t('saas_purchasing_lap_d_n_mua_po', 'Lập Đơn Mua PO')}</span>
             </button>
           )}
         </div>
@@ -599,14 +587,14 @@ export const SaaSPurchasingPage: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 uppercase font-semibold">
                 <tr>
-                  <th className="px-4 py-3">Mã PR</th>
-                  <th className="px-4 py-3">Phòng Ban Đề Xuất</th>
-                  <th className="px-4 py-3">Ngày Đề Xuất</th>
-                  <th className="px-4 py-3">Mức Độ Ưu Tiên</th>
-                  <th className="px-4 py-3">Lý Do / Mục Đích</th>
-                  <th className="px-4 py-3">Dự Kiến Kinh Phí</th>
-                  <th className="px-4 py-3">Trạng Thái</th>
-                  <th className="px-4 py-3 text-right">Thao Tác Quy Trình</th>
+                  <th className="px-4 py-3">{t('saas_purchasing_ma_pr', 'Mã PR')}</th>
+                  <th className="px-4 py-3">{t('saas_purchasing_phong_ban_de_xuat', 'Phòng Ban Đề Xuất')}</th>
+                  <th className="px-4 py-3">{t('saas_purchasing_ngay_de_xuat', 'Ngày Đề Xuất')}</th>
+                  <th className="px-4 py-3">{t('saas_purchasing_muc_do_u_tien', 'Mức Độ Ưu Tiên')}</th>
+                  <th className="px-4 py-3">{t('saas_purchasing_ly_do_muc_dich', 'Lý Do / Mục Đích')}</th>
+                  <th className="px-4 py-3">{t('saas_purchasing_du_kien_kinh_phi', 'Dự Kiến Kinh Phí')}</th>
+                  <th className="px-4 py-3">{t('status', 'Trạng Thái')}</th>
+                  <th className="px-4 py-3 text-right">{t('saas_purchasing_thao_tac_quy_trinh', 'Thao Tác Quy Trình')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -655,7 +643,7 @@ export const SaaSPurchasingPage: React.FC = () => {
                           <button
                             onClick={() => setViewingPR(pr)}
                             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors"
-                            title="Xem chi tiết phiếu PR"
+                            title={t('saas_purchasing_xem_chi_tiet_phieu_pr', 'Xem chi tiết phiếu PR')}
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -666,7 +654,7 @@ export const SaaSPurchasingPage: React.FC = () => {
                               className="px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 rounded-md text-[11px] font-semibold flex items-center gap-1"
                             >
                               <Check className="h-3 w-3" />
-                              <span>Duyệt</span>
+                              <span>{t('saas_purchasing_duyet', 'Duyệt')}</span>
                             </button>
                           )}
 
@@ -677,7 +665,7 @@ export const SaaSPurchasingPage: React.FC = () => {
                               title="Chuyển PR thành Đơn Yêu Cầu Báo Giá (RFQ)"
                             >
                               <Send className="h-3 w-3" />
-                              <span>Tạo RFQ</span>
+                              <span>{t('saas_purchasing_tao_rfq', 'Tạo RFQ')}</span>
                             </button>
                           )}
                         </div>
@@ -767,8 +755,7 @@ export const SaaSPurchasingPage: React.FC = () => {
 
                           {quote.isSelected ? (
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500 text-zinc-950 flex items-center gap-1">
-                              <Check className="h-3 w-3" /> Đã Chọn
-                            </span>
+                              <Check className="h-3 w-3" /> {t('saas_purchasing_da_chon', 'Đã Chọn')}</span>
                           ) : (
                             <button
                               onClick={() => handleSelectRFQSupplier(rfq.id, quote.supplierId)}
@@ -781,14 +768,14 @@ export const SaaSPurchasingPage: React.FC = () => {
 
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs border-t border-zinc-800/80 pt-2">
                           <div>
-                            <span className="text-zinc-500 block text-[10px]">Tổng Giá Báo Chào:</span>
+                            <span className="text-zinc-500 block text-[10px]">{t('saas_purchasing_tong_gia_bao_chao', 'Tổng Giá Báo Chào:')}</span>
                             <span className="font-bold text-amber-400 text-sm">
                               {quote.quotedPriceTotal.toLocaleString('vi-VN')} đ
                             </span>
                           </div>
                           <div>
-                            <span className="text-zinc-500 block text-[10px]">Thời Gian Giao Hàng:</span>
-                            <span className="font-semibold text-zinc-200">{quote.deliveryDays} ngày</span>
+                            <span className="text-zinc-500 block text-[10px]">{t('saas_purchasing_thoi_gian_giao_hang', 'Thời Gian Giao Hàng:')}</span>
+                            <span className="font-semibold text-zinc-200">{quote.deliveryDays} {t('audit_days', 'ngày')}</span>
                           </div>
                         </div>
 
@@ -826,14 +813,14 @@ export const SaaSPurchasingPage: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 uppercase font-semibold">
                 <tr>
-                  <th className="px-4 py-3">Mã Đơn PO</th>
+                  <th className="px-4 py-3">{t('saas_purchasing_ma_d_n_po', 'Mã Đơn PO')}</th>
                   <th className="px-4 py-3">Liên Kết Chứng Từ</th>
-                  <th className="px-4 py-3">Nhà Cung Cấp</th>
+                  <th className="px-4 py-3">{t('menu_suppliers', 'Nhà Cung Cấp')}</th>
                   <th className="px-4 py-3">Ngày Đặt Hàng</th>
-                  <th className="px-4 py-3">Hạn Giao Hàng</th>
+                  <th className="px-4 py-3">{t('saas_purchasing_han_giao_hang', 'Hạn Giao Hàng')}</th>
                   <th className="px-4 py-3">Tổng Giá Trị (VAT)</th>
-                  <th className="px-4 py-3">Trạng Thái PO</th>
-                  <th className="px-4 py-3 text-right">Thao Tác Nhập Kho</th>
+                  <th className="px-4 py-3">{t('saas_purchasing_trang_thai_po', 'Trạng Thái PO')}</th>
+                  <th className="px-4 py-3 text-right">{t('saas_purchasing_thao_tac_nhap_kho', 'Thao Tác Nhập Kho')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -909,8 +896,7 @@ export const SaaSPurchasingPage: React.FC = () => {
 
                           {po.status === 'DA_NHAP_KHO' && (
                             <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1">
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Hoàn Tất
-                            </span>
+                              <CheckCircle2 className="h-3.5 w-3.5" /> {t('saas_purchasing_hoan_tat', 'Hoàn Tất')}</span>
                           )}
                         </div>
                       </td>
@@ -934,39 +920,36 @@ export const SaaSPurchasingPage: React.FC = () => {
             <form onSubmit={handleCreatePR} className="space-y-3 text-xs">
               <div>
                 <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Phòng Ban Đề Xuất *
-                </label>
+                  {t('saas_purchasing_phong_ban_de_xuat_1', 'Phòng Ban Đề Xuất *')}</label>
                 <select
                   value={newPR.department}
                   onChange={(e) => setNewPR({ ...newPR, department: e.target.value })}
                   className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 font-semibold"
                 >
-                  <option value="Kế Toán & Hành Chính">Kế Toán & Hành Chính</option>
-                  <option value="Kho Trung Tâm - Hà Nội">Kho Trung Tâm - Hà Nội</option>
-                  <option value="Phòng Sản Xuất & Kỹ Thuật">Phòng Sản Xuất & Kỹ Thuật</option>
-                  <option value="Phòng Kinh Doanh & Dự Án">Phòng Kinh Doanh & Dự Án</option>
+                  <option value="Kế Toán & Hành Chính">{t('saas_purchasing_ke_toan_hanh_chinh', 'Kế Toán & Hành Chính')}</option>
+                  <option value="Kho Trung Tâm - Hà Nội">{t('saas_purchasing_kho_trung_tam_ha_noi', 'Kho Trung Tâm - Hà Nội')}</option>
+                  <option value="Phòng Sản Xuất & Kỹ Thuật">{t('saas_purchasing_phong_san_xuat_ky_thuat', 'Phòng Sản Xuất & Kỹ Thuật')}</option>
+                  <option value="Phòng Kinh Doanh & Dự Án">{t('saas_purchasing_phong_kinh_doanh_du_an', 'Phòng Kinh Doanh & Dự Án')}</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Mức Độ Ưu Tiên
-                  </label>
+                    {t('saas_purchasing_muc_do_u_tien', 'Mức Độ Ưu Tiên')}</label>
                   <select
                     value={newPR.priority}
                     onChange={(e: any) => setNewPR({ ...newPR, priority: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                   >
-                    <option value="THUONG">Bình thường</option>
-                    <option value="CAO">Ưu tiên cao</option>
-                    <option value="KHAN_CAP">Khẩn cấp</option>
+                    <option value="THUONG">{t('saas_purchasing_binh_th_ong', 'Bình thường')}</option>
+                    <option value="CAO">{t('saas_purchasing_u_tien_cao', 'Ưu tiên cao')}</option>
+                    <option value="KHAN_CAP">{t('saas_purchasing_khan_cap', 'Khẩn cấp')}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Số Lượng Đặt Mua
-                  </label>
+                    {t('saas_purchasing_so_l_ong_d_t_mua', 'Số Lượng Đặt Mua')}</label>
                   <input
                     type="number"
                     min="1"
@@ -984,8 +967,7 @@ export const SaaSPurchasingPage: React.FC = () => {
 
               <div>
                 <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Lý Do / Mục Đích Mua Hàng *
-                </label>
+                  {t('saas_purchasing_ly_do_muc_dich_mua_hang', 'Lý Do / Mục Đích Mua Hàng *')}</label>
                 <textarea
                   required
                   rows={2}
@@ -1002,14 +984,12 @@ export const SaaSPurchasingPage: React.FC = () => {
                   onClick={() => setShowCreatePRModal(false)}
                   className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg"
                 >
-                  Hủy bỏ
-                </button>
+                  {t('cancel', 'Hủy bỏ')}</button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-lg"
                 >
-                  Tạo Yêu Cầu PR
-                </button>
+                  {t('saas_purchasing_tao_yeu_cau_pr', 'Tạo Yêu Cầu PR')}</button>
               </div>
             </form>
           </div>
@@ -1028,8 +1008,7 @@ export const SaaSPurchasingPage: React.FC = () => {
             <form onSubmit={handleCreateManualPO} className="space-y-3 text-xs">
               <div>
                 <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Tên Nhà Cung Cấp *
-                </label>
+                  {t('suppliers_label_name', 'Tên Nhà Cung Cấp *')}</label>
                 <input
                   type="text"
                   required
@@ -1042,8 +1021,7 @@ export const SaaSPurchasingPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Số Lượng Đặt Mua
-                  </label>
+                    {t('saas_purchasing_so_l_ong_d_t_mua', 'Số Lượng Đặt Mua')}</label>
                   <input
                     type="number"
                     min="1"
@@ -1077,8 +1055,7 @@ export const SaaSPurchasingPage: React.FC = () => {
 
               <div>
                 <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Hạn Giao Hàng Dự Kiến
-                </label>
+                  {t('saas_purchasing_han_giao_hang_du_kien', 'Hạn Giao Hàng Dự Kiến')}</label>
                 <input
                   type="date"
                   value={newPO.expected_delivery}
@@ -1093,14 +1070,12 @@ export const SaaSPurchasingPage: React.FC = () => {
                   onClick={() => setShowCreatePOModal(false)}
                   className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg"
                 >
-                  Hủy bỏ
-                </button>
+                  {t('cancel', 'Hủy bỏ')}</button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-lg"
                 >
-                  Tạo Đơn PO
-                </button>
+                  {t('saas_purchasing_tao_d_n_po', 'Tạo Đơn PO')}</button>
               </div>
             </form>
           </div>
@@ -1124,25 +1099,25 @@ export const SaaSPurchasingPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3 bg-zinc-950/50 p-3 rounded-lg border border-zinc-800">
                 <div>
-                  <span className="text-zinc-500 block">Phòng ban:</span>
+                  <span className="text-zinc-500 block">{t('saas_purchasing_phong_ban', 'Phòng ban:')}</span>
                   <span className="font-bold text-zinc-200">{viewingPR.department}</span>
                 </div>
                 <div>
-                  <span className="text-zinc-500 block">Người lập:</span>
+                  <span className="text-zinc-500 block">{t('saas_purchasing_ng_oi_lap', 'Người lập:')}</span>
                   <span className="font-bold text-zinc-200">{viewingPR.creator}</span>
                 </div>
                 <div>
-                  <span className="text-zinc-500 block">Ngày yêu cầu:</span>
+                  <span className="text-zinc-500 block">{t('saas_purchasing_ngay_yeu_cau', 'Ngày yêu cầu:')}</span>
                   <span className="text-zinc-300">{viewingPR.request_date}</span>
                 </div>
                 <div>
-                  <span className="text-zinc-500 block">Hạn cần hàng:</span>
+                  <span className="text-zinc-500 block">{t('saas_purchasing_han_can_hang', 'Hạn cần hàng:')}</span>
                   <span className="text-zinc-300">{viewingPR.required_date}</span>
                 </div>
               </div>
 
               <div>
-                <span className="text-zinc-400 font-bold block mb-1">Lý do mua hàng:</span>
+                <span className="text-zinc-400 font-bold block mb-1">{t('saas_purchasing_ly_do_mua_hang', 'Lý do mua hàng:')}</span>
                 <p className="text-zinc-200 bg-zinc-800/60 p-2 rounded">{viewingPR.reason}</p>
               </div>
 
@@ -1174,8 +1149,7 @@ export const SaaSPurchasingPage: React.FC = () => {
                 onClick={() => setViewingPR(null)}
                 className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-xs"
               >
-                Đóng
-              </button>
+                {t('saas_web_orders_dong', 'Đóng')}</button>
             </div>
           </div>
         </div>
@@ -1198,15 +1172,15 @@ export const SaaSPurchasingPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">Nhà Cung Cấp:</span>
+                  <span className="text-zinc-500">{t('saas_purchasing_nha_cung_cap_1', 'Nhà Cung Cấp:')}</span>
                   <span className="font-bold text-zinc-100">{viewingPO.supplier_name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">SĐT Liên hệ:</span>
+                  <span className="text-zinc-500">{t('saas_purchasing_sdt_lien_he', 'SĐT Liên hệ:')}</span>
                   <span className="text-zinc-300">{viewingPO.supplier_phone}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">Địa chỉ:</span>
+                  <span className="text-zinc-500">{t('saas_purchasing_dia_chi', 'Địa chỉ:')}</span>
                   <span className="text-zinc-300">{viewingPO.supplier_address}</span>
                 </div>
               </div>
@@ -1232,7 +1206,7 @@ export const SaaSPurchasingPage: React.FC = () => {
 
               <div className="border-t border-zinc-800 pt-2 space-y-1 text-right">
                 <div className="flex justify-between">
-                  <span className="text-zinc-400">Tiền hàng trước thuế:</span>
+                  <span className="text-zinc-400">{t('saas_purchasing_tien_hang_tr_oc_thue', 'Tiền hàng trước thuế:')}</span>
                   <span className="font-semibold text-zinc-200">{viewingPO.subtotal.toLocaleString('vi-VN')} đ</span>
                 </div>
                 <div className="flex justify-between">
@@ -1240,7 +1214,7 @@ export const SaaSPurchasingPage: React.FC = () => {
                   <span className="font-semibold text-zinc-200">{viewingPO.vat_amount.toLocaleString('vi-VN')} đ</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold pt-1 border-t border-zinc-800">
-                  <span className="text-amber-400">TỔNG CỘNG THANH TOÁN:</span>
+                  <span className="text-amber-400">{t('saas_purchasing_tong_cong_thanh_toan', 'TỔNG CỘNG THANH TOÁN:')}</span>
                   <span className="text-amber-400">{viewingPO.total_amount.toLocaleString('vi-VN')} đ</span>
                 </div>
               </div>
@@ -1251,8 +1225,7 @@ export const SaaSPurchasingPage: React.FC = () => {
                 onClick={() => setViewingPO(null)}
                 className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-xs"
               >
-                Đóng
-              </button>
+                {t('saas_web_orders_dong', 'Đóng')}</button>
               {viewingPO.status !== 'DA_NHAP_KHO' && (
                 <button
                   onClick={() => {
@@ -1263,7 +1236,7 @@ export const SaaSPurchasingPage: React.FC = () => {
                   className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold rounded-lg text-xs flex items-center gap-1.5"
                 >
                   <ArrowDownLeft className="h-4 w-4" />
-                  <span>Chuyển Sang Nhập Kho</span>
+                  <span>{t('saas_purchasing_chuyen_sang_nhap_kho', 'Chuyển Sang Nhập Kho')}</span>
                 </button>
               )}
             </div>

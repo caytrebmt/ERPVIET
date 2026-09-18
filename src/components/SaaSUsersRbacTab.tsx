@@ -38,6 +38,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTranslation } from 'react-i18next';
 import client from '../api/client';
+import { pickLocalized } from '../utils/localized';
 
 export interface Department {
   id: string;
@@ -160,7 +161,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
         setUsersList(items.map((u: any) => ({
           id: String(u.id), username: u.username, fullName: u.full_name || u.username,
           email: u.email || '', phone: u.phone || '',
-          department: (language === 'en' ? u.dept_name_en : u.dept_name_vi) || u.department_id || 'Chưa phân bổ',
+          department: (pickLocalized(language === 'en', u.dept_name_en, u.dept_name_vi)) || u.department_id || 'Chưa phân bổ',
           departmentId: u.dept_id ? String(u.dept_id) : '', roleId: String(u.role_id || 5),
           roleName: u.role_name_vi || u.role_name_en || 'Nhân Viên',
           status: u.status === 'locked' ? 'locked' : 'active',
@@ -289,9 +290,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
   const handleCopyPassword = (pass: string, name: string) => {
     navigator.clipboard.writeText(pass);
     addToast(
-      language === 'en'
-        ? `Password for ${name} copied to clipboard!`
-        : `Đã sao chép mật khẩu của ${name} vào bộ nhớ tạm!`,
+      t('da_sao_chep_mat_khau', 'Đã sao chép mật khẩu của {{name}} vào bộ nhớ tạm!', { name: name }),
       'success'
     );
   };
@@ -327,7 +326,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
     e.preventDefault();
     if (resetWebshopTargetUser) {
       if (!newResetPassword.trim()) {
-        addToast(language === 'en' ? 'Please enter a valid password' : 'Vui lòng nhập mật khẩu mới', 'error');
+        addToast(t('vui_long_nhap_mat_khau', 'Vui lòng nhập mật khẩu mới'), 'error');
         return;
       }
       try {
@@ -336,14 +335,12 @@ export const SaaSUsersRbacTab: React.FC = () => {
           email: resetWebshopTargetUser.email,
         });
       } catch (error: any) {
-        addToast(error?.response?.data?.message || (language === 'en' ? 'Password reset failed' : 'Cấp lại mật khẩu thất bại'), 'error');
+        addToast(error?.response?.data?.message || (t('cap_lai_mat_khau_that', 'Cấp lại mật khẩu thất bại')), 'error');
         return;
       }
       // The new password is never stored in React state or localStorage.
       addToast(
-        language === 'en'
-          ? `WebShop password for ${resetWebshopTargetUser.name} successfully reset!`
-          : `Đã cấp lại mật khẩu WebShop cho ${resetWebshopTargetUser.name} thành công!`,
+        t('da_cap_lai_mat_khau', 'Đã cấp lại mật khẩu WebShop cho {{name}} thành công!', { name: resetWebshopTargetUser.name }),
         'success'
       );
       setIsResetModalOpen(false);
@@ -352,7 +349,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
     }
 
     if (!resetTargetUser || !newResetPassword.trim()) {
-      addToast(language === 'en' ? 'Please enter a valid password' : 'Vui lòng nhập mật khẩu mới', 'error');
+      addToast(t('vui_long_nhap_mat_khau', 'Vui lòng nhập mật khẩu mới'), 'error');
       return;
     }
 
@@ -363,13 +360,11 @@ export const SaaSUsersRbacTab: React.FC = () => {
       );
       persistUsers(updated);
       addToast(
-        language === 'en'
-          ? `Password for ${resetTargetUser.fullName} successfully reset!`
-          : `Đã cấp lại mật khẩu mới cho ${resetTargetUser.fullName} thành công!`,
+        t('da_cap_lai_mat_khau_2', 'Đã cấp lại mật khẩu mới cho {{fullname}} thành công!', { fullname: resetTargetUser.fullName }),
         'success'
       );
     } catch (err: any) {
-      addToast(err.response?.data?.message || (language === 'en' ? 'Password reset failed' : 'Cấp lại mật khẩu thất bại'), 'error');
+      addToast(err.response?.data?.message || (t('cap_lai_mat_khau_that', 'Cấp lại mật khẩu thất bại')), 'error');
     }
     setIsResetModalOpen(false);
     setResetTargetUser(null);
@@ -402,7 +397,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
       fullName: '',
       email: '',
       phone: '',
-      department: defaultDept ? (language === 'en' ? defaultDept.nameEn : defaultDept.nameVi) : '',
+      department: defaultDept ? (pickLocalized(language === 'en', defaultDept.nameEn, defaultDept.nameVi)) : '',
       departmentId: defaultDept ? defaultDept.id : '',
       roleId: 'sales_rep',
       password: '',
@@ -435,7 +430,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
     e.preventDefault();
     if (!userFormData.username || !userFormData.fullName || (!editingUserId && !userFormData.password.trim())) {
       addToast(
-        language === 'en' ? 'Please enter username and full name' : 'Vui lòng nhập tên đăng nhập và họ tên',
+        t('vui_long_nhap_ten_dang', 'Vui lòng nhập tên đăng nhập và họ tên'),
         'error'
       );
       return;
@@ -445,14 +440,14 @@ export const SaaSUsersRbacTab: React.FC = () => {
     // (TENANT_REQUIRED) to keep every tenant's staff list separated.
     if (!editingUserId && isSuperAdmin && !userFormData.companyId) {
       addToast(
-        language === 'en' ? 'Please select the company (tenant) for this user' : 'Vui lòng chọn doanh nghiệp (tenant) cho tài khoản này',
+        t('vui_long_chon_doanh_nghiep', 'Vui lòng chọn doanh nghiệp (tenant) cho tài khoản này'),
         'error'
       );
       return;
     }
 
     const matchedRole = rolesList.find((r) => r.id === userFormData.roleId);
-    const roleName = matchedRole ? (language === 'en' ? matchedRole.nameEn : matchedRole.nameVi) : userFormData.roleId;
+    const roleName = matchedRole ? (pickLocalized(language === 'en', matchedRole.nameEn, matchedRole.nameVi)) : userFormData.roleId;
     const backendRoleId = mapRoleIdToBackend(userFormData.roleId);
 
     try {
@@ -493,9 +488,9 @@ export const SaaSUsersRbacTab: React.FC = () => {
               : u
           );
           persistUsers(updated);
-          addToast(language === 'en' ? 'User profile updated!' : 'Đã cập nhật thông tin người dùng!', 'success');
+          addToast(t('da_cap_nhat_thong_tin', 'Đã cập nhật thông tin người dùng!'), 'success');
         } else {
-          addToast(res.data?.message || (language === 'en' ? 'Update failed' : 'Cập nhật thất bại'), 'error');
+          addToast(res.data?.message || (t('auth_profile_update_failed', 'Cập nhật thất bại')), 'error');
         }
       } else {
         const res = await client.post('/api/saas/users', {
@@ -531,13 +526,13 @@ export const SaaSUsersRbacTab: React.FC = () => {
             companyName: chosenTenant?.name || '',
           };
           persistUsers([...usersList, newUser]);
-          addToast(language === 'en' ? 'Added new user successfully!' : 'Đã thêm tài khoản người dùng mới thành công!', 'success');
+          addToast(t('da_them_tai_khoan_nguoi', 'Đã thêm tài khoản người dùng mới thành công!'), 'success');
         } else {
-          addToast(res.data?.message || (language === 'en' ? 'Creation failed' : 'Tạo tài khoản thất bại'), 'error');
+          addToast(res.data?.message || (t('tao_tai_khoan_that_bai', 'Tạo tài khoản thất bại')), 'error');
         }
       }
     } catch (err: any) {
-      addToast(err.response?.data?.message || (language === 'en' ? 'Operation failed' : 'Thao tác thất bại'), 'error');
+      addToast(err.response?.data?.message || (t('saas_tenants_thao_tac_that_bai', 'Thao tác thất bại')), 'error');
     }
 
     setIsUserModalOpen(false);
@@ -556,25 +551,25 @@ export const SaaSUsersRbacTab: React.FC = () => {
       persistUsers(updated);
       addToast(
         nextStatus === 'locked'
-          ? language === 'en' ? `Account ${user.username} locked!` : `Đã khóa tài khoản ${user.username}!`
-          : language === 'en' ? `Account ${user.username} unlocked!` : `Đã mở khóa tài khoản ${user.username}!`,
+          ? t('da_khoa_tai_khoan_account', 'Đã khóa tài khoản {{username}}!', { username: user.username })
+          : t('da_mo_khoa_tai_khoan', 'Đã mở khóa tài khoản {{username}}!', { username: user.username }),
         'info'
       );
     } catch (err: any) {
-      addToast(err.response?.data?.message || (language === 'en' ? 'Failed to update status' : 'Cập nhật trạng thái thất bại'), 'error');
+      addToast(err.response?.data?.message || (t('cap_nhat_trang_thai_that', 'Cập nhật trạng thái thất bại')), 'error');
     }
   };
 
   const handleDeleteUser = async (userId: string, name: string) => {
-    if (!window.confirm(language === 'en' ? `Are you sure you want to delete user ${name}?` : `Bạn có chắc chắn muốn xóa người dùng ${name}?`)) return;
+    if (!window.confirm(t('ban_co_chac_chan_muon_2', 'Bạn có chắc chắn muốn xóa người dùng {{name}}?', { name: name }))) return;
 
     try {
       await client.delete(`/api/saas/users/${userId}`);
       const updated = usersList.filter((u) => u.id !== userId);
       persistUsers(updated);
-      addToast(language === 'en' ? 'User deleted from system!' : 'Đã xóa người dùng khỏi hệ thống!', 'warning');
+      addToast(t('da_xoa_nguoi_dung_khoi', 'Đã xóa người dùng khỏi hệ thống!'), 'warning');
     } catch (err: any) {
-      addToast(err.response?.data?.message || (language === 'en' ? 'Delete failed' : 'Xóa thất bại'), 'error');
+      addToast(err.response?.data?.message || (t('xoa_that_bai_delete_failed', 'Xóa thất bại')), 'error');
     }
   };
 
@@ -595,9 +590,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
 
     persistRoles(updatedRoles);
     addToast(
-      language === 'en'
-        ? `Permission updated for role ${activeRoleObj.nameEn || activeRoleObj.nameVi}`
-        : `Đã cập nhật ma trận phân quyền cho vai trò ${activeRoleObj.nameVi}`,
+      t('da_cap_nhat_ma_tran', 'Đã cập nhật ma trận phân quyền cho vai trò {{namevi}}', { namevi: activeRoleObj.nameVi }),
       'info'
     );
   };
@@ -621,8 +614,8 @@ export const SaaSUsersRbacTab: React.FC = () => {
     persistRoles(updatedRoles);
     addToast(
       nextVal
-        ? language === 'en' ? `Granted all permissions for ${moduleCode}` : `Đã cấp tất cả quyền cho mô-đun ${moduleCode}`
-        : language === 'en' ? `Revoked permissions for ${moduleCode}` : `Đã bỏ chọn tất cả quyền của mô-đun ${moduleCode}`,
+        ? t('da_cap_tat_ca_quyen', 'Đã cấp tất cả quyền cho mô-đun {{modulecode}}', { modulecode: moduleCode })
+        : t('da_bo_chon_tat_ca', 'Đã bỏ chọn tất cả quyền của mô-đun {{modulecode}}', { modulecode: moduleCode }),
       'info'
     );
   };
@@ -650,7 +643,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
   const handleCreateNewRole = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRoleForm.nameVi) {
-      addToast(language === 'en' ? 'Please enter role name' : 'Vui lòng nhập tên vai trò mới', 'error');
+      addToast(t('vui_long_nhap_ten_vai', 'Vui lòng nhập tên vai trò mới'), 'error');
       return;
     }
 
@@ -671,21 +664,21 @@ export const SaaSUsersRbacTab: React.FC = () => {
     setSelectedRoleId(roleId);
     setIsNewRoleModalOpen(false);
     setNewRoleForm({ id: '', nameVi: '', nameEn: '', description: '' });
-    addToast(language === 'en' ? 'Created custom role successfully!' : 'Đã khởi tạo vai trò mới thành công!', 'success');
+    addToast(t('da_khoi_tao_vai_tro', 'Đã khởi tạo vai trò mới thành công!'), 'success');
   };
 
   const handleDeleteRole = (roleId: string) => {
     const role = rolesList.find((r) => r.id === roleId);
     if (role?.isSystem) {
-      addToast(language === 'en' ? 'Cannot delete system default roles!' : 'Không thể xóa vai trò mặc định của hệ thống!', 'error');
+      addToast(t('khong_the_xoa_vai_tro', 'Không thể xóa vai trò mặc định của hệ thống!'), 'error');
       return;
     }
 
-    if (window.confirm(language === 'en' ? `Delete role ${role?.nameVi}?` : `Bạn có chắc muốn xóa vai trò ${role?.nameVi}?`)) {
+    if (window.confirm(t('ban_co_chac_muon_xoa_6', 'Bạn có chắc muốn xóa vai trò {{namevi}}?', { namevi: role?.nameVi }))) {
       const updated = rolesList.filter((r) => r.id !== roleId);
       persistRoles(updated);
       setSelectedRoleId('admin');
-      addToast(language === 'en' ? 'Role removed!' : 'Đã xóa vai trò khỏi danh sách!', 'warning');
+      addToast(t('da_xoa_vai_tro_khoi', 'Đã xóa vai trò khỏi danh sách!'), 'warning');
     }
   };
 
@@ -707,7 +700,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
   // Departments list for filter — merge API-fetched departments with any observed in user data
   const departments = useMemo(() => {
     const fromUsers = Array.from(new Set(usersList.map((u) => u.department || 'Ban Giám Đốc')));
-    const fromApi = allDepartments.map((d) => language === 'en' ? d.nameEn : d.nameVi);
+    const fromApi = allDepartments.map((d) => pickLocalized(language === 'en', d.nameEn, d.nameVi));
     return Array.from(new Set([...fromApi, ...fromUsers]));
   }, [usersList, allDepartments, language]);
 
@@ -719,15 +712,11 @@ export const SaaSUsersRbacTab: React.FC = () => {
           <div className="flex items-center gap-2 mb-1">
             <ShieldCheck className="h-6 w-6 text-emerald-400" />
             <h2 className="text-lg font-black tracking-wide">
-              {language === 'en'
-                ? 'User Management & Role-Based Access Control (RBAC Matrix)'
-                : 'Quản Trị Người Dùng & Ma Trận Phân Quyền Vai Trò (RBAC Matrix)'}
+              {t('quan_tri_nguoi_dung_ma', 'Quản Trị Người Dùng & Ma Trận Phân Quyền Vai Trò (RBAC Matrix)')}
             </h2>
           </div>
           <p className="text-xs text-zinc-300 max-w-2xl">
-            {language === 'en'
-              ? 'Add users, manage accounts, define granular matrix permissions per system module (View, Create, Edit, Delete, Export, Approve).'
-              : 'Thêm tài khoản, phân quyền ma trận phân chia chi tiết chức năng (Xem, Thêm, Sửa, Xóa, Xuất dữ liệu, Phê duyệt) theo từng vai trò & phòng ban.'}
+            {t('them_tai_khoan_phan_quyen', 'Thêm tài khoản, phân quyền ma trận phân chia chi tiết chức năng (Xem, Thêm, Sửa, Xóa, Xuất dữ liệu, Phê duyệt) theo từng vai trò & phòng ban.')}
           </p>
         </div>
 
@@ -741,7 +730,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
             }`}
           >
             <Users className="h-4 w-4" />
-            <span>{language === 'en' ? 'ERP Staff' : 'Nhân Viên ERP'} ({usersList.length})</span>
+            <span>{t('topbar_erp_staff', 'Nhân Viên ERP')} ({usersList.length})</span>
           </button>
 
           <button
@@ -753,7 +742,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
             }`}
           >
             <ShoppingBag className="h-4 w-4 text-amber-400" />
-            <span>{language === 'en' ? 'WebShop Users' : 'Khách Hàng WebShop'} ({webshopUsers.length})</span>
+            <span>{t('khach_hang_webshop_webshop_users', 'Khách Hàng WebShop')} ({webshopUsers.length})</span>
           </button>
 
           <button
@@ -765,7 +754,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
             }`}
           >
             <Shield className="h-4 w-4 text-emerald-400" />
-            <span>{language === 'en' ? 'RBAC Permission Matrix' : 'Ma Trận Cấp Quyền RBAC'}</span>
+            <span>{t('ma_tran_cap_quyen_rbac', 'Ma Trận Cấp Quyền RBAC')}</span>
           </button>
         </div>
       </div>
@@ -782,7 +771,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-zinc-400" />
                 <input
                   type="text"
-                  placeholder={language === 'en' ? 'Search user, email or role...' : 'Tìm kiếm họ tên, email, vai trò...'}
+                  placeholder={t('tim_kiem_ho_ten_email', 'Tìm kiếm họ tên, email, vai trò...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 text-xs font-medium bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
@@ -794,7 +783,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                 onChange={(e) => setDepartmentFilter(e.target.value)}
                 className="px-3 py-2 text-xs font-semibold bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-800 dark:text-zinc-200 focus:outline-none"
               >
-                <option value="all">{language === 'en' ? 'All Departments' : 'Tất cả phòng ban'}</option>
+                <option value="all">{t('tat_ca_phong_ban_all', 'Tất cả phòng ban')}</option>
                 {departments.map((dept) => (
                   <option key={dept} value={dept}>
                     {dept}
@@ -808,9 +797,9 @@ export const SaaSUsersRbacTab: React.FC = () => {
                   value={tenantFilter}
                   onChange={(e) => setTenantFilter(e.target.value)}
                   className="px-3 py-2 text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-xl text-emerald-800 dark:text-emerald-200 focus:outline-none"
-                  title={language === 'en' ? 'Filter users by company (tenant)' : 'Lọc ngường dùng theo doanh nghiệp (tenant)'}
+                  title={t('loc_nguong_dung_theo_doanh', 'Lọc ngường dùng theo doanh nghiệp (tenant)')}
                 >
-                  <option value="all">{language === 'en' ? 'All Companies' : 'Tất cả doanh nghiệp'}</option>
+                  <option value="all">{t('tat_ca_doanh_nghiep_all', 'Tất cả doanh nghiệp')}</option>
                   {tenantOptions.map((tn) => (
                     <option key={tn.id} value={String(tn.id)}>
                       {tn.name}
@@ -825,7 +814,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
               className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
             >
               <UserPlus className="h-4 w-4" />
-              <span>{language === 'en' ? 'Add New User Account' : 'Thêm Tài Khoản Mới'}</span>
+              <span>{t('add_user_account', 'Thêm Tài Khoản Mới')}</span>
             </button>
           </div>
 
@@ -835,23 +824,23 @@ export const SaaSUsersRbacTab: React.FC = () => {
               <table className="w-full text-left text-xs text-zinc-700 dark:text-zinc-300">
                 <thead className="bg-zinc-50 dark:bg-zinc-800/80 border-b border-zinc-200 dark:border-zinc-800 text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   <tr>
-                    <th className="py-3.5 px-4">{language === 'en' ? 'User Profile' : 'Họ & Tên / Tài Khoản'}</th>
+                    <th className="py-3.5 px-4">{t('ho_ten_tai_khoan_user', 'Họ & Tên / Tài Khoản')}</th>
                     {isSuperAdmin && (
-                      <th className="py-3.5 px-4">{language === 'en' ? 'Company' : 'Doanh Nghiệp'}</th>
+                      <th className="py-3.5 px-4">{t('doanh_nghiep_company', 'Doanh Nghiệp')}</th>
                     )}
-                    <th className="py-3.5 px-4">{language === 'en' ? 'Department' : 'Phòng Ban'}</th>
-                    <th className="py-3.5 px-4">{language === 'en' ? 'Assigned Role' : 'Vai Trò RBAC'}</th>
-                    <th className="py-3.5 px-4">{language === 'en' ? 'Password' : 'Mật Khẩu (Password)'}</th>
-                    <th className="py-3.5 px-4">{language === 'en' ? 'Contact Info' : 'Liên Hệ'}</th>
-                    <th className="py-3.5 px-4">{language === 'en' ? 'Account Status' : 'Trạng Thái'}</th>
-                    <th className="py-3.5 px-4 text-right">{language === 'en' ? 'Actions' : 'Thao Tác'}</th>
+                    <th className="py-3.5 px-4">{t('phong_ban_department', 'Phòng Ban')}</th>
+                    <th className="py-3.5 px-4">{t('vai_tro_rbac_assigned_role', 'Vai Trò RBAC')}</th>
+                    <th className="py-3.5 px-4">{t('mat_khau_password_password', 'Mật Khẩu (Password)')}</th>
+                    <th className="py-3.5 px-4">{t('saas_customers_lien_he', 'Liên Hệ')}</th>
+                    <th className="py-3.5 px-4">{t('status', 'Trạng Thái')}</th>
+                    <th className="py-3.5 px-4 text-right">{t('actions', 'Thao Tác')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-medium">
                   {filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan={isSuperAdmin ? 8 : 7} className="py-8 text-center text-zinc-400">
-                        {language === 'en' ? 'No users found matching filter.' : 'Không tìm thấy tài khoản người dùng nào phù hợp.'}
+                        {t('khong_tim_thay_tai_khoan', 'Không tìm thấy tài khoản người dùng nào phù hợp.')}
                       </td>
                     </tr>
                   ) : (
@@ -920,7 +909,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                                   togglePasswordVisibility(u.id);
                                 }}
                                 className="p-1 text-zinc-400 hover:text-amber-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
-                                title={isPassVisible ? (language === 'en' ? 'Hide Password' : 'Ẩn mật khẩu') : (language === 'en' ? 'Show Password' : 'Xem mật khẩu')}
+                                title={isPassVisible ? (t('an-mat-khau', 'Ẩn mật khẩu')) : (t('xem_mat_khau_show_password', 'Xem mật khẩu'))}
                               >
                                 {isPassVisible && !isHashedPassword ? <EyeOff className="w-3.5 h-3.5 text-rose-500" /> : <Eye className="w-3.5 h-3.5 text-emerald-500" />}
                               </button>
@@ -933,7 +922,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                                   handleCopyPassword(u.password, u.fullName);
                                 }}
                                 className="p-1 text-zinc-400 hover:text-blue-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
-                                title={language === 'en' ? 'Copy Password' : 'Sao chép mật khẩu'}
+                                title={t('saas_customers_sao_chep_mat_khau', 'Sao chép mật khẩu')}
                               >
                                 <Copy className="w-3.5 h-3.5" />
                               </button>
@@ -955,7 +944,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                               }`}
                             >
                               {isLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-                              <span>{isLocked ? (language === 'en' ? 'Locked' : 'Đã khóa') : (language === 'en' ? 'Active' : 'Hoạt động')}</span>
+                              <span>{isLocked ? (t('da_khoa_locked', 'Đã khóa')) : (t('saas_categories_units_hoat_dong', 'Hoạt động'))}</span>
                             </button>
                           </td>
 
@@ -963,21 +952,21 @@ export const SaaSUsersRbacTab: React.FC = () => {
                             <button
                               onClick={() => handleOpenResetPasswordModal(u)}
                               className="p-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/60 rounded-lg transition cursor-pointer"
-                              title={language === 'en' ? 'Reset / Reissue Password' : 'Cấp lại / Reset mật khẩu'}
+                              title={t('cap_lai_reset_mat_khau', 'Cấp lại / Reset mật khẩu')}
                             >
                               <Key className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleOpenEditUser(u)}
                               className="p-1.5 text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition"
-                              title={language === 'en' ? 'Edit Profile & Role' : 'Chỉnh sửa tài khoản & vai trò'}
+                              title={t('chinh_sua_tai_khoan_vai', 'Chỉnh sửa tài khoản & vai trò')}
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteUser(u.id, u.fullName)}
                               className="p-1.5 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition"
-                              title={language === 'en' ? 'Delete User' : 'Xóa tài khoản'}
+                              title={t('xoa_tai_khoan_delete_user', 'Xóa tài khoản')}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1004,7 +993,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                 <input
                   type="text"
-                  placeholder={language === 'en' ? 'Search WebShop customer name, phone, email...' : 'Tìm tên, SĐT, email khách WebShop...'}
+                  placeholder={t('tim_ten_sdt_email_khach', 'Tìm tên, SĐT, email khách WebShop...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-medium text-zinc-900 dark:text-zinc-100"
@@ -1012,7 +1001,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
               </div>
 
               <div className="text-xs text-zinc-500 font-medium">
-                {language === 'en' ? 'Total WebShop Accounts:' : 'Tổng số tài khoản WebShop:'}{' '}
+                {t('tong_so_tai_khoan_webshop', 'Tổng số tài khoản WebShop:')}{' '}
                 <span className="font-bold text-amber-600 dark:text-amber-400">{webshopUsers.length}</span>
               </div>
             </div>
@@ -1021,12 +1010,12 @@ export const SaaSUsersRbacTab: React.FC = () => {
               <table className="w-full text-left text-xs">
                 <thead className="bg-zinc-50 dark:bg-zinc-800/80 text-zinc-500 font-bold border-b border-zinc-200 dark:border-zinc-700/80">
                   <tr>
-                    <th className="py-3.5 px-4">{language === 'en' ? 'Code / Type' : 'Mã / Phân Loại'}</th>
-                    <th className="py-3.5 px-4">{language === 'en' ? 'Customer Profile' : 'Tên Khách Hàng / Công Ty'}</th>
-                    <th className="py-3.5 px-4">{language === 'en' ? 'Contact Info' : 'Email / Số Điện Thoại'}</th>
-                    <th className="py-3.5 px-4">{language === 'en' ? 'WebShop Password' : 'Mật Khẩu WebShop (Password)'}</th>
-                    <th className="py-3.5 px-4">{language === 'en' ? 'Credit / Debt' : 'Hạn Mức / Nợ Hiện Tại'}</th>
-                    <th className="py-3.5 px-4 text-right">{language === 'en' ? 'Actions' : 'Thao Tác'}</th>
+                    <th className="py-3.5 px-4">{t('ma_phan_loai_code_type', 'Mã / Phân Loại')}</th>
+                    <th className="py-3.5 px-4">{t('ten_khach_hang_cong_ty', 'Tên Khách Hàng / Công Ty')}</th>
+                    <th className="py-3.5 px-4">{t('email_so_dien_thoai_contact', 'Email / Số Điện Thoại')}</th>
+                    <th className="py-3.5 px-4">{t('mat_khau_webshop_password_webshop', 'Mật Khẩu WebShop (Password)')}</th>
+                    <th className="py-3.5 px-4">{t('han_muc_no_hien_tai', 'Hạn Mức / Nợ Hiện Tại')}</th>
+                    <th className="py-3.5 px-4 text-right">{t('actions', 'Thao Tác')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-medium">
@@ -1093,7 +1082,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                                    handleCopyPassword(w.password, w.name);
                                  }}
                                  className="p-1 text-zinc-400 hover:text-blue-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition cursor-pointer"
-                                 title="Sao chép mật khẩu"
+                                 title={t('saas_customers_sao_chep_mat_khau', 'Sao chép mật khẩu')}
                                >
                                  <Copy className="w-3.5 h-3.5" />
                                </button>
@@ -1151,12 +1140,10 @@ export const SaaSUsersRbacTab: React.FC = () => {
               <div>
                 <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                   <Sliders className="h-4 w-4 text-amber-500" />
-                  {language === 'en' ? 'Select Target Role for Matrix Customization' : 'Chọn Vai Trò Để Cấu Hình Ma Trận Cấp Quyền'}
+                  {t('chon_vai_tro_de_cau', 'Chọn Vai Trò Để Cấu Hình Ma Trận Cấp Quyền')}
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  {language === 'en'
-                    ? 'Click checkboxes in the matrix table to instantly enable or revoke permissions per module and action.'
-                    : 'Nhấp vào các ô tick trong bảng ma trận để bật/tắt tức thì các quyền Xem, Thêm, Sửa, Xóa, Xuất, Phê duyệt.'}
+                  {t('nhap_vao_cac_o_tick', 'Nhấp vào các ô tick trong bảng ma trận để bật/tắt tức thì các quyền Xem, Thêm, Sửa, Xóa, Xuất, Phê duyệt.')}
                 </p>
               </div>
 
@@ -1165,7 +1152,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                 className="px-3.5 py-2 text-xs font-bold rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 shadow-2xs flex items-center gap-1.5 transition cursor-pointer self-start md:self-auto"
               >
                 <Plus className="w-4 h-4 text-amber-400 dark:text-amber-600" />
-                <span>{language === 'en' ? 'Create Custom Role' : 'Thêm Vai Trò Tùy Chỉnh'}</span>
+                <span>{t('create_custom_role', 'Thêm Vai Trò Tùy Chỉnh')}</span>
               </button>
             </div>
 
@@ -1184,7 +1171,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                       }`}
                     >
                       <Shield className={`w-3.5 h-3.5 ${isActive ? 'text-zinc-950' : 'text-amber-500'}`} />
-                      <span>{language === 'en' ? r.nameEn : r.nameVi}</span>
+                      <span>{pickLocalized(language === 'en', r.nameEn, r.nameVi)}</span>
                       {r.isSystem && (
                         <span className={`px-1.5 py-0.2 rounded text-[9px] uppercase tracking-wider font-extrabold ${
                           isActive ? 'bg-zinc-950/20 text-zinc-950' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400'
@@ -1213,7 +1200,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                 <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold mr-1.5">
-                    {language === 'en' ? activeRoleObj.nameEn : activeRoleObj.nameVi}:
+                    {pickLocalized(language === 'en', activeRoleObj.nameEn, activeRoleObj.nameVi)}:
                   </span>
                   <span>{activeRoleObj.description}</span>
                 </div>
@@ -1230,7 +1217,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                     <th className="py-4 px-5 w-1/3">
                       <div className="flex items-center gap-1.5">
                         <Building className="w-4 h-4 text-amber-400" />
-                        <span>{language === 'en' ? 'System Module / Service' : 'Mô-đun Chức Năng Hệ Thống'}</span>
+                        <span>{t('mo_dun_chuc_nang_he', 'Mô-đun Chức Năng Hệ Thống')}</span>
                       </div>
                     </th>
                     {ACTION_CODES.map((act) => (
@@ -1241,11 +1228,11 @@ export const SaaSUsersRbacTab: React.FC = () => {
                           title={`Toggle all ${act.labelVi}`}
                         >
                           <span className="text-sm">{act.icon}</span>
-                          <span className="group-hover:underline">{language === 'en' ? act.labelEn : act.labelVi}</span>
+                          <span className="group-hover:underline">{pickLocalized(language === 'en', act.labelEn, act.labelVi)}</span>
                         </button>
                       </th>
                     ))}
-                    <th className="py-4 px-4 text-center w-24">{language === 'en' ? 'Select All' : 'Tất cả'}</th>
+                    <th className="py-4 px-4 text-center w-24">{t('saas_inventory_tat_ca', 'Tất cả')}</th>
                   </tr>
                 </thead>
 
@@ -1265,7 +1252,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                         {/* Module Name */}
                         <td className="py-3.5 px-5">
                           <div className="font-bold text-zinc-900 dark:text-zinc-100 text-xs">
-                            {language === 'en' ? mod.nameEn : mod.nameVi}
+                            {pickLocalized(language === 'en', mod.nameEn, mod.nameVi)}
                           </div>
                           <div className="text-[10px] text-zinc-400 font-mono">code: {mod.code}</div>
                         </td>
@@ -1341,8 +1328,8 @@ export const SaaSUsersRbacTab: React.FC = () => {
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-amber-500" />
                 {editingUserId
-                  ? language === 'en' ? 'Edit User & Role Assignment' : 'Chỉnh Sửa Tài Khoản & Cấp Quyền'
-                  : language === 'en' ? 'Add New Enterprise User Account' : 'Tạo Mới Tài Khoản Người Dùng Enterprise'}
+                  ? t('chinh_sua_tai_khoan_cap', 'Chỉnh Sửa Tài Khoản & Cấp Quyền')
+                  : t('tao_moi_tai_khoan_nguoi', 'Tạo Mới Tài Khoản Người Dùng Enterprise')}
               </h3>
               <button
                 onClick={() => setIsUserModalOpen(false)}
@@ -1385,7 +1372,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-zinc-700 dark:text-zinc-300 mb-1">{language === 'en' ? 'Department' : 'Phòng Ban / Bộ Phận'}</label>
+                  <label className="block font-bold text-zinc-700 dark:text-zinc-300 mb-1">{t('phong_ban_bo_phan_department', 'Phòng Ban / Bộ Phận')}</label>
                   <select
                     value={userFormData.departmentId}
                     onChange={(e) => {
@@ -1393,23 +1380,23 @@ export const SaaSUsersRbacTab: React.FC = () => {
                       setUserFormData({
                         ...userFormData,
                         departmentId: e.target.value,
-                        department: selected ? (language === 'en' ? selected.nameEn : selected.nameVi) : '',
+                        department: selected ? (pickLocalized(language === 'en', selected.nameEn, selected.nameVi)) : '',
                       });
                     }}
                     className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-amber-500/50 focus:outline-none font-semibold"
                     required
                   >
-                    <option value="">{language === 'en' ? 'Select department' : 'Chọn phòng ban'}</option>
+                    <option value="">{t('chon_phong_ban_select_department', 'Chọn phòng ban')}</option>
                     {allDepartments.map((dept) => (
                       <option key={dept.id} value={dept.id}>
-                        {language === 'en' ? dept.nameEn : dept.nameVi}
+                        {pickLocalized(language === 'en', dept.nameEn, dept.nameVi)}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-zinc-700 dark:text-zinc-300 mb-1">Số Điện Thoại</label>
+                  <label className="block font-bold text-zinc-700 dark:text-zinc-300 mb-1">{t('saas_register_company_phone', 'Số Điện Thoại')}</label>
                   <input
                     type="text"
                     value={userFormData.phone}
@@ -1425,7 +1412,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
               {isSuperAdmin && !editingUserId && (
                 <div>
                   <label className="block font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                    {language === 'en' ? 'Company (Tenant)' : 'Doanh Nghiệp (Tenant)'} <span className="text-rose-500">*</span>
+                    {t('doanh_nghiep_tenant_company_tenant', 'Doanh Nghiệp (Tenant)')} <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={userFormData.companyId}
@@ -1439,7 +1426,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                     className="w-full px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-xl font-bold text-emerald-900 dark:text-emerald-200 focus:outline-none"
                     required
                   >
-                    <option value="">{language === 'en' ? 'Select company for this user' : 'Chọn doanh nghiệp cho tài khoản'}</option>
+                    <option value="">{t('chon_doanh_nghiep_cho_tai', 'Chọn doanh nghiệp cho tài khoản')}</option>
                     {tenantOptions.map((tn) => (
                       <option key={tn.id} value={String(tn.id)}>
                         {tn.name} (#{tn.id})
@@ -1447,9 +1434,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                     ))}
                   </select>
                   <p className="text-[10px] text-zinc-400 mt-1">
-                    {language === 'en'
-                      ? 'The account is created inside the selected tenant only — never mixed into the platform ERP.'
-                      : 'Tài khoản chỉ được tạo trong tenant đã chọn — không trộn chung vào ERP của nền tảng.'}
+                    {t('tai_khoan_chi_duoc_tao', 'Tài khoản chỉ được tạo trong tenant đã chọn — không trộn chung vào ERP của nền tảng.')}
                   </p>
                 </div>
               )}
@@ -1466,7 +1451,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                 >
                   {rolesList.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {language === 'en' ? r.nameEn : r.nameVi} ({r.description.slice(0, 45)}...)
+                      {pickLocalized(language === 'en', r.nameEn, r.nameVi)} ({r.description.slice(0, 45)}...)
                     </option>
                   ))}
                 </select>
@@ -1513,8 +1498,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                   onClick={() => setIsUserModalOpen(false)}
                   className="px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold"
                 >
-                  Hủy
-                </button>
+                  {t('assets_cancel', 'Hủy')}</button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
@@ -1588,8 +1572,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                   onClick={() => setIsNewRoleModalOpen(false)}
                   className="px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold"
                 >
-                  Hủy
-                </button>
+                  {t('assets_cancel', 'Hủy')}</button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
@@ -1612,8 +1595,8 @@ export const SaaSUsersRbacTab: React.FC = () => {
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <Key className="h-5 w-5 text-amber-500" />
                 {resetWebshopTargetUser
-                  ? (language === 'en' ? 'Reissue / Reset WebShop Customer Password' : 'Cấp Lại / Reset Mật Khẩu Khách Hàng WebShop')
-                  : (language === 'en' ? 'Reissue / Reset User Password' : 'Cấp Lại / Reset Mật Khẩu Người Dùng ERP')}
+                  ? (t('cap_lai_reset_mat_khau_2', 'Cấp Lại / Reset Mật Khẩu Khách Hàng WebShop'))
+                  : (t('cap_lai_reset_mat_khau_3', 'Cấp Lại / Reset Mật Khẩu Người Dùng ERP'))}
               </h3>
               <button
                 onClick={() => {
@@ -1638,7 +1621,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                 {resetWebshopTargetUser ? (
                   <>Email: {resetWebshopTargetUser.email} | SĐT: {resetWebshopTargetUser.phone}</>
                 ) : (
-                  <>{language === 'en' ? 'Dept' : 'Phòng ban'}: {resetTargetUser?.department} | {language === 'en' ? 'Role' : 'Vai trò'}: {resetTargetUser?.roleName}</>
+                  <>{t('phong_ban_department', 'Phòng ban')}: {resetTargetUser?.department} | {t('vai_tro_role', 'Vai trò')}: {resetTargetUser?.roleName}</>
                 )}
               </div>
             </div>
@@ -1647,7 +1630,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="font-bold text-zinc-700 dark:text-zinc-300">
-                    {language === 'en' ? 'New Reissued Password' : 'Mật Khẩu Mới Cấp Lại'} <span className="text-rose-500">*</span>
+                    {t('mat_khau_moi_cap_lai', 'Mật Khẩu Mới Cấp Lại')} <span className="text-rose-500">*</span>
                   </label>
                   <button
                     type="button"
@@ -1655,7 +1638,7 @@ export const SaaSUsersRbacTab: React.FC = () => {
                     className="text-amber-600 dark:text-amber-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <RefreshCw className="w-3 h-3" />
-                    <span>{language === 'en' ? 'Generate Random' : 'Tạo ngẫu nhiên'}</span>
+                    <span>{t('saas_customers_tao_ng_u_nhien', 'Tạo ngẫu nhiên')}</span>
                   </button>
                 </div>
 
@@ -1684,14 +1667,14 @@ export const SaaSUsersRbacTab: React.FC = () => {
                   onClick={() => setIsResetModalOpen(false)}
                   className="px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold cursor-pointer"
                 >
-                  {language === 'en' ? 'Cancel' : 'Hủy'}
+                  {t('assets_cancel', 'Hủy')}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{language === 'en' ? 'Save & Reissue Password' : 'Lưu & Cấp Mật Khẩu Mới'}</span>
+                  <span>{t('luu_cap_mat_khau_moi', 'Lưu & Cấp Mật Khẩu Mới')}</span>
                 </button>
               </div>
             </form>

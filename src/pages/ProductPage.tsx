@@ -121,7 +121,7 @@ const ProductPage: React.FC = () => {
     return (
       <div className="min-h-[40vh] flex flex-col items-center justify-center text-center p-4">
         <PackageOpen className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-2" />
-        <h3 className="font-semibold text-gray-700 dark:text-gray-300">Sản phẩm không khả dụng</h3>
+        <h3 className="font-semibold text-gray-700 dark:text-gray-300">{t('page_product_unavailable', 'Sản phẩm không khả dụng')}</h3>
         <Link to={shopPath("/")} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline mt-2">
           Quay lại trang chủ
         </Link>
@@ -144,8 +144,7 @@ const ProductPage: React.FC = () => {
       {/* Sleek Breadcrumb Navigation */}
       <nav className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xs border border-gray-200/80 dark:border-gray-800 rounded-lg px-3.5 py-2">
         <Link to={shopPath("/")} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-          Trang chủ
-        </Link>
+          {t('nav_home', 'Trang chủ')}</Link>
         <ChevronRight className="w-3 h-3 text-gray-400" />
         <Link to={shopPath(`/?category_id=${product.categoryId}`)} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
           {categoryName || "Danh mục"}
@@ -221,11 +220,10 @@ const ProductPage: React.FC = () => {
             {/* Pricing Box */}
             <div className="bg-indigo-50/70 dark:bg-indigo-950/30 p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/50 flex items-baseline justify-between">
               <div>
-                <span className="text-xs text-indigo-800 dark:text-indigo-300 font-medium block mb-0.5">Giá bán niêm yết:</span>
+                <span className="text-xs text-indigo-800 dark:text-indigo-300 font-medium block mb-0.5">{t('saas_products_gia_ban_niem_yet_1', 'Giá bán niêm yết:')}</span>
                 {showContact ? (
                   <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
-                    Liên hệ
-                  </span>
+                    {t('saas_customers_lien_he', 'Liên hệ')}</span>
                 ) : (
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
@@ -349,7 +347,7 @@ const ProductPage: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="py-2 px-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-150 dark:border-gray-800 flex justify-between">
-                    <span className="text-gray-500">Mã SKU:</span>
+                    <span className="text-gray-500">{t('saas_products_ma_sku_1', 'Mã SKU:')}</span>
                     <span className="font-semibold text-gray-800 dark:text-gray-200">{product.sku}</span>
                   </div>
                   <div className="py-2 px-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-150 dark:border-gray-800 flex justify-between">

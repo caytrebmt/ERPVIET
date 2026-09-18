@@ -7,6 +7,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { generateSmartSKU } from '../../utils/format';
 import client from '../../api/client';
+import { getIntlLocale, pickLocalized } from '../../utils/localized';
 
 interface ProductItem {
   id: number;
@@ -209,13 +210,11 @@ export const SaaSProductsPage: React.FC = () => {
       const savedPercent = totalOrig > 0 ? Math.round(((totalOrig - totalComp) / totalOrig) * 100) : 0;
 
       addToast(
-        language === 'en'
-          ? `Uploaded & compressed ${newCompressedImages.length} images (${origMB}MB -> ${compKB}KB, saved ${savedPercent}%)!`
-          : `Đã tải lên & nén thành công ${newCompressedImages.length} ảnh (Tối ưu ${origMB}MB -> ${compKB}KB, tiết kiệm ${savedPercent}% dung lượng)!`,
+        t('da_tai_len_nen_thanh', 'Đã tải lên & nén thành công {{length}} ảnh (Tối ưu {{origmb}}MB -> {{compkb}}KB, tiết kiệm {{savedpercent}}% dung lượng)!', { length: newCompressedImages.length, origmb: origMB, compkb: compKB, savedpercent: savedPercent }),
         'success'
       );
     } catch (err) {
-      addToast(language === 'en' ? 'Failed to compress or upload images' : 'Không thể nén/tải lên file hình ảnh', 'error');
+      addToast(t('khong_the_nen_tai_len', 'Không thể nén/tải lên file hình ảnh'), 'error');
     } finally {
       setIsCompressing(false);
       e.target.value = '';
@@ -224,7 +223,7 @@ export const SaaSProductsPage: React.FC = () => {
 
   const handleRemoveImage = (index: number) => {
     setImagesList(imagesList.filter((_, i) => i !== index));
-    addToast(language === 'en' ? 'Removed image from list' : 'Đã xóa hình ảnh khỏi danh sách sản phẩm', 'info');
+    addToast(t('da_xoa_hinh_anh_khoi', 'Đã xóa hình ảnh khỏi danh sách sản phẩm'), 'info');
   };
 
   const handleSetPrimaryImage = (index: number) => {
@@ -232,7 +231,7 @@ export const SaaSProductsPage: React.FC = () => {
     const selected = imagesList[index];
     const rest = imagesList.filter((_, i) => i !== index);
     setImagesList([selected, ...rest]);
-    addToast(language === 'en' ? 'Set image as primary!' : 'Đã chọn hình ảnh làm ảnh đại diện chính!', 'success');
+    addToast(t('da_chon_hinh_anh_lam', 'Đã chọn hình ảnh làm ảnh đại diện chính!'), 'success');
   };
 
   const handleGenerateAutoSKU = () => {
@@ -244,7 +243,7 @@ export const SaaSProductsPage: React.FC = () => {
       products.length + 1
     );
     setFormData((prev) => ({ ...prev, sku: autoSku }));
-    addToast(language === 'en' ? `Generated smart SKU: ${autoSku}` : `Đã tự động tạo SKU thông minh: ${autoSku}`, 'info');
+    addToast(t('da_tu_dong_tao_sku', 'Đã tự động tạo SKU thông minh: {{autosku}}', { autosku: autoSku }), 'info');
   };
 
   const handleOpenAdd = () => {
@@ -346,15 +345,15 @@ export const SaaSProductsPage: React.FC = () => {
     try {
       if (editingProduct) {
         await client.put(`/api/shop/admin/products/${editingProduct.id}`, payload);
-        addToast(language === 'en' ? `Updated product "${formData.name_en || formData.name_vi}"!` : `Cập nhật sản phẩm "${formData.name_vi}" thành công!`, 'success');
+        addToast(t('cap_nhat_san_pham_thanh', 'Cập nhật sản phẩm "{{name_vi}}" thành công!', { name_vi: formData.name_vi }), 'success');
       } else {
         await client.post('/api/shop/admin/products', payload);
-        addToast(language === 'en' ? `Created product "${formData.name_en || formData.name_vi}"!` : `Thêm mới sản phẩm "${formData.name_vi}" thành công!`, 'success');
+        addToast(t('them_moi_san_pham_thanh', 'Thêm mới sản phẩm "{{name_vi}}" thành công!', { name_vi: formData.name_vi }), 'success');
       }
       fetchProductsFromApi();
     } catch (err: any) {
       addToast(
-        err.response?.data?.message || (language === 'en' ? 'Could not save the product.' : 'Không thể lưu sản phẩm vào PostgreSQL.'),
+        err.response?.data?.message || (t('khong_the_luu_san_pham', 'Không thể lưu sản phẩm vào PostgreSQL.')),
         'error'
       );
       return;
@@ -364,13 +363,13 @@ export const SaaSProductsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: number, prod: ProductItem) => {
-    const prodName = language === 'en' ? (prod.name_en || prod.name) : (prod.name_vi || prod.name);
-    if (window.confirm(language === 'en' ? `Delete product "${prodName}" from catalog?` : `Bạn có chắc muốn xóa sản phẩm "${prodName}" khỏi danh mục ERP?`)) {
+    const prodName = pickLocalized(language === 'en', (prod.name_en || prod.name), (prod.name_vi || prod.name));
+    if (window.confirm(t('ban_co_chac_muon_xoa_4', 'Bạn có chắc muốn xóa sản phẩm "{{prodname}}" khỏi danh mục ERP?', { prodname: prodName }))) {
       try {
         await client.delete(`/api/shop/admin/products/${id}`);
-        addToast(language === 'en' ? `Deleted product "${prodName}"` : `Đã xóa sản phẩm "${prodName}" thành công!`, 'warning');
+        addToast(t('da_xoa_san_pham_thanh', 'Đã xóa sản phẩm "{{prodname}}" thành công!', { prodname: prodName }), 'warning');
       } catch (err) {
-        addToast(language === 'en' ? `Deleted product "${prodName}"` : `Đã xóa sản phẩm "${prodName}"`, 'warning');
+        addToast(t('da_xoa_san_pham_deleted', 'Đã xóa sản phẩm "{{prodname}}"', { prodname: prodName }), 'warning');
       }
       setProducts(products.filter((p) => p.id !== id));
     }
@@ -379,7 +378,7 @@ export const SaaSProductsPage: React.FC = () => {
   const columns: ColumnDef<ProductItem>[] = [
     {
       accessorKey: 'imageUrl',
-      header: language === 'en' ? 'Image' : 'Hình Ảnh',
+      header: t('saas_products_hinh_anh', 'Hình Ảnh'),
       cell: ({ row }) => {
         const img = row.original.imageUrl || row.original.images?.[0];
         const count = row.original.images?.length || (img ? 1 : 0);
@@ -387,7 +386,7 @@ export const SaaSProductsPage: React.FC = () => {
           <div
             onClick={() => setPreviewProduct(row.original)}
             className="relative group cursor-pointer w-11 h-11 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0"
-            title={language === 'en' ? 'Click to view product details' : 'Bấm để xem chi tiết & thư viện ảnh'}
+            title={t('bam_de_xem_chi_tiet', 'Bấm để xem chi tiết & thư viện ảnh')}
           >
             {img ? (
               <img src={img} alt={row.original.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -405,7 +404,7 @@ export const SaaSProductsPage: React.FC = () => {
     },
     {
       accessorKey: 'sku',
-      header: language === 'en' ? 'SKU Code' : 'Mã SKU',
+      header: t('saas_reports_ma_sku', 'Mã SKU'),
       cell: (info) => (
         <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 ">
           {info.getValue() as string}
@@ -414,12 +413,12 @@ export const SaaSProductsPage: React.FC = () => {
     },
     {
       accessorKey: 'name',
-      header: language === 'en' ? 'Product Name & Info' : 'Tên Hàng Hóa & Thông Tin',
+      header: t('saas_products_ten_hang_hoa_thong_tin', 'Tên Hàng Hóa & Thông Tin'),
       cell: ({ row }) => {
         const prod = row.original;
-        const name = language === 'en' ? (prod.name_en || prod.name) : (prod.name_vi || prod.name);
-        const altName = language === 'en' ? prod.name_vi : prod.name_en;
-        const warranty = language === 'en' ? (prod.warranty_en || prod.warranty) : (prod.warranty_vi || prod.warranty);
+        const name = pickLocalized(language === 'en', (prod.name_en || prod.name), (prod.name_vi || prod.name));
+        const altName = pickLocalized(language === 'en', prod.name_vi, prod.name_en);
+        const warranty = pickLocalized(language === 'en', (prod.warranty_en || prod.warranty), (prod.warranty_vi || prod.warranty));
         return (
           <div>
             <div
@@ -428,26 +427,17 @@ export const SaaSProductsPage: React.FC = () => {
             >
               {name}
             </div>
-          {/*  {altName && altName !== name && (
-              <div className="text-[10px] text-zinc-400 dark:text-zinc-500 italic">{altName}</div>
-            )}
-            {prod.brand && (
-              <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 flex items-center gap-2">
-                <span>{language === 'en' ? 'Brand' : 'Hãng'}: <strong className="text-zinc-700 dark:text-zinc-300">{prod.brand}</strong></span>
-                {warranty && <span>• {language === 'en' ? 'Warranty' : 'BH'}: {warranty}</span>}
-              </div>
-            )}
-          */}    
+              
           </div>
         );
       },
     },
     {
       accessorKey: 'category',
-      header: language === 'en' ? 'Category' : 'Danh Mục',
+      header: t('category', 'Danh Mục'),
       cell: ({ row }) => {
         const prod = row.original;
-        const cat = language === 'en' ? (prod.category_en || prod.category) : (prod.category_vi || prod.category);
+        const cat = pickLocalized(language === 'en', (prod.category_en || prod.category), (prod.category_vi || prod.category));
         return (
           <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
             <Tag className="h-3 w-3 text-zinc-400" />
@@ -458,30 +448,30 @@ export const SaaSProductsPage: React.FC = () => {
     },
     {
       accessorKey: 'unit',
-      header: language === 'en' ? 'UOM' : 'ĐVT',
+      header: t('dvt_uom', 'ĐVT'),
       cell: ({ row }) => {
         const prod = row.original;
-        const unitStr = language === 'en' ? (prod.unit_en || prod.unit) : (prod.unit_vi || prod.unit);
+        const unitStr = pickLocalized(language === 'en', (prod.unit_en || prod.unit), (prod.unit_vi || prod.unit));
         return <span className="text-xs font-semibold">{unitStr}</span>;
       },
     },
     {
       accessorKey: 'salePrice',
-      header: language === 'en' ? 'Retail Price' : 'Giá Bán Niêm Yết',
+      header: t('selling_price', 'Giá Bán Niêm Yết'),
       cell: (info) => (
         <span className="font-bold text-zinc-900 dark:text-zinc-100">
-          {(info.getValue() as number).toLocaleString(language === 'en' ? 'en-US' : 'vi-VN')} đ
+          {(info.getValue() as number).toLocaleString(getIntlLocale(language === 'en'))} đ
         </span>
       ),
     },
     {
       accessorKey: 'stock',
-      header: language === 'en' ? 'ERP Stock' : 'Tồn Kho ERP',
+      header: t('saas_products_ton_kho_erp', 'Tồn Kho ERP'),
       cell: ({ row }) => {
         const stock = row.original.stock;
         const minStock = row.original.minStock;
         const isLow = stock <= minStock;
-        const unitStr = language === 'en' ? (row.original.unit_en || row.original.unit) : (row.original.unit_vi || row.original.unit);
+        const unitStr = pickLocalized(language === 'en', (row.original.unit_en || row.original.unit), (row.original.unit_vi || row.original.unit));
         return (
           <div className="flex items-center gap-1.5">
             <span className={`font-mono font-bold ${isLow ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
@@ -489,7 +479,7 @@ export const SaaSProductsPage: React.FC = () => {
             </span>
             {isLow && (
               <span className="text-[10px] bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 px-1.5 py-0.2 rounded-xs font-semibold">
-                {language === 'en' ? 'Low Stock' : 'Cảnh báo tồn'}
+                {t('saas_products_canh_bao_ton', 'Cảnh báo tồn')}
               </span>
             )}
           </div>
@@ -498,27 +488,27 @@ export const SaaSProductsPage: React.FC = () => {
     },
     {
       id: 'actions',
-      header: language === 'en' ? 'Actions' : 'Thao Tác',
+      header: t('actions', 'Thao Tác'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => setPreviewProduct(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-            title={language === 'en' ? 'View Details' : 'Xem chi tiết'}
+            title={t('saas_tenants_xem_chi_tiet', 'Xem chi tiết')}
           >
             <Eye className="h-4 w-4 text-blue-500" />
           </button>
           <button
             onClick={() => handleOpenEdit(row.original)}
             className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-            title={language === 'en' ? 'Edit Product' : 'Sửa sản phẩm'}
+            title={t('saas_products_sua_san_pham', 'Sửa sản phẩm')}
           >
             <Edit2 className="h-4 w-4 text-amber-500" />
           </button>
           <button
             onClick={() => handleDelete(row.original.id, row.original)}
             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors cursor-pointer"
-            title={language === 'en' ? 'Delete Product' : 'Xóa sản phẩm'}
+            title={t('saas_products_xoa_san_pham', 'Xóa sản phẩm')}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -533,12 +523,10 @@ export const SaaSProductsPage: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <Package className="h-6 w-6 text-amber-500" />{' '}
-            {language === 'en' ? 'ERP Master Product Management' : 'Quản Lý Danh Mục Hàng Hóa & Vật Tư (ERP Master)'}
+            {t('quan_ly_danh_muc_hang', 'Quản Lý Danh Mục Hàng Hóa & Vật Tư (ERP Master)')}
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            {language === 'en'
-              ? 'Synchronize product listings, dual-language specs, prices, and stock counts between ERPACC core and WebShop.'
-              : 'Đồng bộ toàn bộ danh mục sản phẩm 2 ngôn ngữ, bảng giá và tồn kho thời gian thực giữa ERP và WebShop.'}
+            {t('dong_bo_toan_bo_danh', 'Đồng bộ toàn bộ danh mục sản phẩm 2 ngôn ngữ, bảng giá và tồn kho thời gian thực giữa ERP và WebShop.')}
           </p>
         </div>
 
@@ -546,14 +534,14 @@ export const SaaSProductsPage: React.FC = () => {
           onClick={handleOpenAdd}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-950 shadow-xs transition-all cursor-pointer"
         >
-          <Plus className="h-4 w-4" /> {language === 'en' ? 'Add New Product' : 'Thêm mới hàng hóa'}
+          <Plus className="h-4 w-4" /> {t('saas_products_them_moi_hang_hoa', 'Thêm mới hàng hóa')}
         </button>
       </div>
 
       <DataTable
         columns={columns}
         data={products}
-        searchPlaceholder={language === 'en' ? 'Search SKU, product name, brand...' : 'Tìm kiếm mã SKU, tên hàng hóa, thương hiệu...'}
+        searchPlaceholder={t('tim_kiem_ma_sku_ten', 'Tìm kiếm mã SKU, tên hàng hóa, thương hiệu...')}
       />
 
       {/* Product Add/Edit Modal */}
@@ -564,12 +552,8 @@ export const SaaSProductsPage: React.FC = () => {
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <Package className="h-5 w-5 text-amber-500" />
                 {editingProduct
-                  ? language === 'en'
-                    ? 'Edit Product Master'
-                    : 'Chỉnh Sửa Thông Tin Hàng Hóa'
-                  : language === 'en'
-                  ? 'Add New ERP Product'
-                  : 'Thêm Mới Sản Phẩm Hàng Hóa'}
+                  ? t('chinh_sua_thong_tin_hang', 'Chỉnh Sửa Thông Tin Hàng Hóa')
+                  : t('saas_products_them_moi_san_pham_hang_hoa', 'Thêm Mới Sản Phẩm Hàng Hóa')}
               </h3>
               <button onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 cursor-pointer">
                 <X className="h-5 w-5" />
@@ -582,14 +566,14 @@ export const SaaSProductsPage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                      {language === 'en' ? 'SKU Code *' : 'Mã SKU / Mã Hàng *'}
+                      {t('saas_products_ma_sku_ma_hang', 'Mã SKU / Mã Hàng *')}
                     </label>
                     <button
                       type="button"
                       onClick={handleGenerateAutoSKU}
                       className="text-[10px] text-amber-600 dark:text-amber-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      <Sparkles className="h-3 w-3" /> {language === 'en' ? 'Auto SKU' : 'Tạo SKU Tự Động'}
+                      <Sparkles className="h-3 w-3" /> {t('saas_products_tao_sku_tu_dong', 'Tạo SKU Tự Động')}
                     </button>
                   </div>
                   <input
@@ -604,7 +588,7 @@ export const SaaSProductsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    {language === 'en' ? 'Manufacturer Brand' : 'Thương Hiệu / Hãng'}
+                    {t('saas_products_th_ng_hieu_hang', 'Thương Hiệu / Hãng')}
                   </label>
                   <input
                     type="text"
@@ -624,8 +608,7 @@ export const SaaSProductsPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      🇻🇳 Tên tiếng Việt *
-                    </label>
+                      {t('saas_products_ten_tieng_viet', '🇻🇳 Tên tiếng Việt *')}</label>
                     <input
                       type="text"
                       required
@@ -654,7 +637,7 @@ export const SaaSProductsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    {language === 'en' ? 'Category' : 'Danh Mục Sản Phẩm'}
+                    {t('saas_products_danh_muc_san_pham', 'Danh Mục Sản Phẩm')}
                   </label>
                   <select
                     value={formData.category_vi}
@@ -674,7 +657,7 @@ export const SaaSProductsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    {language === 'en' ? 'Unit of Measure (UOM)' : 'Đơn Vị Tính (UOM)'}
+                    {t('don_vi_tinh_uom_unit', 'Đơn Vị Tính (UOM)')}
                   </label>
                   <select
                     value={formData.unit_vi}
@@ -699,7 +682,7 @@ export const SaaSProductsPage: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    {language === 'en' ? 'Retail Price' : 'Giá Bán Bán Lẻ'}
+                    {t('saas_products_gia_ban_ban_le', 'Giá Bán Bán Lẻ')}
                   </label>
                   <input
                     type="number"
@@ -710,7 +693,7 @@ export const SaaSProductsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    {language === 'en' ? 'Cost Price' : 'Giá Vốn Nhập Kho'}
+                    {t('saas_products_gia_von_nhap_kho', 'Giá Vốn Nhập Kho')}
                   </label>
                   <input
                     type="number"
@@ -721,7 +704,7 @@ export const SaaSProductsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    {language === 'en' ? 'ERP Stock' : 'Số Lượng Tồn Kho'}
+                    {t('stock_quantity', 'Số Lượng Tồn Kho')}
                   </label>
                   <input
                     type="number"
@@ -732,7 +715,7 @@ export const SaaSProductsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    {language === 'en' ? 'Min Stock' : 'Tồn Tối Thiểu'}
+                    {t('saas_products_ton_toi_thieu', 'Tồn Tối Thiểu')}
                   </label>
                   <input
                     type="number"
@@ -748,7 +731,7 @@ export const SaaSProductsPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                     <ImageIcon className="h-4 w-4 text-amber-500" />
-                    {language === 'en' ? 'Product Image Gallery' : 'Bộ Ảnh Sản Phẩm (Tự động nén WebP siêu nhẹ)'}
+                    {t('bo_anh_san_pham_tu', 'Bộ Ảnh Sản Phẩm (Tự động nén WebP siêu nhẹ)')}
                   </label>
                 </div>
 
@@ -758,8 +741,7 @@ export const SaaSProductsPage: React.FC = () => {
                       <img src={img} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
                       {idx === 0 && (
                         <span className="absolute top-0 left-0 bg-amber-500 text-zinc-950 text-[8px] font-black px-1 rounded-br-xs uppercase">
-                          Chính
-                        </span>
+                          {t('saas_products_chinh', 'Chính')}</span>
                       )}
                       <div className="absolute inset-0 bg-zinc-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                         {idx !== 0 && (
@@ -767,7 +749,7 @@ export const SaaSProductsPage: React.FC = () => {
                             type="button"
                             onClick={() => handleSetPrimaryImage(idx)}
                             className="p-1 rounded bg-amber-500 text-zinc-950 hover:scale-110 transition-transform cursor-pointer"
-                            title="Đặt làm ảnh chính"
+                            title={t('saas_products_d_t_lam_anh_chinh', 'Đặt làm ảnh chính')}
                           >
                             <Star className="h-3 w-3 fill-current" />
                           </button>
@@ -776,7 +758,7 @@ export const SaaSProductsPage: React.FC = () => {
                           type="button"
                           onClick={() => handleRemoveImage(idx)}
                           className="p-1 rounded bg-red-600 text-white hover:scale-110 transition-transform cursor-pointer"
-                          title="Xóa ảnh này"
+                          title={t('saas_products_xoa_anh_nay', 'Xóa ảnh này')}
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>
@@ -786,7 +768,7 @@ export const SaaSProductsPage: React.FC = () => {
 
                   <label className="w-16 h-16 rounded-xl border-2 border-dashed border-amber-500/50 hover:border-amber-500 bg-amber-500/5 hover:bg-amber-500/10 flex flex-col items-center justify-center text-amber-600 dark:text-amber-400 cursor-pointer transition-colors shrink-0">
                     <Upload className="h-5 w-5 mb-0.5" />
-                    <span className="text-[9px] font-bold">+ Tải Ảnh</span>
+                    <span className="text-[9px] font-bold">{t('saas_products_tai_anh', '+ Tải Ảnh')}</span>
                     <input type="file" multiple accept="image/*" onChange={handleImageFileUpload} className="hidden" />
                   </label>
                 </div>
@@ -796,7 +778,7 @@ export const SaaSProductsPage: React.FC = () => {
               <div className="space-y-3 pt-2 border-t border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 dark:text-zinc-200">
                   <FileText className="h-4 w-4 text-amber-500" />
-                  {language === 'en' ? 'Specifications & Details (2 Languages)' : 'Thông Tin Chi Tiết & Thông Số Kỹ Thuật (2 Ngôn Ngữ)'}
+                  {t('thong_tin_chi_tiet_thong', 'Thông Tin Chi Tiết & Thông Số Kỹ Thuật (2 Ngôn Ngữ)')}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
@@ -808,7 +790,7 @@ export const SaaSProductsPage: React.FC = () => {
                       type="text"
                       value={formData.origin_vi}
                       onChange={(e) => setFormData({ ...formData, origin_vi: e.target.value })}
-                      placeholder="VD: Việt Nam, Nhập khẩu Mỹ"
+                      placeholder={t('saas_products_vd_viet_nam_nhap_khau_my', 'VD: Việt Nam, Nhập khẩu Mỹ')}
                       className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                     />
                   </div>
@@ -832,7 +814,7 @@ export const SaaSProductsPage: React.FC = () => {
                       type="text"
                       value={formData.warranty_vi}
                       onChange={(e) => setFormData({ ...formData, warranty_vi: e.target.value })}
-                      placeholder="VD: 12 Tháng chính hãng"
+                      placeholder={t('saas_products_vd_12_thang_chinh_hang', 'VD: 12 Tháng chính hãng')}
                       className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
                     />
                   </div>
@@ -853,8 +835,7 @@ export const SaaSProductsPage: React.FC = () => {
                 <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
                   <div>
                     <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                      🇻🇳 Mô tả tiếng Việt
-                    </label>
+                      {t('saas_products_mo_ta_tieng_viet', '🇻🇳 Mô tả tiếng Việt')}</label>
                     <textarea
                       rows={2}
                       value={formData.description_vi}
@@ -887,9 +868,7 @@ export const SaaSProductsPage: React.FC = () => {
                   className="rounded text-amber-500 focus:ring-amber-500 cursor-pointer"
                 />
                 <label htmlFor="allowNegativeStock" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                  {language === 'en'
-                    ? 'Allow backorders / negative stock selling before restock'
-                    : 'Linh hoạt: Cho phép bán trước / xuất âm kho khi chưa kịp nhập kho'}
+                  {t('linh_hoat_cho_phep_ban', 'Linh hoạt: Cho phép bán trước / xuất âm kho khi chưa kịp nhập kho')}
                 </label>
               </div>
 
@@ -899,7 +878,7 @@ export const SaaSProductsPage: React.FC = () => {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer"
                 >
-                  {language === 'en' ? 'Cancel' : 'Hủy Bỏ'}
+                  {t('cancel', 'Hủy Bỏ')}
                 </button>
                 <button
                   type="submit"
@@ -907,12 +886,8 @@ export const SaaSProductsPage: React.FC = () => {
                   className="px-5 py-2 text-xs font-bold text-zinc-950 bg-amber-500 hover:bg-amber-600 rounded-lg shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   {editingProduct
-                    ? language === 'en'
-                      ? 'Update Product'
-                      : 'Cập Nhật Sản Phẩm'
-                    : language === 'en'
-                    ? 'Save Product'
-                    : 'Lưu Sản Phẩm'}
+                    ? t('saas_products_cap_nhat_san_pham', 'Cập Nhật Sản Phẩm')
+                    : t('saas_products_l_u_san_pham', 'Lưu Sản Phẩm')}
                 </button>
               </div>
             </form>
@@ -927,7 +902,7 @@ export const SaaSProductsPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <Info className="h-5 w-5 text-amber-500" />
-                {language === 'en' ? 'Product Details' : 'Chi Tiết Sản Phẩm'}: {language === 'en' ? (previewProduct.name_en || previewProduct.name) : (previewProduct.name_vi || previewProduct.name)}
+                {t('saas_products_chi_tiet_san_pham', 'Chi Tiết Sản Phẩm')}: {pickLocalized(language === 'en', (previewProduct.name_en || previewProduct.name), (previewProduct.name_vi || previewProduct.name))}
               </h3>
               <button
                 onClick={() => setPreviewProduct(null)}
@@ -940,7 +915,7 @@ export const SaaSProductsPage: React.FC = () => {
             {/* Images gallery preview */}
             <div className="space-y-2">
               <div className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                {language === 'en' ? `Product Gallery (${previewProduct.images?.length || 1} images):` : `Bộ Ảnh Sản Phẩm (${previewProduct.images?.length || 1} ảnh):`}
+                {t('bo_anh_san_pham_anh', 'Bộ Ảnh Sản Phẩm ({{length}} ảnh):', { length: previewProduct.images?.length || 1 })}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {(previewProduct.images || [previewProduct.imageUrl || '']).map((img, i) => (
@@ -953,30 +928,30 @@ export const SaaSProductsPage: React.FC = () => {
 
             {/* Info details */}
             <div className="grid grid-cols-2 gap-3 bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl text-xs space-y-1">
-              <div><strong>{language === 'en' ? 'SKU:' : 'Mã SKU:'}</strong> <span className="font-mono text-amber-600 dark:text-amber-400">{previewProduct.sku}</span></div>
-              <div><strong>{language === 'en' ? 'Category:' : 'Danh mục:'}</strong> {language === 'en' ? (previewProduct.category_en || previewProduct.category) : (previewProduct.category_vi || previewProduct.category)}</div>
-              <div><strong>{language === 'en' ? 'Brand:' : 'Hãng sản xuất:'}</strong> {previewProduct.brand || 'Other'}</div>
-              <div><strong>{language === 'en' ? 'Origin:' : 'Xuất xứ:'}</strong> {language === 'en' ? (previewProduct.origin_en || previewProduct.origin) : (previewProduct.origin_vi || previewProduct.origin)}</div>
-              <div><strong>{language === 'en' ? 'Warranty:' : 'Bảo hành:'}</strong> {language === 'en' ? (previewProduct.warranty_en || previewProduct.warranty) : (previewProduct.warranty_vi || previewProduct.warranty)}</div>
-              <div><strong>{language === 'en' ? 'UOM:' : 'Đơn vị tính:'}</strong> {language === 'en' ? (previewProduct.unit_en || previewProduct.unit) : (previewProduct.unit_vi || previewProduct.unit)}</div>
-              <div><strong>{language === 'en' ? 'Retail Price:' : 'Giá bán niêm yết:'}</strong> <span className="font-bold text-emerald-600 dark:text-emerald-400">{previewProduct.salePrice.toLocaleString(language === 'en' ? 'en-US' : 'vi-VN')} đ</span></div>
-              <div><strong>{language === 'en' ? 'ERP Stock:' : 'Tồn kho ERP:'}</strong> <span className="font-bold">{previewProduct.stock} {language === 'en' ? (previewProduct.unit_en || previewProduct.unit) : (previewProduct.unit_vi || previewProduct.unit)}</span></div>
+              <div><strong>{t('saas_products_ma_sku_1', 'Mã SKU:')}</strong> <span className="font-mono text-amber-600 dark:text-amber-400">{previewProduct.sku}</span></div>
+              <div><strong>{t('saas_products_danh_muc_1', 'Danh mục:')}</strong> {pickLocalized(language === 'en', (previewProduct.category_en || previewProduct.category), (previewProduct.category_vi || previewProduct.category))}</div>
+              <div><strong>{t('saas_products_hang_san_xuat', 'Hãng sản xuất:')}</strong> {previewProduct.brand || 'Other'}</div>
+              <div><strong>{t('saas_products_xuat_xu', 'Xuất xứ:')}</strong> {pickLocalized(language === 'en', (previewProduct.origin_en || previewProduct.origin), (previewProduct.origin_vi || previewProduct.origin))}</div>
+              <div><strong>{t('saas_products_bao_hanh', 'Bảo hành:')}</strong> {pickLocalized(language === 'en', (previewProduct.warranty_en || previewProduct.warranty), (previewProduct.warranty_vi || previewProduct.warranty))}</div>
+              <div><strong>{t('saas_products_d_n_vi_tinh', 'Đơn vị tính:')}</strong> {pickLocalized(language === 'en', (previewProduct.unit_en || previewProduct.unit), (previewProduct.unit_vi || previewProduct.unit))}</div>
+              <div><strong>{t('saas_products_gia_ban_niem_yet_1', 'Giá bán niêm yết:')}</strong> <span className="font-bold text-emerald-600 dark:text-emerald-400">{previewProduct.salePrice.toLocaleString(getIntlLocale(language === 'en'))} đ</span></div>
+              <div><strong>{t('saas_products_ton_kho_erp_1', 'Tồn kho ERP:')}</strong> <span className="font-bold">{previewProduct.stock} {pickLocalized(language === 'en', (previewProduct.unit_en || previewProduct.unit), (previewProduct.unit_vi || previewProduct.unit))}</span></div>
             </div>
 
             {(previewProduct.highlights_en || previewProduct.highlights_vi || previewProduct.highlights) && (
               <div className="text-xs space-y-1">
-                <strong className="text-zinc-800 dark:text-zinc-200">{language === 'en' ? 'Highlights:' : 'Đặc điểm nổi bật:'}</strong>
+                <strong className="text-zinc-800 dark:text-zinc-200">{t('saas_products_d_c_diem_noi_bat', 'Đặc điểm nổi bật:')}</strong>
                 <p className="text-zinc-600 dark:text-zinc-300 bg-amber-500/10 p-2.5 rounded-lg border border-amber-500/20">
-                  {language === 'en' ? (previewProduct.highlights_en || previewProduct.highlights) : (previewProduct.highlights_vi || previewProduct.highlights)}
+                  {pickLocalized(language === 'en', (previewProduct.highlights_en || previewProduct.highlights), (previewProduct.highlights_vi || previewProduct.highlights))}
                 </p>
               </div>
             )}
 
             {(previewProduct.description_en || previewProduct.description_vi || previewProduct.description) && (
               <div className="text-xs space-y-1">
-                <strong className="text-zinc-800 dark:text-zinc-200">{language === 'en' ? 'Description:' : 'Mô tả chi tiết:'}</strong>
+                <strong className="text-zinc-800 dark:text-zinc-200">{t('saas_products_mo_ta_chi_tiet', 'Mô tả chi tiết:')}</strong>
                 <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                  {language === 'en' ? (previewProduct.description_en || previewProduct.description) : (previewProduct.description_vi || previewProduct.description)}
+                  {pickLocalized(language === 'en', (previewProduct.description_en || previewProduct.description), (previewProduct.description_vi || previewProduct.description))}
                 </p>
               </div>
             )}
@@ -986,7 +961,7 @@ export const SaaSProductsPage: React.FC = () => {
                 onClick={() => setPreviewProduct(null)}
                 className="px-4 py-2 text-xs font-bold rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 cursor-pointer"
               >
-                {language === 'en' ? 'Close' : 'Đóng Xem'}
+                {t('saas_products_dong_xem', 'Đóng Xem')}
               </button>
             </div>
           </div>

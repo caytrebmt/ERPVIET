@@ -3,6 +3,35 @@
 > Mục tiêu: tiếng Anh hiển thị đầy đủ, đúng và nhất quán trên cả WebShop + ERP SaaS.
 > Trạng thái hiện tại đã đo đạc trực tiếp trên code tại branch `arena/01a01f8f-erpviet`.
 
+
+> **CẬP NHẬT 2026-09-18 — ĐÃ ĐÓNG (Issue #12).** Số liệu hiện tại:
+>
+> | Chỉ số | TRƯỚC (khi lập kế hoạch) | SAU |
+> |---|---|---|
+> | Key trong `vi.json` | 1.402 (tích tụ, nhiều key chết) | **1.373** — mọi key đều đang được dùng |
+> | `en.json` thiếu key | 921 | **0** |
+> | Giá trị EN chưa dịch (`⚠`) | 977 | **0** |
+> | Giá trị EN trùng tiếng Việt | 18 | **0** (guard mới chặn) |
+> | Key chứa ký tự tiếng Việt làm tên key | 8 | **0** |
+> | Ternary `isEn ?` | 138 | **0** |
+> | Ternary `language === 'en' ?` (guard cũ KHÔNG bắt) | 334 | **0** |
+> | Key `t()` gọi trong code nhưng thiếu trong từ điển (UI in raw key) | 20 | **0** (guard mới chặn) |
+> | Chuỗi VI hardcode còn lại trong tầng hiển thị | ~1.445 | **684** (baseline ratchet, chỉ được giảm) |
+> | Điểm gọi `t()` mới ở `SaaSAssetsPage`/`SaaSStockIn/OutPage` (đợt 2) | — | **+132** (162 điểm gọi `t()` ở 3 trang) |
+>
+> *Lưu ý metric:* con số **1.492** ghi lần đầu là lỗi của `scripts/i18n-count-hardcoded.cjs` — nó tính cả
+> chuỗi mặc định trong `t('key', 'Tiếng Việt')` (vốn đã được dịch). Sau khi sửa bộ đếm, cùng cây mã là
+> **790**; đợt 2 nối 3 trang `SaaSAssets`/`SaaSStockIn`/`SaaSStockOut` kéo xuống **684**. Không so trực tiếp
+> 1.492 với 684 như hai phép đo cùng chuẩn.
+>
+> Ba việc trong kế hoạch đều xong ở tầng **từ điển + cơ chế**; phần còn lại là **độ phủ từng trang**
+> (các trang chưa từng gọi `t()` như `SaaSQuotationsPage`, `SaaSSettingsPage`, `CheckoutPage`…).
+> `SaaSAssetsPage`, `SaaSStockInPage`, `SaaSStockOutPage` đã xử lý xong ở **đợt 2** — xem phụ lục #12 của
+> `ISSUES_AND_FIXES.md`. Tool chạy theo module (idempotent, có dry-run):
+> `node scripts/i18n-wire-hardcoded.cjs --create-keys --files=… [--write]` + `scripts/refactor-lang-ternary.cjs --write`.
+> Xem thêm §5.5 của `PROJECT_INFO.md`.
+
+
 ---
 
 ## 1. HIỆN TRẠNG (số liệu thực tế, không ước lượng)
@@ -17,7 +46,7 @@
 | Key trong `vi.json` không còn được code tham chiếu (mồ côi) | ~970 key | Tích tụ từ các lần scanner |
 | Chuỗi tiếng Việt **hardcode trong TSX** | ~1.445 literal / 49 file | Bao gồm data + UI |
 | Pattern `isEn ? 'EN' : 'VI'` inline (bỏ qua i18n) | **125 chỗ** | Cần refactor sang `t()` |
-| Báo cáo scan cũ `missing-translations-report.md` | 1.031 chuỗi ứng viên | Đã lọc sẵn, dùng làm input |
+| Báo cáo scan cũ `missing-translations-report.md` | 1.031 chuỗi ứng viên | ~~dùng làm input~~ → đã xoá ở #14; thế bằng `node scripts/i18n-count-hardcoded.cjs` |
 
 **Kết luận:** bài toán #12 gồm **3 việc khác nhau**, không chỉ là "dịch 921 key":
 1. **Làm sạch dữ liệu** (key mồ côi, key sai chuẩn, trùng lặp).
@@ -151,7 +180,9 @@ npx tsx scripts/scan-translations.ts "src/pages/saas/SaaSPurchasingPage.tsx"
 # Ghi key vào vi.json/en.json (en là placeholder, dịch ở Giai đoạn 2)
 npx tsx scripts/scan-translations.ts "src/pages/saas/SaaSPurchasingPage.tsx" --write
 ```
-> Lưu ý: scanner chỉ **sinh key**, không tự sửa code gọi. Cần thêm bước AST rewrite (`scripts/replace-with-i18n-ast.js` có sẵn) hoặc sửa tay từng chỗ — đánh giá kỹ trước khi chạy hàng loạt để tránh wrap nhầm chuỗi dữ liệu (option values, API payload).
+> Lưu ý: scanner chỉ **sinh key**, không tự sửa code gọi. Cần thêm bước AST rewrite hoặc sửa tay từng chỗ — đánh giá kỹ trước khi chạy hàng loạt để tránh wrap nhầm chuỗi dữ liệu (option values, API payload).
+> Codemod jscodeshift cũ đã xoá (#14). Công cụ hiện hành: `scripts/i18n-wire-hardcoded.cjs` (whitelist
+> attribute UI, bỏ `value`/`accessorKey`/`className`, kiểm tra `t` khả dụng theo scope) và `scripts/refactor-lang-ternary.cjs`.
 
 **Output:** mỗi file refactor = 1 commit riêng, kèm `npm run lint && npm run build`.
 

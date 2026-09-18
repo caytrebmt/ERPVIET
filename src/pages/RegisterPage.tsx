@@ -93,7 +93,7 @@ const RegisterPage: React.FC = () => {
             <input
               type="text"
               required
-              placeholder="Ví dụ: Nguyễn Văn A"
+              placeholder={t('saas_c_r_m_vi_du_nguyen_v_n_a', 'Ví dụ: Nguyễn Văn A')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -116,7 +116,7 @@ const RegisterPage: React.FC = () => {
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> Số điện thoại <span className="text-red-500">*</span>
+              <Phone className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> {t('saas_register_company_phone', 'Số điện thoại')}<span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
@@ -131,7 +131,7 @@ const RegisterPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> Mật khẩu <span className="text-red-500">*</span>
+                <Lock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-450" /> {t('mat-khau-login-web', 'Mật khẩu')}<span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -202,8 +202,7 @@ const RegisterPage: React.FC = () => {
             {submitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Đang khởi tạo...
-              </>
+                {t('saas_register_submitting', 'Đang khởi tạo...')}</>
             ) : (
               <>
                 <UserPlus className="w-4 h-4" />
@@ -218,7 +217,7 @@ const RegisterPage: React.FC = () => {
           <p className="text-xs text-gray-500 dark:text-gray-400 m-0">
             Đã sẵn có tài khoản?{" "}
             <Link to={shopPath("/login")} className="font-bold text-indigo-600 dark:text-indigo-450 hover:underline inline-flex items-center gap-0.5">
-              Đăng nhập <ArrowLeft className="w-3 h-3" />
+              {t('nav_login', 'Đăng nhập')}<ArrowLeft className="w-3 h-3" />
             </Link>
           </p>
         </div>
