@@ -46,7 +46,7 @@
 | Key trong `vi.json` không còn được code tham chiếu (mồ côi) | ~970 key | Tích tụ từ các lần scanner |
 | Chuỗi tiếng Việt **hardcode trong TSX** | ~1.445 literal / 49 file | Bao gồm data + UI |
 | Pattern `isEn ? 'EN' : 'VI'` inline (bỏ qua i18n) | **125 chỗ** | Cần refactor sang `t()` |
-| Báo cáo scan cũ `missing-translations-report.md` | 1.031 chuỗi ứng viên | Đã lọc sẵn, dùng làm input |
+| Báo cáo scan cũ `missing-translations-report.md` | 1.031 chuỗi ứng viên | ~~dùng làm input~~ → đã xoá ở #14; thế bằng `node scripts/i18n-count-hardcoded.cjs` |
 
 **Kết luận:** bài toán #12 gồm **3 việc khác nhau**, không chỉ là "dịch 921 key":
 1. **Làm sạch dữ liệu** (key mồ côi, key sai chuẩn, trùng lặp).
@@ -180,7 +180,9 @@ npx tsx scripts/scan-translations.ts "src/pages/saas/SaaSPurchasingPage.tsx"
 # Ghi key vào vi.json/en.json (en là placeholder, dịch ở Giai đoạn 2)
 npx tsx scripts/scan-translations.ts "src/pages/saas/SaaSPurchasingPage.tsx" --write
 ```
-> Lưu ý: scanner chỉ **sinh key**, không tự sửa code gọi. Cần thêm bước AST rewrite (`scripts/replace-with-i18n-ast.js` có sẵn) hoặc sửa tay từng chỗ — đánh giá kỹ trước khi chạy hàng loạt để tránh wrap nhầm chuỗi dữ liệu (option values, API payload).
+> Lưu ý: scanner chỉ **sinh key**, không tự sửa code gọi. Cần thêm bước AST rewrite hoặc sửa tay từng chỗ — đánh giá kỹ trước khi chạy hàng loạt để tránh wrap nhầm chuỗi dữ liệu (option values, API payload).
+> Codemod jscodeshift cũ đã xoá (#14). Công cụ hiện hành: `scripts/i18n-wire-hardcoded.cjs` (whitelist
+> attribute UI, bỏ `value`/`accessorKey`/`className`, kiểm tra `t` khả dụng theo scope) và `scripts/refactor-lang-ternary.cjs`.
 
 **Output:** mỗi file refactor = 1 commit riêng, kèm `npm run lint && npm run build`.
 

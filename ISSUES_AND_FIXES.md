@@ -510,9 +510,13 @@ export async function query(text: string, params?: any[]) {
 
 ---
 
-## 🟡 ISSUE #12 — i18n tiếng Anh chưa hoàn thiện (481/1402 key)
+## ✅ ISSUE #12 — i18n tiếng Anh chưa hoàn thiện (481/1402 key) — ĐÃ TRẢ XONG 2026-09-18
 
-**Vị trí:** `public/locales/en.json` thiếu ~66% key; `missing-translations-report.md` ghi nhận 1,031 chuỗi hardcode.
+> Kết quả + cách tái sử dụng tool: xem **PHỤ LỤC — KẾT QUẢ ISSUE #12** và **PHỤ LỤC — ĐỢT 2** ở cuối file.
+
+**Vị trí (khi mở issue):** `public/locales/en.json` thiếu ~66% key; `missing-translations-report.md` ghi nhận 1,031 chuỗi hardcode.
+
+*(Báo cáo scan đó đã bị xoá ở đợt dọn #14 vì số liệu không còn đúng; công cụ đo hiện tại là `scripts/i18n-count-hardcoded.cjs`.)*
 
 **Fix:**
 1. Chạy scanner để extract chuỗi hardcode:
@@ -545,17 +549,28 @@ Và sửa `metadata.json` (bỏ `MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API`) nếu
 
 ---
 
-## 🟡 ISSUE #14 — File rác bị commit
+## ✅ ISSUE #14 — File rác bị commit — ĐÃ DỌN 2026-09-18
 
 **Vị trí (root):** `--extensions`, `-d`, `npx`, `i18n-replacements.json` (rỗng), `check_toasts.js`, `extract-strings.cjs`, `generate-report.cjs`, `codemods/`... (các artifact quá trình i18n).
 
-**Fix:**
-```bash
-git rm --cached -- "--extensions" "-d" npx i18n-replacements.json
-# rà soát các script tạm còn dùng hay không trước khi xóa
-```
+**Đã dọn** (16 path — không còn reference sống nào trong repo):
 
-**Kiểm tra:** `git status` sạch; root chỉ còn file cần thiết.
+| Nhóm | Path đã xoá | Lý do |
+|---|---|---|
+| Báo cáo/input đợt scan cũ | `missing-translations-report.md` (80 kB) · `candidates.json` (43 kB) · `scripts/i18n-replacements.json` | số liệu lỗi thời; jscodeshift không còn dùng |
+| Producer của 2 file trên | `extract-strings.cjs` · `generate-report.cjs` | thay bằng `scripts/i18n-count-hardcoded.cjs` (AST, bỏ cả data & payload) |
+| Codemod cũ | `codemods/replace-with-i18n-ast-i18next.js` (xóa cả thư mục) · `scripts/replace-with-i18n-ast.js` | cần `jscodeshift` + file replacements; thay bằng `scripts/i18n-wire-hardcoded.cjs` |
+| Script một lần | `scripts/fix-i18n.cjs` · `scripts/add-khong-the-duyet-key.cjs` · `scripts/compare-groups.cjs` · `scripts/extract-vi-strings.js` · `scripts/extract-vi-strings-debug.js` · `check_toasts.js` | không file nào tham chiếu |
+| Tool đã bị thay | `scripts/optimize-keys.cjs` + `scripts/key-report.json` · `scripts/refactor-isen.cjs` | prune do `i18n-prune-and-flatten.cjs` lo; báo cáo `isEn ?` do guard + `refactor-lang-ternary.cjs` lo |
+
+File rác `--extensions`, `-d`, `npx` đã ra khỏi repo từ trước (`git ls-files` xác nhận).
+
+**Giữ lại vì vẫn còn dùng:** `scripts/scan-translations.ts`, `analyze-i18n.cjs`, `cleanup-duplicate-keys.ts`,
+`find-missing-keys.cjs`, `add-missing-keys.ts`, `normalize-locales.js` (dùng cho đợt chuẩn hoá tên key),
+`sync-sources.cjs` (JSON ↔ `sys_translations`), `translate-en.cjs`, `e2e-multitenant.mjs`.
+
+**Kiểm tra:** `git status` sạch · `grep -rn "refactor-isen\|candidates.json\|missing-translations-report" src tests scripts`
+không còn pointer nào chạy được · `npm test` + `npm run build` vẫn pass.
 
 ---
 
@@ -740,8 +755,8 @@ jobs:
 - Chuỗi VI hardcode ở các trang chưa nối `t()`: theo metric lúc đó là 1.492, nhưng bộ đếm tính nhầm cả
   giá trị mặc định trong `t(key, 'Tiếng Việt')`; metric đúng (đã sửa trong `scripts/i18n-count-hardcoded.cjs`)
   là **790**. Đợt 2 bên dưới đã kéo xuống **684** và baseline ratchet đã ghi theo số mới.
-- `missing-translations-report.md` + `candidates.json` + `scripts/i18n-replacements.json` là input của
-  đợt cũ, nay đã lỗi thời → nên xóa ở đợt dọn tiếp theo.
+- ~~`missing-translations-report.md` + `candidates.json` + `scripts/i18n-replacements.json`~~ — **đã xoá**
+  cùng 13 artifact/script chết khác trong đợt dọn issue `#14` (2026-09-18).
 - 14 key vẫn dùng dấu gạch ngang (`dashboard-tong-quan`, `xem-webshop`, `an-mat-khau`…) thay vì
   snake_case theo chuẩn §2.4 — gộp vào đợt chuẩn hoá tên key (đã có `scripts/normalize-locales.js`).
 - Thông báo trả về từ `saasRouter`/`shopRouter` (key `api_*`) vẫn là chuỗi cứng trong API;

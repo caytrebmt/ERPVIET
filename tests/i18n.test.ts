@@ -119,7 +119,9 @@ describe('i18n — Code Quality', () => {
       console.error(`\n❌ Còn ${count} chỗ dùng "isEn ?" (bypass i18n system):`);
       examples.forEach(l => console.error(`   ${l.slice(0, 100)}`));
       if (count > 5) console.error(`   ... và ${count - 5} chỗ khác`);
-      console.error('\n   → Chạy: node scripts/refactor-isen.cjs để xem hướng dẫn refactor');
+      console.error('\n   → Sửa bằng codemod: node scripts/refactor-lang-ternary.cjs --write'
+        + ', rồi node scripts/i18n-wire-hardcoded.cjs --create-keys --write --files=<file>'
+        + ' (hướng dẫn: I18N_DEPLOY_GUIDE.md Phần 4)');
     }
 
     expect(count, `${count} chỗ còn dùng isEn ? inline`).toBe(0);
